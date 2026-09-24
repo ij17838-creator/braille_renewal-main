@@ -1,0 +1,168 @@
+{
+  "irregular_rules": {
+    "digeut": {
+      "name": "ㄷ 불규칙",
+      "target_final_consonant": "ㄷ",
+      "trigger_condition": {
+        "following_starts_with": "vowel"
+      },
+      "transformation": {
+        "final_consonant_changes_to": "ㄹ",
+        "example_stems": [
+          { "base": "듣", "vowel_trigger": "들", "example": "듣다 -> 들어요 / 들으면" },
+          { "base": "걷", "vowel_trigger": "걸", "example": "걷다 -> 걸어요 / 걸으면" },
+          { "base": "묻", "vowel_trigger": "물", "example": "묻다 -> 물어요 (질문하다의 뜻일 때)" }
+        ],
+        "regular_exceptions": [
+          { "base": "받", "example": "받다 -> 받아요 / 받으면" },
+          { "base": "닫", "example": "닫다 -> 닫아요 / 닫으면" },
+          { "base": "믿", "example": "믿다 -> 믿어요 / 믿으면" }
+        ]
+      }
+    },
+    "bieup": {
+      "name": "ㅂ 불규칙",
+      "target_final_consonant": "ㅂ",
+      "trigger_condition": {
+        "following_starts_with": "vowel"
+      },
+      "transformation": {
+        "final_consonant_drops": true,
+        "inserted_vowel": {
+          "default": "우",
+          "yang_vowel_monosyllabic_exception": {
+            "condition": "어간이 1음절이고 모음이 'ㅏ' 또는 'ㅗ'인 일부 용언이 '-아/어'를 만날 때",
+            "inserted_vowel": "오",
+            "examples": [
+              { "base": "돕", "with_ah": "도와", "with_eumyeon": "도우면" },
+              { "base": "곱", "with_ah": "고와", "with_eumyeon": "고우면" }
+            ]
+          }
+        },
+        "eu_absorption": {
+          "description": "'-(으)면', '-(으)니' 등의 매개모음 '으'와 만날 때 'ㅂ'이 탈락하고 '우'로 대체됨",
+          "formula": "어간(ㅂ 탈락) + 우 + 어미(자음)"
+        },
+        "regular_exceptions": [
+          { "base": "잡", "example": "잡다 -> 잡아요 / 잡으면" },
+          { "base": "뽑", "example": "뽑다 -> 뽑아요 / 뽑으면" },
+          { "base": "입", "example": "입다 -> 입어요 / 입으면" },
+          { "base": "좁", "example": "좁다 -> 좁아요 / 좁으면" }
+        ]
+      }
+    },
+    "siot": {
+      "name": "ㅅ 불규칙",
+      "target_final_consonant": "ㅅ",
+      "trigger_condition": {
+        "following_starts_with": "vowel"
+      },
+      "transformation": {
+        "final_consonant_drops": true,
+        "vowel_contraction_blocked": true,
+        "description": "받침 'ㅅ'은 탈락하지만 모음끼리 축약되지 않고 독립된 음절을 유지함",
+        "example_stems": [
+          { "base": "짓", "transformed": "지", "example": "짓다 -> 지어 / 지으면 (져 X)" },
+          { "base": "낫", "transformed": "나", "example": "낫다 -> 나아 / 나으면 (나 X)" },
+          { "base": "붓", "transformed": "부", "example": "붓다 -> 부어 / 부으면 (붜 X)" }
+        ],
+        "regular_exceptions": [
+          { "base": "벗", "example": "벗다 -> 벗어요 / 벗으면" },
+          { "base": "웃", "example": "웃다 -> 웃어요 / 웃으면" },
+          { "base": "씻", "example": "씻다 -> 씻어요 / 씻으면" },
+          { "base": "빼앗", "example": "빼앗다 -> 빼앗아요 / 빼앗으면" }
+        ]
+      }
+    },
+    "reu": {
+      "name": "르 불규칙",
+      "target_syllable": "르",
+      "trigger_condition": {
+        "following_eomi": "-아/-어 계열 어미"
+      },
+      "transformation": {
+        "eu_drops": true,
+        "add_rieul_batchim_to_previous_syllable": true,
+        "following_vowel_added": "ㄹ + 아/어",
+        "description": "어간 끝 '르'의 'ㅡ'가 탈락하고, 앞 음절에 종성 'ㄹ'이 붙으며 뒤에는 '라/러'가 결합",
+        "example_stems": [
+          { "base": "모르", "example": "모르다 -> 몰라 / 몰라서" },
+          { "base": "빠르", "example": "빠르다 -> 빨라 / 빨라서" },
+          { "base": "부르", "example": "부르다 -> 불러 / 불러서" },
+          { "base": "흐르", "example": "흐르다 -> 흘러 / 흘러서" }
+        ],
+        "contrasting_rules": {
+          "compare_with_leobeulgyuchik": {
+            "name": "러 불규칙",
+            "mechanism": "어간의 '르'는 유지되고 어미 '-어'가 '-러'로 바뀜",
+            "examples": [
+              { "base": "이르", "meaning": "도착하다", "example": "이르다 -> 이르러" },
+              { "base": "푸르", "meaning": "색상", "example": "푸르다 -> 푸르러" }
+            ]
+          }
+        }
+      }
+    },
+    "eu_drop": {
+      "name": "ㅡ 탈락 (규칙적 음운 변동)",
+      "target_vowel": "ㅡ",
+      "trigger_condition": {
+        "following_starts_with": "vowel"
+      },
+      "transformation": {
+        "stem_final_vowel_drops": true,
+        "vowel_harmony_determined_by": "어간 'ㅡ'의 바로 앞 음절 모음 (앞 음절이 없으면 음성 모음 취급)",
+        "example_stems": [
+          { "base": "바쁘", "preceding_vowel": "ㅏ (양성)", "example": "바쁘다 -> 바빠 (바ㅃ + 아)" },
+          { "base": "예쁘", "preceding_vowel": "ㅖ (음성)", "example": "예쁘다 -> 예뻐 (예ㅃ + 어)" },
+          { "base": "크", "preceding_vowel": null, "example": "크다 -> 커 (ㅋ + 어)" },
+          { "base": "쓰", "preceding_vowel": null, "example": "쓰다 -> 써 (ㅆ + 어)" }
+        ]
+      }
+    },
+    "rieul_drop": {
+      "name": "ㄹ 탈락 (규칙적 음운 변동)",
+      "target_final_consonant": "ㄹ",
+      "trigger_condition": {
+        "following_starts_with_consonant": ["ㄴ", "ㅂ", "ㅅ", "ㄹ"],
+        "following_starts_with_filler_vowel": "-(으) 계열 매개모음 어미 결합 시 매개모음 탈락"
+      },
+      "transformation": {
+        "final_consonant_drops": true,
+        "example_stems": [
+          { "base": "살", "with_ni": "사니", "with_b_nida": "삽니다", "with_si": "사시다", "with_myeon": "살면" },
+          { "base": "알", "with_neun": "아는", "with_b_nida": "압니다", "with_so": "아오", "with_myeon": "알면" },
+          { "base": "만들", "with_si": "만드시-", "with_b_nida": "만듭니다", "with_neun": "만드는" }
+        ]
+      }
+    },
+    "yeo": {
+      "name": "여 불규칙 (하다 불규칙)",
+      "target_stem": "하",
+      "trigger_condition": {
+        "following_eomi": "-아/-어 계열 어미"
+      },
+      "transformation": {
+        "eomi_changes_to": "여",
+        "contraction": "하여 -> 해",
+        "example": "하다 -> 하여 / 해"
+      }
+    },
+    "hieut": {
+      "name": "ㅎ 불규칙",
+      "target_final_consonant": "ㅎ",
+      "trigger_condition": {
+        "vowel_eomi": "-아/-어 결합 시 또는 '-(으)' 매개모음 결합 시"
+      },
+      "transformation": {
+        "with_eu_vowel": "ㅎ 탈락 (파랗다 + 으면 -> 파라면)",
+        "with_ah_uh_vowel": "ㅎ 탈락 및 앞 모음과 축약되어 'ㅐ' 또는 'ㅒ'로 변환 (파랗다 + 아 -> 파래, 하얗다 + 아 -> 하얘)"
+      },
+      "regular_exceptions": [
+        { "base": "좋", "example": "좋다 -> 좋아 / 좋으면" },
+        { "base": "놓", "example": "놓다 -> 놓아 / 놓으면" },
+        { "base": "넣", "example": "넣다 -> 넣어 / 넣으면" }
+      ]
+    }
+  }
+}

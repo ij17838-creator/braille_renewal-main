@@ -1,0 +1,215 @@
+{
+  "pipeline_order": [
+    "inflectional_suffix",
+    "derivational_suffix",
+    "root",
+    "prefix"
+  ],
+
+  "prefixes": {
+    "category": "prefix",
+    "description": "어근 앞에 결합하는 주요 접두사 목록 및 음절 경계 분리 규칙",
+    "rule": {
+      "position": "initial",
+      "boundaryCheck": true,
+      "priority": 60
+    },
+    "items": {
+      "un": { "morpheme": "un", "type": "negative" },
+      "re": { "morpheme": "re", "type": "repetitive" },
+      "pre": { "morpheme": "pre", "type": "locative_temporal" },
+      "non": { "morpheme": "non", "type": "negative" },
+      "anti": { "morpheme": "anti", "type": "oppositional" },
+      "mis": { "morpheme": "mis", "type": "pejorative" },
+      "over": { "morpheme": "over", "type": "degree" },
+      "under": { "morpheme": "under", "type": "degree" },
+      "sub": { "morpheme": "sub", "type": "locative" },
+      "trans": { "morpheme": "trans", "type": "locative" },
+      "inter": { "morpheme": "inter", "type": "relational" },
+      "semi": { "morpheme": "semi", "type": "degree" }
+    }
+  },
+
+  "inflectional_suffixes": {
+    "category": "inflectional_suffix",
+    "description": "문법적 관계를 나타내는 굴절 어미 및 결합 속성",
+    "rule": {
+      "position": "final_outer",
+      "affectsStem": true,
+      "priority": 80
+    },
+    "items": {
+      "s": {
+        "morpheme": "s",
+        "grammar": "plural_or_3rd_singular"
+      },
+      "es": {
+        "morpheme": "es",
+        "grammar": "plural_or_3rd_singular_sibilant"
+      },
+      "ed": {
+        "morpheme": "ed",
+        "grammar": "past_or_past_participle"
+      },
+      "ing": {
+        "morpheme": "ing",
+        "grammar": "present_participle_or_gerund"
+      },
+      "er": {
+        "morpheme": "er",
+        "grammar": "comparative"
+      },
+      "est": {
+        "morpheme": "est",
+        "grammar": "superlative"
+      }
+    }
+  },
+
+  "derivational_suffixes": {
+    "category": "derivational_suffix",
+    "description": "품사를 전환하거나 의미를 확장하는 파생 어미(기존 점자 약어에 없는 형태소 중심)",
+    "rule": {
+      "position": "final_inner",
+      "affectsStem": true,
+      "priority": 70
+    },
+    "items": {
+      "able": { "morpheme": "able", "targetPos": "adjective" },
+      "ible": { "morpheme": "ible", "targetPos": "adjective" },
+      "ful": { "morpheme": "ful", "targetPos": "adjective" },
+      "ish": { "morpheme": "ish", "targetPos": "adjective" },
+      "ist": { "morpheme": "ist", "targetPos": "noun" },
+      "ism": { "morpheme": "ism", "targetPos": "noun" },
+      "ize": { "morpheme": "ize", "targetPos": "verb" },
+      "ise": { "morpheme": "ise", "targetPos": "verb" },
+      "ship": { "morpheme": "ship", "targetPos": "noun" },
+      "hood": { "morpheme": "hood", "targetPos": "noun" },
+      "dom": { "morpheme": "dom", "targetPos": "noun" },
+      "ly": { "morpheme": "ly", "targetPos": "adverb" }
+    }
+  },
+
+  "roots": {
+    "category": "root",
+    "description": "다양한 접사와 결합하는 기본 어근 및 형태소 분리 속성",
+    "rule": {
+      "position": "base",
+      "priority": 50
+    },
+    "items": {
+      "act": {
+        "stem": "act",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "form": {
+        "stem": "form",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "port": {
+        "stem": "port",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "struct": {
+        "stem": "struct",
+        "pos": ["verb"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "tract": {
+        "stem": "tract",
+        "pos": ["verb"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "press": {
+        "stem": "press",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "play": {
+        "stem": "play",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "help": {
+        "stem": "help",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": false,
+        "doubleConsonantAllowed": false
+      },
+      "care": {
+        "stem": "care",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": true,
+        "doubleConsonantAllowed": false
+      },
+      "hope": {
+        "stem": "hope",
+        "pos": ["verb", "noun"],
+        "allowPrefix": true,
+        "allowSuffix": true,
+        "hasSilentE": true,
+        "doubleConsonantAllowed": false
+      }
+    }
+  },
+
+  "combining_rules": {
+    "bridge_rule": {
+      "description": "형태소 경계를 가로지르는 점자 약어(묶음약자) 생성 금지 규칙",
+      "disallowCrossMorphemeContraction": true,
+      "scope": {
+        "prefixToRoot": true,
+        "rootToDerivationalSuffix": true,
+        "derivationalToInflectionalSuffix": true
+      },
+      "allowExceptions": false
+    },
+    "spelling_transformations": {
+      "drop_silent_e": {
+        "triggerSuffixes": ["ing", "ed", "er", "est", "able", "ist", "ize"],
+        "requiresStemProperty": "hasSilentE",
+        "action": "remove_last_letter"
+      },
+      "double_final_consonant": {
+        "triggerSuffixes": ["ing", "ed", "er", "est"],
+        "pattern": "[^aeiou][aeiou][bcdfghjklmnpqrstvz]$",
+        "excludedEndings": ["w", "x", "y"],
+        "requiresStemProperty": "doubleConsonantAllowed",
+        "action": "duplicate_last_consonant"
+      },
+      "y_to_i": {
+        "triggerSuffixes": ["es", "ed", "er", "est", "ly", "ful"],
+        "pattern": "[^aeiou]y$",
+        "action": "replace_y_with_i"
+      }
+    }
+  }
+}

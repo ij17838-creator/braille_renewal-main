@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.2",
+  "system": "ueb",
+  "module": "numeric_mode_parser",
+  "initiator_condition": {
+    "requires_prefix": true,
+    "prefix_id": "num_prefix",
+    "braille": "⠼",
+    "dots": [3, 4, 5, 6],
+    "description": "Numeric mode begins immediately following the numeric indicator (⠼)"
+  },
+  "scope_maintenance": {
+    "continuation_connectors": [
+      { "name": "comma", "char": ",", "braille": "⠂", "usage": "자릿수 구분" },
+      { "name": "period", "char": ".", "braille": "⠲", "usage": "소수점" },
+      { "name": "colon", "char": ":", "braille": "⠒", "usage": "시간 및 비율 표기 (수표 모드 유지)" },
+      { "name": "simple_fraction_slash", "char": "/", "braille": "⠌", "usage": "단순 분수선" },
+      { "name": "numeric_space", "char": " ", "braille": "⠐", "usage": "숫자 간 분리 빈칸" }
+    ],
+    "terminating_connectors": [
+      { "name": "hyphen", "char": "-", "braille": "⠤" },
+      { "name": "en_dash", "char": "–", "braille": "⠐⠤" },
+      { "name": "em_dash", "char": "—", "braille": "⠐⠠⠤" }
+    ],
+    "description": "자릿점(,), 소수점(.), 쌍점(:), 단순분수선(/), 숫자빈칸은 숫자 모드를 유지함. 반면 하이픈(-) 및 대시는 모드를 종료하므로 후속 숫자에 수표를 다시 표기해야 함."
+  },
+  "termination_triggers": {
+    "terminators": [
+      "space",
+      "hyphen",
+      "dash",
+      "non_numeric_punctuation",
+      "letters",
+      "line_break"
+    ]
+  },
+  "collision_resolutions": {
+    "alphanumeric_transition": {
+      "grade1_required_targets": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+      "grade1_exempt_targets": ["k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"],
+      "grade1_indicator": "⠰",
+      "resolution": "숫자 모드 직후 a~j (대소문자 포함) 문자가 결합될 경우 글리프 중복 해석 방지를 위해 1급 기호표(⠰) 삽입 필수. k~z는 기호표 없이 숫자 모드만 종료."
+    },
+    "wordsign_suppression": {
+      "rule": "수표 모드 내에서는 'b' (but), 'c' (can) 등의 알파벳 약어(Alphabetic Wordsign) 파싱을 전면 차단하고 아라비아 숫자로 처리"
+    }
+  },
+  "standing_alone_rules": {
+    "description": "UEB Rule 2.6 독립 단어(Standing Alone) 조건 정의",
+    "adjacent_delimiters": {
+      "neutral_punctuation": {
+        "description": "단어 앞뒤에 인접해도 독립 단어 상태를 유지하는 부호",
+        "allows_contraction": true,
+        "symbols": [
+          { "name": "comma", "char": ",", "braille": "⠂" },
+          { "name": "period", "char": ".", "braille": "⠲" },
+          { "name": "question_mark", "char": "?", "braille": "⠦" },
+          { "name": "exclamation_mark", "char": "!", "braille": "⠖" },
+          { "name": "colon", "char": ":", "braille": "⠒" },
+          { "name": "semicolon", "char": ";", "braille": "⠆" },
+          { "name": "single_quote_open", "char": "‘", "braille": "⠠⠦" },
+          { "name": "single_quote_close", "char": "’", "braille": "⠠⠴" },
+          { "name": "double_quote_open", "char": "“", "braille": "⠐⠦" },
+          { "name": "double_quote_close", "char": "”", "braille": "⠐⠴" },
+          { "name": "neutral_single_quote", "char": "'", "braille": "⠦ / ⠴" },
+          { "name": "parentheses", "char": "()", "braille": "⠐⠣ / ⠐⠜" },
+          { "name": "brackets", "char": "[]", "braille": "⠨⠣ / ⠨⠜" }
+        ]
+      },
+      "hyphen_and_dashes": {
+        "allows_contraction": true,
+        "mode_effect": "terminates_numeric_mode",
+        "symbols": [
+          { "name": "hyphen", "char": "-", "braille": "⠤" },
+          { "name": "en_dash", "char": "–", "braille": "⠐⠤" },
+          { "name": "em_dash", "char": "—", "braille": "⠐⠠⠤" }
+        ]
+      },
+      "slash_and_symbols": {
+        "allows_contraction": false,
+        "symbols": [
+          { "name": "solidus_slash", "char": "/", "braille": "⠸⠌" },
+          { "name": "ampersand", "char": "&", "braille": "⠈⠯" },
+          { "name": "at_sign", "char": "@", "braille": "⠈⠁" }
+        ]
+      },
+      "apostrophe_exceptions": {
+        "rules": [
+          {
+            "pattern": "word + 'd|'ll|'re|'s|'t|'ve",
+            "allows_contraction": true,
+            "condition": "지정된 어미 결합 시 독립 단어 상태를 유지하여 축약 허용"
+          },
+          {
+            "pattern": "numeric + 's",
+            "allows_contraction": false,
+            "condition": "아포스트로피(')로 숫자 모드가 종료되며 뒤따라오는 's'는 단순 문자로 점역"
+          }
+        ]
+      }
+    }
+  }
+}

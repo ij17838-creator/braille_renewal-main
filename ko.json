@@ -1,0 +1,171 @@
+{
+  "abbreviation_word": {
+    "category": "wordsign",
+    "description": "접속사 등 단독으로 쓰이는 단어 약어",
+    "rule": {
+      "position": "standalone",
+      "priority": 100
+    },
+    "items": {
+      "그래서": { "word": "그래서", "dots": [[1], [2, 3, 4]], "unicode": "⠁⠎" },
+      "그러나": { "word": "그러나", "dots": [[1], [1, 4]], "unicode": "⠁⠉" },
+      "그러면": { "word": "그러면", "dots": [[1], [2, 5]], "unicode": "⠁⠒" },
+      "그러므로": { "word": "그러므로", "dots": [[1], [2, 6]], "unicode": "⠁⠢" },
+      "그런데": { "word": "그런데", "dots": [[1], [1, 3, 4, 5]], "unicode": "⠁⠝" },
+      "그리고": { "word": "그리고", "dots": [[1], [1, 3, 6]], "unicode": "⠁⠥" },
+      "그리하여": { "word": "그리하여", "dots": [[1], [1, 5, 6]], "unicode": "⠁⠱" }
+    }
+  },
+
+  "abbreviation_syllable": {
+    "category": "syllable_contraction",
+    "description": "음절 전체 또는 모음+받침 결합을 한 점형으로 축약하는 약자",
+    "rule": {
+      "priority": 80,
+      "sub_rules": {
+        "ga_series": "초성+ㅏ 축약 약자. 종성이 붙으면 약자 뒤에 종성 점형을 결합",
+        "vowel_coda_series": "초성과 결합 가능 (초성 'ㅇ'인 경우 단독 사용)"
+      }
+    },
+    "items": {
+      "가": { "syllable": "가", "dots": [[1, 2, 4, 6]], "unicode": "⠫", "type": "ga_series" },
+      "나": { "syllable": "나", "dots": [[1, 4]], "unicode": "⠉", "type": "ga_series" },
+      "다": { "syllable": "다", "dots": [[2, 4]], "unicode": "⠊", "type": "ga_series" },
+      "마": { "syllable": "마", "dots": [[1, 5]], "unicode": "⠑", "type": "ga_series" },
+      "바": { "syllable": "바", "dots": [[4, 5]], "unicode": "⠘", "type": "ga_series" },
+      "사": { "syllable": "사", "dots": [[1, 2, 3]], "unicode": "⠇", "type": "ga_series", "expanded_unicode": "⠈⠣", "expanded_dots": [[4], [1, 2, 6]], "exception_rules": { "vowel_connection": "제18항 제1호: '사' 뒤에 바로 모음이 이어지는 경우 풀어 적음 (예: 사이 -> ⠈⠣⠊)", "after_number": "제18항 제2호: 숫자 뒤에 '사'가 올 경우 풀어 적음 (예: 4사분기 -> ⠼⠙⠈⠣...)" } },
+      "자": { "syllable": "자", "dots": [[4, 6]], "unicode": "⠨", "type": "ga_series" },
+      "카": { "syllable": "카", "dots": [[1, 2, 4]], "unicode": "⠋", "type": "ga_series" },
+      "타": { "syllable": "타", "dots": [[1, 2, 5]], "unicode": "⠓", "type": "ga_series" },
+      "파": { "syllable": "파", "dots": [[1, 4, 5]], "unicode": "⠙", "type": "ga_series" },
+      "하": { "syllable": "하", "dots": [[2, 4, 5]], "unicode": "⠚", "type": "ga_series" },
+      "것": { "syllable": "것", "dots": [[4, 5, 6], [2, 3, 4]], "unicode": "⠸⠎", "type": "complete_syllable" },
+      "억": { "syllable": "억", "dots": [[1, 4, 5, 6]], "unicode": "⠹", "type": "vowel_coda_series" },
+      "언": { "syllable": "언", "dots": [[2, 3, 4, 5, 6]], "unicode": "⠾", "type": "vowel_coda_series" },
+      "얼": { "syllable": "얼", "dots": [[2, 3, 4, 5]], "unicode": "⠞", "type": "vowel_coda_series" },
+      "연": { "syllable": "연", "dots": [[1, 6]], "unicode": "⠡", "type": "vowel_coda_series" },
+      "열": { "syllable": "열", "dots": [[1, 2, 5, 6]], "unicode": "⠳", "type": "vowel_coda_series" },
+      "영": { "syllable": "영", "dots": [[1, 2, 4, 5, 6]], "unicode": "⠻", "type": "vowel_coda_series" },
+      "옥": { "syllable": "옥", "dots": [[1, 3, 4, 5, 6]], "unicode": "⠽", "type": "vowel_coda_series" },
+      "온": { "syllable": "온", "dots": [[1, 2, 3, 5, 6]], "unicode": "⠷", "type": "vowel_coda_series" },
+      "옹": { "syllable": "옹", "dots": [[1, 2, 3, 4, 5, 6]], "unicode": "⠿", "type": "vowel_coda_series" },
+      "운": { "syllable": "운", "dots": [[1, 2, 4, 5]], "unicode": "⠛", "type": "vowel_coda_series" },
+      "울": { "syllable": "울", "dots": [[1, 2, 3, 4, 6]], "unicode": "⠯", "type": "vowel_coda_series" },
+      "은": { "syllable": "은", "dots": [[1, 3, 5, 6]], "unicode": "⠵", "type": "vowel_coda_series" },
+      "을": { "syllable": "을", "dots": [[2, 3, 4, 6]], "unicode": "⠮", "type": "vowel_coda_series" },
+      "인": { "syllable": "인", "dots": [[1, 2, 3, 4, 5]], "unicode": "⠟", "type": "vowel_coda_series" }
+    }
+  },
+
+  "chosung": {
+    "category": "initial_consonant",
+    "description": "음절의 첫소리 자음",
+    "rule": {
+      "position": "syllable_initial",
+      "omitZeroConsonant": true,
+      "priority": 50
+    },
+    "items": {
+      "ㄱ": { "char": "ㄱ", "dots": [[4]], "unicode": "⠈" },
+      "ㄴ": { "char": "ㄴ", "dots": [[1, 4]], "unicode": "⠉" },
+      "ㄷ": { "char": "ㄷ", "dots": [[2, 4]], "unicode": "⠊" },
+      "ㄹ": { "char": "ㄹ", "dots": [[5]], "unicode": "⠐" },
+      "ㅁ": { "char": "ㅁ", "dots": [[1, 5]], "unicode": "⠑" },
+      "ㅂ": { "char": "ㅂ", "dots": [[4, 5]], "unicode": "⠘" },
+      "ㅅ": { "char": "ㅅ", "dots": [[6]], "unicode": "⠠" },
+      "ㅇ": { "char": "ㅇ", "dots": [], "unicode": "", "isOmitted": true },
+      "ㅈ": { "char": "ㅈ", "dots": [[4, 6]], "unicode": "⠨" },
+      "ㅊ": { "char": "ㅊ", "dots": [[5, 6]], "unicode": "⠰" },
+      "ㅋ": { "char": "ㅋ", "dots": [[1, 2, 4]], "unicode": "⠋" },
+      "ㅌ": { "char": "ㅌ", "dots": [[1, 2, 5]], "unicode": "⠓" },
+      "ㅍ": { "char": "ㅍ", "dots": [[1, 4, 5]], "unicode": "⠙" },
+      "ㅎ": { "char": "ㅎ", "dots": [[2, 4, 5]], "unicode": "⠚" },
+      "ㄲ": { "char": "ㄲ", "dots": [[6], [4]], "unicode": "⠠⠈" },
+      "ㄸ": { "char": "ㄸ", "dots": [[6], [2, 4]], "unicode": "⠠⠊" },
+      "ㅃ": { "char": "ㅃ", "dots": [[6], [4, 5]], "unicode": "⠠⠘" },
+      "ㅆ": { "char": "ㅆ", "dots": [[6], [6]], "unicode": "⠠⠠" },
+      "ㅉ": { "char": "ㅉ", "dots": [[6], [4, 6]], "unicode": "⠠⠨" }
+    }
+  },
+
+  "jungsung": {
+    "category": "medial_vowel",
+    "description": "기본 단모음 및 이중/복합 모음",
+    "rule": {
+      "position": "syllable_medial",
+      "priority": 40
+    },
+    "items": {
+      "ㅏ": { "char": "ㅏ", "dots": [[1, 2, 6]], "unicode": "⠣" },
+      "ㅑ": { "char": "ㅑ", "dots": [[3, 4, 5]], "unicode": "⠜" },
+      "ㅓ": { "char": "ㅓ", "dots": [[2, 3, 4]], "unicode": "⠎" },
+      "ㅕ": { "char": "ㅕ", "dots": [[1, 5, 6]], "unicode": "⠱" },
+      "ㅗ": { "char": "ㅗ", "dots": [[1, 3, 6]], "unicode": "⠥" },
+      "ㅛ": { "char": "ㅛ", "dots": [[3, 4, 6]], "unicode": "⠬" },
+      "ㅜ": { "char": "ㅜ", "dots": [[1, 3, 4]], "unicode": "⠍" },
+      "ㅠ": { "char": "ㅠ", "dots": [[1, 4, 6]], "unicode": "⠩" },
+      "ㅡ": { "char": "ㅡ", "dots": [[2, 4, 6]], "unicode": "⠪" },
+      "ㅣ": { "char": "ㅣ", "dots": [[1, 3, 5]], "unicode": "⠕" },
+      "ㅐ": { "char": "ㅐ", "dots": [[1, 2, 3, 5]], "unicode": "⠗" },
+      "ㅔ": { "char": "ㅔ", "dots": [[1, 3, 4, 5]], "unicode": "⠝" },
+      "ㅒ": { "char": "ㅒ", "dots": [[3, 4, 5], [1, 2, 3, 5]], "unicode": "⠜⠗" },
+      "ㅖ": { "char": "ㅖ", "dots": [[3, 4]], "unicode": "⠌" },
+      "ㅘ": { "char": "ㅘ", "dots": [[1, 2, 3, 6]], "unicode": "⠧" },
+      "ㅙ": { "char": "ㅙ", "dots": [[1, 2, 3, 6], [1, 2, 3, 5]], "unicode": "⠧⠗" },
+      "ㅚ": { "char": "ㅚ", "dots": [[1, 3, 6], [1, 2, 3, 5]], "unicode": "⠥⠗" },
+      "ㅝ": { "char": "ㅝ", "dots": [[1, 2, 3, 4]], "unicode": "⠏" },
+      "ㅞ": { "char": "ㅞ", "dots": [[1, 2, 3, 4], [1, 2, 3, 5]], "unicode": "⠏⠗" },
+      "ㅟ": { "char": "ㅟ", "dots": [[1, 3, 4], [1, 2, 3, 5]], "unicode": "⠍⠗" },
+      "ㅢ": { "char": "ㅢ", "dots": [[2, 4, 5, 6]], "unicode": "⠺" }
+    }
+  },
+
+  "jongsung": {
+    "category": "final_consonant",
+    "description": "음절의 끝소리 받침 자음",
+    "rule": {
+      "position": "syllable_final",
+      "priority": 30
+    },
+    "items": {
+      "ㄱ": { "char": "ㄱ", "dots": [[1]], "unicode": "⠁" },
+      "ㄴ": { "char": "ㄴ", "dots": [[2, 5]], "unicode": "⠒" },
+      "ㄷ": { "char": "ㄷ", "dots": [[3, 5]], "unicode": "⠔" },
+      "ㄹ": { "char": "ㄹ", "dots": [[2]], "unicode": "⠂" },
+      "ㅁ": { "char": "ㅁ", "dots": [[2, 6]], "unicode": "⠢" },
+      "ㅂ": { "char": "ㅂ", "dots": [[1, 2]], "unicode": "⠃" },
+      "ㅅ": { "char": "ㅅ", "dots": [[3]], "unicode": "⠄" },
+      "ㅇ": { "char": "ㅇ", "dots": [[2, 3, 5, 6]], "unicode": "⠶" },
+      "ㅈ": { "char": "ㅈ", "dots": [[1, 3]], "unicode": "⠅" },
+      "ㅊ": { "char": "ㅊ", "dots": [[2, 3]], "unicode": "⠆" },
+      "ㅋ": { "char": "ㅋ", "dots": [[1, 2, 4]], "unicode": "⠋" },
+      "ㅌ": { "char": "ㅌ", "dots": [[1, 2, 5]], "unicode": "⠓" },
+      "ㅍ": { "char": "ㅍ", "dots": [[1, 4, 5]], "unicode": "⠙" },
+      "ㅎ": { "char": "ㅎ", "dots": [[3, 5, 6]], "unicode": "⠴" },
+      "ㄲ": { "char": "ㄲ", "dots": [[1], [1]], "unicode": "⠁⠁" },
+      "ㄳ": { "char": "ㄳ", "dots": [[1], [3]], "unicode": "⠁⠄" },
+      "ㄵ": { "char": "ㄵ", "dots": [[2, 5], [1, 3]], "unicode": "⠒⠅" },
+      "ㄶ": { "char": "ㄶ", "dots": [[2, 5], [3, 5, 6]], "unicode": "⠒⠴" },
+      "ㄺ": { "char": "ㄺ", "dots": [[2], [1]], "unicode": "⠂⠁" },
+      "ㄻ": { "char": "ㄻ", "dots": [[2], [2, 6]], "unicode": "⠂⠢" },
+      "ㄼ": { "char": "ㄼ", "dots": [[2], [1, 2]], "unicode": "⠂⠃" },
+      "ㄽ": { "char": "ㄽ", "dots": [[2], [3]], "unicode": "⠂⠄" },
+      "ㄾ": { "char": "ㄾ", "dots": [[2], [1, 2, 5]], "unicode": "⠂⠓" },
+      "ㄿ": { "char": "ㄿ", "dots": [[2], [1, 4, 5]], "unicode": "⠂⠙" },
+      "ㅀ": { "char": "ㅀ", "dots": [[2], [3, 5, 6]], "unicode": "⠂⠴" },
+      "ㅄ": { "char": "ㅄ", "dots": [[1, 2], [3]], "unicode": "⠃⠄" },
+      "ㅆ": { "char": "ㅆ", "dots": [[3, 4]], "unicode": "⠌" }
+    }
+  },
+
+  "special_rules": {
+    "category": "exception_handling",
+    "description": "숫자 뒤 혼동 방지 및 기타 문법 규칙",
+    "number_prefix_rule": {
+      "trigger_after": "number",
+      "affected_initials": ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"],
+      "action": "insert_letter_indicator_or_rule",
+      "note": "수표(⠼) 뒤에 초성 'ㄴ, ㄷ, ㅁ, ㅋ, ㅌ, ㅍ, ㅎ'이 오면 숫자와 혼동될 수 있으므로 분리 표기 필요"
+    }
+  }
+}

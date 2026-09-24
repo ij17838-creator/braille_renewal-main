@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>게임 2: 점자 카드 셀렉트 (Braille Select)</title>
+  <meta name="theme-color" content="#0f172a">
+  
+  <!-- Tailwind CSS & Tone.js -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --braille-dot-size: 0.32em;
+      --braille-cell-gap: 0.16em;
+      --braille-word-gap: 0.45em;
+      --target-word-size: 2.5rem;
+    }
+
+    body.text-scale-normal { --target-word-size: 2.5rem; }
+    body.text-scale-large { --target-word-size: 3.1rem; }
+    body.text-scale-xlarge { --target-word-size: 3.8rem; }
+
+    #target-prompt-text { font-size: var(--target-word-size) !important; line-height: 1.2; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body.accessible-font {
+      font-family: 'Noto Sans KR', sans-serif !important;
+      letter-spacing: 0.04em !important;
+      line-height: 1.6 !important;
+    }
+
+    body.focus-ring-enhanced :focus-visible,
+    body.focus-ring-enhanced button:focus {
+      outline: 4px solid #facc15 !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 0 7px rgba(15, 23, 42, 0.95), 0 0 16px 2px rgba(250, 204, 21, 0.7) !important;
+    }
+
+    body.dot-scale-1x { --braille-dot-size: 0.32em; --braille-cell-gap: 0.16em; --braille-word-gap: 0.45em; }
+    body.dot-scale-15x { --braille-dot-size: 0.46em; --braille-cell-gap: 0.24em; --braille-word-gap: 0.62em; }
+    body.dot-scale-2x { --braille-dot-size: 0.58em; --braille-cell-gap: 0.30em; --braille-word-gap: 0.80em; }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(226, 232, 240, 0.85);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .glass-card:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 1);
+      transform: translateY(-4px) scale(1.015);
+      border-color: #6366f1;
+      box-shadow: 0 14px 28px -6px rgba(99, 102, 241, 0.22), 0 0 0 1px rgba(99, 102, 241, 0.2);
+    }
+
+        /* 고대비 색상 팔레트 모듈 */
+    :root[data-theme="hc-yellow"] {
+      --hc-bg: #000000;
+      --hc-text: #ffff00;
+      --hc-border: #ffff00;
+      --hc-accent: #00ffff;
+      --hc-disabled: #9ca3af;
+    }
+    :root[data-theme="hc-white-black"] {
+      --hc-bg: #000000;
+      --hc-text: #ffffff;
+      --hc-border: #ffffff;
+      --hc-accent: #38bdf8;
+      --hc-disabled: #a3a3a3;
+    }
+    :root[data-theme="hc-black-white"] {
+      --hc-bg: #ffffff;
+      --hc-text: #000000;
+      --hc-border: #000000;
+      --hc-accent: #0047ab;
+      --hc-disabled: #525252;
+    }
+    :root[data-theme="hc-amber"] {
+      --hc-bg: #090a0f;
+      --hc-text: #fde047;
+      --hc-border: #facc15;
+      --hc-accent: #67e8f9;
+      --hc-disabled: #94a3b8;
+    }
+
+    /* 고대비 모드 공통 테두리 및 포커스 스타일 */
+    .hc-element {
+      background-color: var(--hc-bg);
+      color: var(--hc-text);
+      border: 2px solid var(--hc-border);
+    }
+    .hc-element:focus-visible {
+      outline: 3px solid var(--hc-accent);
+      outline-offset: 2px;
+    }
+
+    /* 고대비 테마 일괄 적용 오버라이드 */
+    :root[data-theme] body {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+    }
+    :root[data-theme] #app-bg-gradient,
+    :root[data-theme] #bg-gradient {
+      display: none !important;
+    }
+    :root[data-theme] .glass-panel,
+    :root[data-theme] .glass-card,
+    :root[data-theme] .glass-button {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border: 2px solid var(--hc-border) !important;
+    }
+    :root[data-theme] button {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border: 2px solid var(--hc-border) !important;
+    }
+    :root[data-theme] button:hover:not(:disabled) {
+      background-color: var(--hc-text) !important;
+      color: var(--hc-bg) !important;
+      border-color: var(--hc-accent) !important;
+    }
+    :root[data-theme] button:hover:not(:disabled) * {
+      color: var(--hc-bg) !important;
+    }
+    :root[data-theme] div,
+    :root[data-theme] p,
+    :root[data-theme] span,
+    :root[data-theme] h1,
+    :root[data-theme] h2,
+    :root[data-theme] h3,
+    :root[data-theme] h4,
+    :root[data-theme] label,
+    :root[data-theme] li,
+    :root[data-theme] svg {
+      color: var(--hc-text) !important;
+      border-color: var(--hc-border) !important;
+    }
+    :root[data-theme] .braille-cell {
+      border: 1.5px solid var(--hc-border) !important;
+    }
+    :root[data-theme] .braille-dot.active {
+      background-color: var(--hc-text) !important;
+    }
+    :root[data-theme] .braille-dot.inactive {
+      background-color: transparent !important;
+      border: 1.5px solid var(--hc-border) !important;
+    }
+
+    /* 점자 그리드 스타일 */
+    .braille-word { display: inline-flex; gap: var(--braille-word-gap); align-items: center; justify-content: center; flex-wrap: wrap; }
+    .braille-cell { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: var(--braille-cell-gap); padding: 0.12em; border-radius: 0.2em; }
+    .braille-dot { width: var(--braille-dot-size); height: var(--braille-dot-size); border-radius: 50%; box-sizing: border-box; }
+    .braille-dot.active { background-color: currentColor; }
+    .braille-dot.inactive { background-color: rgba(148, 163, 184, 0.3); }
+    body.active-dot-highlight .braille-dot.active { box-shadow: 0 0 0 2px #ffffff, 0 0 10px 2px rgba(99, 102, 241, 0.9); }
+
+    @keyframes card-pop { 0% { transform: scale(0.98); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+    @keyframes card-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+    .animate-card-pop { animation: card-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .animate-card-shake { animation: card-shake 0.4s ease-in-out; }
+    body.reduce-motion * { animation: none !important; transition: none !important; }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 8px; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 h-[100dvh] w-screen relative dot-scale-1x text-scale-normal focus-ring-enhanced active-dot-highlight">
+
+  <div id="bg-gradient" class="absolute top-0 left-0 w-full h-full z-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900"></div>
+
+  <!-- 시각장애인 접근성 라이브 리전 -->
+  <div id="select-live-region" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <div class="relative z-20 w-full h-full flex flex-col items-center justify-center p-3 sm:p-5">
+    
+    <!-- 메인 셀렉트 게임 컨테이너 -->
+    <main class="glass-panel shadow-2xl rounded-3xl w-full max-w-4xl flex flex-col h-[95%] max-h-[850px] overflow-hidden">
+      
+      <!-- 1. 헤더: 상태 표시, 콤보, 칭호 배지, 취약 분석 버튼 -->
+      <header class="flex justify-between items-center p-4 border-b border-white/50 bg-white/40 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md text-xl">
+            🎴
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-black text-slate-800 tracking-tight">점자 카드 셀렉트</h1>
+              <span id="title-badge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-800 border border-indigo-300">
+                점자 탐색가
+              </span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-0.5">
+              <span id="label-level-mode">Level 1 · KO · 4지선다</span>
+              <span>·</span>
+              <span class="text-indigo-600 font-black" id="combo-counter">연속 0콤보</span>
+            </div>
+          </div>
+        </div>
+
+                <div class="flex items-center gap-2">
+          <!-- 음성 힌트 다시 듣기 버튼 -->
+          <button id="btn-audio-hint" class="p-2 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all shadow-sm" title="음성 힌트 듣기 (단축키 R)" aria-label="문제 음성 힌트 다시 듣기">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          </button>
+          <!-- 취약 분석 모달 토글 버튼 -->
+          <button id="btn-open-weakness-modal" class="px-3 py-1.5 rounded-xl bg-white/90 hover:bg-white border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm">
+            <span>취약 분석</span>
+            <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+          </button>
+          <!-- 메인 프론트엔드 허브 이동 홈 버튼 -->
+          <button id="btn-go-home" class="p-2 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all shadow-sm" title="메인 허브로 이동" aria-label="메인 허브로 이동">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </button>
+          <!-- 환경 및 접근성 설정 버튼 -->
+          <button id="btn-settings-open" class="p-2 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-indigo-600 border border-slate-200 transition-all shadow-sm" title="환경 및 접근성 설정" aria-label="환경 및 접근성 설정 열기">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- 2. 중앙 문제 출제 영역 -->
+      <section class="p-4 sm:p-5 flex flex-col items-center justify-center shrink-0 border-b border-white/40 bg-white/20">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="prompt-category-tag" class="text-[11px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-100 px-3 py-0.5 rounded-full border border-indigo-200">
+            단어 점역 선택
+          </span>
+          <span id="prompt-rule-tag" class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+            규칙 검증 대기
+          </span>
+        </div>
+        
+        <h2 id="target-prompt-text" class="font-black text-slate-900 tracking-tight text-center drop-shadow-xs my-1 break-all">
+          하늘
+        </h2>
+
+        <p id="target-prompt-desc" class="text-xs sm:text-sm text-slate-600 font-semibold text-center max-w-lg">
+          제시된 단어/문장에 해당하는 올바른 6점 점자 카드를 선택하세요.
+        </p>
+      </section>
+
+      <!-- 3. 4지선다 점자 선택 카드 그리드 (2x2) -->
+      <section class="flex-1 p-4 sm:p-6 overflow-y-auto custom-scrollbar flex items-center justify-center">
+        <div id="card-selection-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl"></div>
+      </section>
+
+      <!-- 4. 하단 안내 및 키보드 조작 가이드 -->
+      <footer class="p-3 sm:p-4 border-t border-white/60 bg-slate-50/90 rounded-b-3xl shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-500">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 bg-slate-200 rounded text-slate-700 font-mono font-black">[1]~[4]</span>
+          <span>숫자 키로 즉시 선택 가능</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span id="status-connection">허브 통신 연결 대기 중 (단독 모드 활성)</span>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+    <!-- 취약점 분석 & 복습 대시보드 모달 -->
+  <div id="weakness-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl relative z-10 m-4 flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+          📊 점자 셀렉트 취약 규칙 분석 대시보드
+        </h3>
+        <button id="btn-close-weakness" class="text-slate-400 hover:text-slate-700 p-1" aria-label="닫기">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 py-4 flex flex-col gap-4">
+        <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200">
+          <h4 class="text-xs font-bold text-rose-700 uppercase tracking-wider mb-2">오답 데이터 기반 취약 유형 Top 3</h4>
+          <ul id="modal-weakness-list" class="flex flex-col gap-2"></ul>
+        </div>
+
+        <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-200">
+          <h4 class="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-2">칭호 및 달성도</h4>
+          <div id="modal-badge-list" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-200">
+        <button id="btn-retry-weakness" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm">
+          취약 유형 집중 복습 문제 출제
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공통 환경 및 접근성 설정 모달 -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true">
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl relative z-10 m-4 flex flex-col gap-4">
+      <div class="flex justify-between items-center pb-2.5 border-b border-slate-200">
+        <h3 class="text-lg font-black text-slate-800">환경 및 접근성 설정</h3>
+        <button id="btn-settings-close-x" class="text-slate-400 hover:text-slate-700 p-1">✕</button>
+      </div>
+
+      <div class="flex flex-col gap-3">
+                <!-- 고대비 테마 -->
+        <div>
+          <span class="text-xs font-bold text-slate-600 block mb-1">고대비 테마 프리셋</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" class="modal-theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-yellow">옐로우 온 블랙</button>
+            <button type="button" class="modal-theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-white-black">화이트 온 블랙</button>
+            <button type="button" class="modal-theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-black-white">블랙 온 화이트</button>
+            <button type="button" class="modal-theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-amber">앰버 네온</button>
+          </div>
+        </div>
+
+        <!-- 텍스트 크기 -->
+        <div>
+          <span class="text-xs font-bold text-slate-600 block mb-1">텍스트 크기</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="modal-scale-btn py-2 rounded-xl text-xs font-bold border bg-emerald-500 text-white" data-scale="normal">1.0x</button>
+            <button type="button" class="modal-scale-btn py-2 rounded-xl text-xs font-bold border bg-white text-slate-700" data-scale="large">1.25x</button>
+            <button type="button" class="modal-scale-btn py-2 rounded-xl text-xs font-bold border bg-white text-slate-700" data-scale="xlarge">1.5x</button>
+          </div>
+        </div>
+
+        <!-- TTS 및 음향 -->
+        <div class="bg-teal-50/70 p-3 rounded-xl border border-teal-200 flex flex-col gap-2 text-xs">
+          <label class="flex items-center justify-between font-bold text-slate-700">
+            <span>TTS 음성 안내</span>
+            <input type="checkbox" id="chk-modal-tts" class="w-4 h-4 accent-emerald-500" checked>
+          </label>
+          <label class="flex items-center justify-between font-bold text-slate-700">
+            <span>도·레·미 음계 비프음</span>
+            <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
+          </label>
+        </div>
+      </div>
+
+      <button id="btn-save-settings" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm mt-1">
+        설정 저장 및 닫기
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    // 1. UEB / 한글 규칙 라벨 매퍼
+    const RULE_LABELS = {
+      'EN_BASIC_LETTER': 'UEB 기본 알파벳 점자',
+      'EN_STANDALONE': 'UEB 독립 알파벳 단어약어',
+      'EN_SHORTFORM': 'UEB 기본 축어(Shortform)',
+      'EN_SHORTFORM_STANDALONE': 'UEB 단독 사용 축어',
+      'EN_SHORTFORM_INFLECTED': 'UEB 굴절 허용 축어',
+      'EN_SHORTFORM_COMPOUND': 'UEB 복합어 허용 축어',
+      'EN_PREFIX_RULE': 'UEB 접두사 약어 규칙',
+      'EN_INFLECTION': '철자 변형 결합 규칙 (Silent e/y→i)',
+      'EN_BRIDGE_RULE': '형태소 경계 가교약어(Bridge) 금지',
+      'EN_SENTENCE_SYNTAX': 'UEB 문장부호 및 수표/1급 기호표 충돌',
+      '음절 약어 원칙 (제17항)': '한글 점자 규정 제17항 (음절 약어 사)',
+      '모음 연접 풀어쓰기 (제18항 1호)': '한글 점자 규정 제18항 제1호 (모음 연접 사)',
+      '숫자 뒤 풀어쓰기 (제18항 2호)': '한글 점자 규정 제18항 제2호 (숫자 직후 사)',
+      '가 계열 약자': '가 계열 약자 음절',
+      '초성 및 모음 결합': '초성 및 모음 대칭 오인',
+      '받침 종성 결합': '종성 받침 혼동',
+      '약자 및 받침 결합': '약자 및 받침 결합',
+      '단어 약어': '접속어 및 단어 약자',
+      '복합 종성 결합': '복합 종성 표기'
+    };
+
+    function getReadableRule(ruleType) {
+      return RULE_LABELS[ruleType] || ruleType || "일반 점역 규칙";
+    }
+
+        // 2. 상태 머신
+    function loadUnifiedRuleStats() {
+      const unified = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
+      const selectLegacy = JSON.parse(localStorage.getItem('braille_select_stats') || '{}');
+      const merged = {};
+      
+      // selectLegacy 병합
+      Object.entries(selectLegacy).forEach(([k, v]) => merged[k] = v);
+
+      // unified rule stats 병합 (errors 수량)
+      Object.entries(unified).forEach(([k, v]) => {
+        if (v && typeof v.errors === 'number' && v.errors > 0) {
+          merged[k] = (merged[k] || 0) + v.errors;
+        }
+      });
+
+      if (Object.keys(merged).length === 0) {
+        return {
+          '초성 및 모음 대칭 오인': 3,
+          '종성 받침 혼동': 4,
+          '접속어 및 단어 약자': 2
+        };
+      }
+      return merged;
+    }
+
+    const state = {
+      lang: "KO",
+      level: 1,
+      combo: 0,
+      badgeTitle: "점자 탐색가",
+      currentQuiz: null,
+      isAnsweringLocked: false,
+      isHubConnected: false,
+      weaknessStats: loadUnifiedRuleStats()
+    };
+
+    // 통신 타임아웃 참조 핸들러
+    let hubResponseTimeout = null;
+
+    // 3. 오디오 합성기 (Tone.js & Web Speech API)
+    let synthAudio, sfxCorrect, sfxWrong;
+    async function initAudio() {
+      if (synthAudio) return;
+      await Tone.start();
+      synthAudio = new Tone.PolySynth(Tone.Synth).toDestination();
+      sfxCorrect = new Tone.Synth({ oscillator: { type: "triangle" } }).toDestination();
+      sfxWrong = new Tone.MembraneSynth().toDestination();
+    }
+
+    function playSound(type) {
+      if (!synthAudio) return;
+      if (type === 'hover') {
+        synthAudio.triggerAttackRelease("E5", "64n");
+      } else if (type === 'correct') {
+        sfxCorrect.triggerAttackRelease("G5", "16n");
+        setTimeout(() => sfxCorrect.triggerAttackRelease("C6", "16n"), 130);
+      } else if (type === 'wrong') {
+        sfxWrong.triggerAttackRelease("C2", "8n");
+      }
+    }
+
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const ut = new SpeechSynthesisUtterance(text);
+      ut.lang = state.lang === "KO" ? "ko-KR" : "en-US";
+      document.getElementById('select-live-region').textContent = text;
+      window.speechSynthesis.speak(ut);
+    }
+
+    // 4. 6점 점자 유니코드 변환 및 렌더러
+    function unicodeToDots(brailleChar) {
+      if (!brailleChar || brailleChar.length !== 1) return [];
+      const code = brailleChar.charCodeAt(0) - 0x2800;
+      if (code < 0 || code > 63) return [];
+      const dots = [];
+      const masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20];
+      for (let i = 0; i < masks.length; i++) {
+        if (code & masks[i]) dots.push(i + 1);
+      }
+      return dots;
+    }
+
+    function dotsToUnicode(dots) {
+      let code = 0;
+      const masks = { 1: 0x01, 2: 0x02, 3: 0x04, 4: 0x08, 5: 0x10, 6: 0x20 };
+      for (const d of new Set(dots)) {
+        if (masks[d]) code |= masks[d];
+      }
+      return String.fromCharCode(0x2800 + code);
+    }
+
+    function renderBrailleHTML(text) {
+      let html = `<div class="braille-word text-3xl">`;
+      for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i);
+        if (charCode >= 0x2800 && charCode <= 0x28FF) {
+          const pattern = charCode - 0x2800;
+          html += `<div class="braille-cell">`;
+          const bits = [
+            (pattern & 0x01) > 0, (pattern & 0x08) > 0,
+            (pattern & 0x02) > 0, (pattern & 0x10) > 0,
+            (pattern & 0x04) > 0, (pattern & 0x20) > 0
+          ];
+          bits.forEach(on => html += `<div class="braille-dot ${on ? 'active' : 'inactive'}"></div>`);
+          html += `</div>`;
+        } else {
+          html += `<span class="font-bold mx-1 text-xl">${text[i]}</span>`;
+        }
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    // 5. 인지과학 방해점형 생성기 및 Fallback 데이터
+    const H_MIRROR = { 1: 4, 2: 5, 3: 6, 4: 1, 5: 2, 6: 3 };
+    const V_INVERT = { 1: 3, 2: 2, 3: 1, 4: 6, 5: 5, 6: 4 };
+
+    function generateCognitiveDistractors(correctBraille, count = 3) {
+      const distractors = new Set();
+
+      // 1. 좌우 반전
+      const hMirrored = correctBraille.split('').map(ch => {
+        const dots = unicodeToDots(ch);
+        return dots.length > 0 ? dotsToUnicode(dots.map(d => H_MIRROR[d])) : ch;
+      }).join('');
+      if (hMirrored !== correctBraille) distractors.add(hMirrored);
+
+      // 2. 상하 반전
+      const vInverted = correctBraille.split('').map(ch => {
+        const dots = unicodeToDots(ch);
+        return dots.length > 0 ? dotsToUnicode(dots.map(d => V_INVERT[d])) : ch;
+      }).join('');
+      if (vInverted !== correctBraille) distractors.add(vInverted);
+
+      // 3. 점 1개 누락 또는 추가 변이
+      for (let attempt = 0; attempt < 8 && distractors.size < count; attempt++) {
+        const chars = correctBraille.split('');
+        const randIdx = Math.floor(Math.random() * chars.length);
+        const dots = unicodeToDots(chars[randIdx]);
+        if (dots.length > 0) {
+          if (Math.random() > 0.5 && dots.length > 1) {
+            dots.splice(Math.floor(Math.random() * dots.length), 1);
+          } else {
+            const avail = [1, 2, 3, 4, 5, 6].filter(d => !dots.includes(d));
+            if (avail.length > 0) dots.push(avail[Math.floor(Math.random() * avail.length)]);
+          }
+          chars[randIdx] = dotsToUnicode(dots);
+          const mutated = chars.join('');
+          if (mutated !== correctBraille) distractors.add(mutated);
+        }
+      }
+
+      const fallbackList = ["⠁", "⠃", "⠉", "⠙", "⠑", "⠋", "⠛", "⠚", "⠒", "⠦"];
+      for (const fb of fallbackList) {
+        if (distractors.size >= count) break;
+        if (fb !== correctBraille) distractors.add(fb);
+      }
+
+      return Array.from(distractors).slice(0, count);
+    }
+
+        const FALLBACK_QUIZ_POOL = {
+      KO: [
+        { target_text: "사람", target_braille: "⠇⠐⠢", rule_type: "음절 약어 원칙 (제17항)", category: "명사 어휘", hint: "약어 '사'([1, 2, 3]점: ⠇)와 '람'(⠐⠢) 결합" },
+        { target_text: "사이", target_braille: "⠈⠣⠊", rule_type: "모음 연접 풀어쓰기 (제18항 1호)", category: "명사 어휘", hint: "'사' 뒤에 모음('이')이 오므로 약어(⠇) 대신 풀어쓴 '사'(⠈⠣) 표기" },
+        { target_text: "4사분기", target_braille: "⠼⠙⠈⠣⠃⠍⠁⠅⠕", rule_type: "숫자 뒤 풀어쓰기 (제18항 2호)", category: "복합 수식", hint: "숫자 4 뒤의 '사'는 수표 혼동 방지를 위해 풀어쓴 '사'(⠈⠣) 표기" },
+        { target_text: "나", target_braille: "⠉", rule_type: "가 계열 약자", category: "약자 음절", hint: "초성 ㄴ과 중성 ㅏ의 결합 약자" },
+        { target_text: "하늘", target_braille: "⠚⠉⠮", rule_type: "초성 및 모음 결합", category: "기초 단어", hint: "하(⠚)와 늘(⠉⠮: 초성 ㄴ + '을' 약자)의 연속 결합" },
+        { target_text: "그리고", target_braille: "⠁⠥", rule_type: "단어 약어", category: "접속사 약어", hint: "한국 점자 규정의 단독 접속어 약자(ㄱ + ㅜ)" },
+        { target_text: "선생님", target_braille: "⠠⠾⠠⠗⠶⠉⠕⠢", rule_type: "약자 및 받침 결합", category: "존칭 단어", hint: "선('언' 약자 결합 ⠠⠾), 생(⠠⠗⠶), 님(⠉⠕⠢)" }
+      ],
+      EN: [
+        { target_text: "knowledge", target_braille: "⠅", rule_type: "EN_STANDALONE", category: "단어 약어", hint: "Single letter wordsign for letter 'k'" },
+        { target_text: "braille", target_braille: "⠃⠗⠇", rule_type: "EN_SHORTFORM", category: "축어 표기", hint: "Contraction for the word 'braille'" },
+        { target_text: "people", target_braille: "⠏", rule_type: "EN_STANDALONE", category: "단어 약어", hint: "Single letter wordsign for letter 'p'" },
+        { target_text: "together", target_braille: "⠞⠛⠗", rule_type: "EN_SHORTFORM", category: "복합 축어", hint: "Standard shortform for 'together'" }
+      ]
+    };
+
+    let LOCAL_QUIZ_POOL = { KO: [], EN: [] };
+    let localPoolReady = false;
+
+    async function loadLocalQuizPool() {
+      if (localPoolReady) return;
+      try {
+        const res = await fetch("morpheme_quizzes.json");
+        if (res.ok) {
+          const data = await res.json();
+          LOCAL_QUIZ_POOL.KO = Array.isArray(data.KO) ? data.KO : [];
+          LOCAL_QUIZ_POOL.EN = Array.isArray(data.EN) ? data.EN : [];
+        }
+      } catch (e) {
+        console.warn("morpheme_quizzes.json 로드 실패, 내장 풀 사용");
+      }
+      localPoolReady = true;
+    }
+
+    function pickLocalQuiz() {
+      const jsonPool = LOCAL_QUIZ_POOL[state.lang] || [];
+      const fallback = FALLBACK_QUIZ_POOL[state.lang] || FALLBACK_QUIZ_POOL.KO;
+      const pool = jsonPool.length ? jsonPool : fallback;
+      const quizItem = pool[fallbackIndex % pool.length];
+      fallbackIndex++;
+      return quizItem;
+    }
+        function loadQuizData(quizObj) {
+      if (hubResponseTimeout) {
+        clearTimeout(hubResponseTimeout);
+        hubResponseTimeout = null;
+      }
+
+      state.currentQuiz = quizObj;
+      state.isAnsweringLocked = false;
+
+      // 이전 카드의 disabled 상태 해제 및 컨테이너 초기화
+      const grid = document.getElementById('card-selection-grid');
+      if (grid) grid.innerHTML = '';
+
+      const targetText = quizObj.target_text || quizObj.text || "";
+      const targetBraille = quizObj.target_braille || quizObj.braille || "";
+      quizObj.target_text = targetText;
+      quizObj.target_braille = targetBraille;
+
+      let options = [{ braille: targetBraille, isCorrect: true }];
+
+      if (Array.isArray(quizObj.distractors_braille) && quizObj.distractors_braille.length > 0) {
+        options.push(...quizObj.distractors_braille.map(b => ({ braille: b, isCorrect: false })));
+        if (options.length < 4) {
+          const needed = 4 - options.length;
+          const extra = generateCognitiveDistractors(targetBraille, needed);
+          options.push(...extra.map(b => ({ braille: b, isCorrect: false })));
+        }
+      } else {
+        const distractors = generateCognitiveDistractors(targetBraille, 3);
+        options.push(...distractors.map(b => ({ braille: b, isCorrect: false })));
+      }
+
+      options = options.slice(0, 4);
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+      }
+      state.currentQuiz.options = options;
+
+      const readableRule = getReadableRule(quizObj.rule_type);
+      document.getElementById('label-level-mode').textContent = `Level ${state.level} · ${state.lang} · 4지선다`;
+      document.getElementById('prompt-category-tag').textContent = quizObj.category || "점자 선다형";
+      document.getElementById('prompt-rule-tag').textContent = readableRule;
+      document.getElementById('target-prompt-text').textContent = targetText;
+      document.getElementById('target-prompt-desc').textContent = quizObj.hint || `${readableRule}에 맞는 올바른 점자 카드를 선택하세요.`;
+
+      renderCards(options);
+
+      let speechText = quizObj.prompt_audio || (state.lang === "KO"
+        ? `문제: ${targetText}. ${readableRule}. 올바른 점자 카드를 1번에서 4번 중 선택하세요.`
+        : `Question. Choose the correct braille for ${targetText}.`);
+      speak(speechText);
+    }
+
+    function renderCards(options) {
+      const grid = document.getElementById('card-selection-grid');
+      grid.innerHTML = '';
+
+      options.forEach((opt, idx) => {
+        const cardBtn = document.createElement('button');
+        cardBtn.className = 'glass-card rounded-2xl p-5 flex flex-col items-center justify-between min-h-[140px] relative group text-slate-800 shadow-md focus:ring-4';
+        cardBtn.setAttribute('data-index', idx);
+        cardBtn.setAttribute('aria-label', `선택지 ${idx + 1}번 카드. 점자 기호`);
+
+        cardBtn.innerHTML = `
+          <div class="w-full flex justify-between items-center text-xs font-mono font-bold text-slate-400 group-hover:text-indigo-600 transition-colors">
+            <span class="px-2 py-0.5 rounded-md bg-slate-100/90 border border-slate-200">[${idx + 1}번]</span>
+            <span class="text-[11px] font-semibold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">선택하기 ↵</span>
+          </div>
+          <div class="my-auto py-2">
+            ${renderBrailleHTML(opt.braille)}
+          </div>
+          <div class="w-full text-center text-[11px] font-semibold text-slate-400">
+            점자 유니코드 표현
+          </div>
+        `;
+
+        cardBtn.addEventListener('mouseenter', () => playSound('hover'));
+        cardBtn.addEventListener('click', () => handleOptionSelect(opt, cardBtn));
+
+        grid.appendChild(cardBtn);
+      });
+    }
+
+    // 7. 정답 판정 및 허브 통신
+        function handleOptionSelect(option, cardElement) {
+      if (state.isAnsweringLocked) return;
+      state.isAnsweringLocked = true;
+      initAudio();
+
+      const allCards = document.querySelectorAll('#card-selection-grid button');
+
+      if (option.isCorrect) {
+        playSound('correct');
+        state.combo++;
+        updateTitleAndBadges();
+        speak(state.lang === "KO" ? `정답입니다! 연속 ${state.combo}콤보 달성.` : `Correct! ${state.combo} in a row.`);
+
+        cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
+        allCards.forEach(c => c.disabled = true);
+
+        notifyResultToHub(true);
+        setTimeout(generateNextQuiz, 1100);
+      } else {
+        playSound('wrong');
+
+        const rawRule = state.currentQuiz ? (state.currentQuiz.rule_type || "기본 점역") : "기본 점역";
+        const failRuleLabel = getReadableRule(rawRule);
+        state.weaknessStats[failRuleLabel] = (state.weaknessStats[failRuleLabel] || 0) + 1;
+        localStorage.setItem('braille_select_stats', JSON.stringify(state.weaknessStats));
+
+        // 통합 LocalStorage 데이터 구조 (braille_rule_stats) 단일화 갱신
+        const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
+        if (!ruleStats[failRuleLabel]) ruleStats[failRuleLabel] = { errors: 0, trials: 0, games: {} };
+        ruleStats[failRuleLabel].errors = (ruleStats[failRuleLabel].errors || 0) + 1;
+        ruleStats[failRuleLabel].trials = (ruleStats[failRuleLabel].trials || 0) + 1;
+        if (!ruleStats[failRuleLabel].games) ruleStats[failRuleLabel].games = {};
+        ruleStats[failRuleLabel].games['select'] = (ruleStats[failRuleLabel].games['select'] || 0) + 1;
+        localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
+
+        state.combo = 0;
+        updateTitleAndBadges();
+        speak(state.lang === "KO" ? "오답입니다. 올바른 점형을 확인하세요." : "Incorrect. Check the correct braille pattern.");
+
+        cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90');
+
+        allCards.forEach((c, i) => {
+          if (state.currentQuiz && state.currentQuiz.options && state.currentQuiz.options[i] && state.currentQuiz.options[i].isCorrect) {
+            c.classList.add('border-emerald-500', 'bg-emerald-50/50');
+          }
+        });
+
+        notifyResultToHub(false);
+        setTimeout(() => {
+          state.isAnsweringLocked = false;
+          cardElement.classList.remove('animate-card-shake');
+          allCards.forEach(c => c.disabled = false);
+        }, 1200);
+      }
+    }
+
+        // 해결 방법 A 적용: 타임아웃 Fallback 안전장치 및 풀 로테이션 포함
+    let fallbackIndex = 0;
+
+    function generateNextQuiz() {
+      if (state.isHubConnected) {
+        if (hubResponseTimeout) clearTimeout(hubResponseTimeout);
+
+        window.parent.postMessage({
+          type: 'REQUEST_NEXT_QUIZ',
+          game: 'select',
+          input_mode: 'TRIANGLE',
+          lang: state.lang,
+          level: state.level
+        }, '*');
+
+        // 상위 허브에서 500ms 내 응답이 없으면 로컬 데이터 풀에서 강제 출제
+        hubResponseTimeout = setTimeout(() => {
+          loadQuizData(pickLocalQuiz());
+        }, 500);
+
+      } else {
+        loadQuizData(pickLocalQuiz());
+      }
+    }
+
+        function notifyResultToHub(isCorrect) {
+      const payload = {
+        type: 'SUBMIT_RESULT',
+        game: 'select',
+        isCorrect: !!isCorrect,
+        combo: state.combo,
+        quiz: {
+          target_text: state.currentQuiz ? state.currentQuiz.target_text : '',
+          target_braille: state.currentQuiz ? state.currentQuiz.target_braille : '',
+          rule_type: state.currentQuiz ? state.currentQuiz.rule_type : '기본',
+          rule_label: state.currentQuiz ? getReadableRule(state.currentQuiz.rule_type) : '기본'
+        }
+      };
+
+      try {
+        window.parent.postMessage(payload, '*');
+      } catch (e) {
+        console.warn("Hub notification omitted (Standalone mode)");
+      }
+    }
+
+    function updateTitleAndBadges() {
+      const comboLabel = document.getElementById('combo-counter');
+      const titleBadge = document.getElementById('title-badge');
+
+      comboLabel.textContent = `연속 ${state.combo}콤보`;
+
+      if (state.combo >= 8) {
+        state.badgeTitle = state.lang === "KO" ? "점역 심판관" : "UEB Inspector";
+        titleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 text-purple-800 border border-purple-300 animate-pulse";
+      } else if (state.combo >= 4) {
+        state.badgeTitle = "숙련 탐색가";
+        titleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300";
+      } else {
+        state.badgeTitle = "점자 탐색가";
+        titleBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-800 border border-indigo-300";
+      }
+      titleBadge.textContent = state.badgeTitle;
+    }
+
+    // 8. 상위 허브 통신 및 설정 리스너
+    function setupHubMessaging() {
+      window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (!data || !data.type) return;
+
+        state.isHubConnected = true;
+        const statusLabel = document.getElementById('status-connection');
+        if (statusLabel) {
+          statusLabel.textContent = "허브 프로그램 실시간 연동 중";
+          statusLabel.previousElementSibling.className = "w-2 h-2 rounded-full bg-indigo-500 animate-ping";
+        }
+
+        switch (data.type) {
+          case 'LOAD_QUIZ':
+            if (hubResponseTimeout) {
+              clearTimeout(hubResponseTimeout);
+              hubResponseTimeout = null;
+            }
+            if (data.quiz) loadQuizData(data.quiz);
+            break;
+          case 'CHANGE_SETTINGS':
+            applySettings(data.settings);
+            break;
+        }
+      });
+
+      try {
+        window.parent.postMessage({ type: 'MODULE_READY', game: 'select' }, '*');
+      } catch (e) {}
+    }
+
+        function normalizeTheme(theme) {
+      if (theme === 'yellow') return 'hc-yellow';
+      if (theme === 'bw') return 'hc-white-black';
+      return theme;
+    }
+
+    function applySettings(cfg) {
+      if (!cfg) return;
+      if (cfg.lang) state.lang = cfg.lang;
+      if (cfg.level) state.level = cfg.level;
+
+      const b = document.body;
+      b.classList.remove("text-scale-large", "text-scale-xlarge");
+      
+      const theme = normalizeTheme(cfg.contrastTheme);
+      if (theme && theme !== 'off') {
+        document.documentElement.setAttribute('data-theme', theme);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+
+      if (cfg.textScale === "large") b.classList.add("text-scale-large");
+      if (cfg.textScale === "xlarge") b.classList.add("text-scale-xlarge");
+      if (cfg.accessibleFont) b.classList.add("accessible-font");
+
+      if (cfg.dotScale) {
+        b.classList.remove("dot-scale-1x", "dot-scale-15x", "dot-scale-2x");
+        b.classList.add(`dot-scale-${cfg.dotScale}`);
+      }
+
+      document.getElementById('label-level-mode').textContent = `Level ${state.level} · ${state.lang} · 4지선다`;
+    }
+
+    // 9. 취약점 모달 대시보드
+    function openWeaknessModal() {
+      const modal = document.getElementById('weakness-modal');
+      const list = document.getElementById('modal-weakness-list');
+      const badgeContainer = document.getElementById('modal-badge-list');
+
+      const sorted = Object.entries(state.weaknessStats)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      list.innerHTML = sorted.map(([k, v]) => `
+        <li class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-rose-100 text-xs font-bold">
+          <span class="text-slate-700">${k}</span>
+          <span class="text-rose-600 font-mono">${v}회 오답</span>
+        </li>
+      `).join('');
+
+      badgeContainer.innerHTML = `
+        <span class="px-3 py-1 rounded-lg text-xs font-black bg-indigo-100 text-indigo-700 border border-indigo-200">
+          🏆 현재 칭호: ${state.badgeTitle}
+        </span>
+        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+          🔥 달성 콤보: ${state.combo}연속
+        </span>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    // 10. 이벤트 바인딩
+    window.addEventListener('keydown', (e) => {
+      initAudio(); // 첫 키 입력 시 AudioContext 초기화 보장
+      if (state.isAnsweringLocked) return;
+
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 4 && state.currentQuiz && state.currentQuiz.options) {
+        const option = state.currentQuiz.options[num - 1];
+        const cardBtns = document.querySelectorAll('#card-selection-grid button');
+        if (option && cardBtns[num - 1]) {
+          handleOptionSelect(option, cardBtns[num - 1]);
+          e.preventDefault();
+        }
+      } else if (e.key === 'r' || e.key === 'R') {
+        document.getElementById('btn-audio-hint').click();
+      } else if (e.key === 'Escape') {
+        document.getElementById('weakness-modal').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('btn-audio-hint').addEventListener('click', () => {
+      if (!state.currentQuiz) return;
+      if (state.currentQuiz.prompt_audio) {
+        speak(state.currentQuiz.prompt_audio);
+      } else {
+        const ruleLabel = getReadableRule(state.currentQuiz.rule_type);
+        const hintText = state.currentQuiz.hint || ruleLabel;
+        speak(state.lang === "KO"
+          ? `문제: ${state.currentQuiz.target_text}. 힌트: ${hintText}`
+          : `Question: ${state.currentQuiz.target_text}. Hint: ${hintText}`);
+      }
+    });
+
+        document.getElementById('btn-open-weakness-modal').addEventListener('click', openWeaknessModal);
+    document.getElementById('btn-close-weakness').addEventListener('click', () => {
+      document.getElementById('weakness-modal').classList.add('hidden');
+    });
+
+    const goHomeBtnSelect = document.getElementById('btn-go-home');
+    if (goHomeBtnSelect) {
+      goHomeBtnSelect.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "NAVIGATE_HUB" }, "*");
+        } else {
+          window.location.href = "front_end.html";
+        }
+      });
+    }
+
+        document.getElementById('btn-retry-weakness').addEventListener('click', () => {
+      document.getElementById('weakness-modal').classList.add('hidden');
+      speak(state.lang === "KO" ? "오답률이 높은 취약 규칙 카드를 집중 출제합니다." : "Focusing on your most vulnerable rules.");
+      generateNextQuiz();
+    });
+
+    // =========================================================================
+    // 설정 모달 및 환경 동기화
+    // =========================================================================
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsBtn = document.getElementById('btn-settings-open');
+    const closeSettingsBtn = document.getElementById('btn-settings-close-x');
+    const saveSettingsBtn = document.getElementById('btn-save-settings');
+
+    const globalSettings = {
+      theme: localStorage.getItem('braille_theme') || 'off',
+      scale: localStorage.getItem('braille_text_scale') || 'normal',
+      tts: localStorage.getItem('braille_tts') !== 'false',
+      pitch: localStorage.getItem('braille_pitch') !== 'false'
+    };
+
+        function applyVisualSettings() {
+      const b = document.body;
+      b.classList.remove('text-scale-normal', 'text-scale-large', 'text-scale-xlarge');
+      
+      const theme = normalizeTheme(globalSettings.theme);
+      if (theme && theme !== 'off') {
+        document.documentElement.setAttribute('data-theme', theme);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+
+      b.classList.add(`text-scale-${globalSettings.scale}`);
+
+      const ttsChk = document.getElementById('chk-modal-tts');
+      const pitchChk = document.getElementById('chk-modal-pitch');
+      if (ttsChk) ttsChk.checked = globalSettings.tts;
+      if (pitchChk) pitchChk.checked = globalSettings.pitch;
+    }
+
+    if (openSettingsBtn) {
+      openSettingsBtn.addEventListener('click', () => {
+        applyVisualSettings();
+        settingsModal.classList.remove('hidden');
+      });
+    }
+
+    if (closeSettingsBtn) {
+      closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+    }
+
+    if (saveSettingsBtn) {
+      saveSettingsBtn.addEventListener('click', () => {
+        const ttsChk = document.getElementById('chk-modal-tts');
+        const pitchChk = document.getElementById('chk-modal-pitch');
+        if (ttsChk) globalSettings.tts = ttsChk.checked;
+        if (pitchChk) globalSettings.pitch = pitchChk.checked;
+
+                localStorage.setItem('braille_theme', globalSettings.theme);
+        localStorage.setItem('braille_text_scale', globalSettings.scale);
+        localStorage.setItem('braille_tts', globalSettings.tts.toString());
+        localStorage.setItem('braille_pitch', globalSettings.pitch.toString());
+
+        applyVisualSettings();
+        settingsModal.classList.add('hidden');
+
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: 'CHANGE_SETTINGS',
+              settings: globalSettings
+            }, '*');
+          }
+        } catch (e) {}
+      });
+    }
+
+    document.querySelectorAll('.modal-theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = btn.dataset.theme;
+        globalSettings.theme = (globalSettings.theme === t) ? 'off' : t;
+        applyVisualSettings();
+      });
+    });
+
+    document.querySelectorAll('.modal-scale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        globalSettings.scale = btn.dataset.scale;
+        document.querySelectorAll('.modal-scale-btn').forEach(b => {
+          b.classList.remove('bg-emerald-500', 'text-white');
+          b.classList.add('bg-white', 'text-slate-700');
+        });
+        btn.classList.add('bg-emerald-500', 'text-white');
+        btn.classList.remove('bg-white', 'text-slate-700');
+        applyVisualSettings();
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      applyVisualSettings();
+      setupHubMessaging();
+      await loadLocalQuizPool();
+      generateNextQuiz();
+    });
+  </script>
+</body>
+</html>

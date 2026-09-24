@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "data_type": "glyph_definitions",
+    "numeric_indicators": {
+    "num_prefix": {
+      "name": "수표",
+      "dots": [[3, 4, 5, 6]],
+      "unicode": "⠼"
+    }
+  },
+  "grade1_indicators": {
+    "grade1_symbol": {
+      "name": "1급 기호표",
+      "dots": [[5, 6]],
+      "unicode": "⠰"
+    }
+  },
+  "digits": {
+    "1": { "dots": [[1]], "unicode": "⠁", "homoglyph_letter": "a" },
+    "2": { "dots": [[1, 2]], "unicode": "⠃", "homoglyph_letter": "b" },
+    "3": { "dots": [[1, 4]], "unicode": "⠉", "homoglyph_letter": "c" },
+    "4": { "dots": [[1, 4, 5]], "unicode": "⠙", "homoglyph_letter": "d" },
+    "5": { "dots": [[1, 5]], "unicode": "⠑", "homoglyph_letter": "e" },
+    "6": { "dots": [[1, 2, 4]], "unicode": "⠋", "homoglyph_letter": "f" },
+    "7": { "dots": [[1, 2, 4, 5]], "unicode": "⠛", "homoglyph_letter": "g" },
+    "8": { "dots": [[1, 2, 5]], "unicode": "⠓", "homoglyph_letter": "h" },
+    "9": { "dots": [[2, 4]], "unicode": "⠊", "homoglyph_letter": "i" },
+    "0": { "dots": [[2, 4, 5]], "unicode": "⠚", "homoglyph_letter": "j" }
+  },
+  "connectors": {
+    "comma": {
+      "name": "자릿수 쉼표",
+      "dots": [[2]],
+      "unicode": "⠂"
+    },
+    "period": {
+      "name": "소수점",
+      "dots": [[2, 5, 6]],
+      "unicode": "⠲"
+    },
+    "hyphen": {
+      "name": "하이픈",
+      "dots": [[3, 6]],
+      "unicode": "⠤"
+    },
+    "fraction_slash": {
+      "name": "단순 분수선",
+      "dots": [[3, 4]],
+      "unicode": "⠌"
+    },
+    "numeric_space": {
+      "name": "숫자 빈칸",
+      "dots": [[5]],
+      "unicode": "⠐"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+# Git
+.git/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs / temp
+*.log
+*.tmp
+
+# Secrets
+.env
+.env.*
+*.env

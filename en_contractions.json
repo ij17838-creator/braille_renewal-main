@@ -1,0 +1,155 @@
+{
+  "groups": [
+    {
+      "category": "groupsign",
+      "type": "strong_groupsign",
+      "priority": 10,
+      "rule": {
+        "canStandAlone": false,
+        "canFollowLetters": true,
+        "canPrecedeLetters": true
+      },
+      "description": "어두/어중/어말 어디서든 다른 철자와 결합해 쓰이는 묶음자 약어",
+            "items": {
+        "ch": { "word": "ch", "dots": [[1, 6]], "unicode": "⠡" },
+        "gh": { "word": "gh", "dots": [[1, 2, 6]], "unicode": "⠣" },
+        "sh": { "word": "sh", "dots": [[1, 4, 6]], "unicode": "⠩" },
+        "th": { "word": "th", "dots": [[1, 4, 5, 6]], "unicode": "⠹" },
+        "wh": { "word": "wh", "dots": [[1, 5, 6]], "unicode": "⠱" },
+        "ed": { "word": "ed", "dots": [[1, 2, 4, 6]], "unicode": "⠫" },
+        "er": { "word": "er", "dots": [[1, 2, 4, 5, 6]], "unicode": "⠻" },
+        "ou": { "word": "ou", "dots": [[1, 2, 5, 6]], "unicode": "⠳" },
+        "ow": { "word": "ow", "dots": [[2, 4, 6]], "unicode": "⠪" }
+      }
+    },
+    {
+      "category": "lower_wordsign_and_groupsign",
+      "type": "en_in_groupsign",
+      "priority": 20,
+      "rule": {
+        "canStandAlone": true,
+        "canFollowLetters": true,
+        "canPrecedeLetters": true,
+        "allowPunctuation": true
+      },
+      "description": "단독 단어로도 쓰이고 다른 글자와도 결합 가능한 하점 약어",
+            "items": {
+        "en": { "word": "en", "dots": [[2, 6]], "unicode": "⠢" },
+        "in": { "word": "in", "dots": [[3, 5]], "unicode": "⠔" }
+      }
+    },
+    {
+      "category": "lower_groupsign",
+      "type": "medial_double_letters",
+      "priority": 30,
+      "rule": {
+        "canStandAlone": false,
+        "canFollowLetters": true,
+        "canPrecedeLetters": true,
+        "requiresSurroundingLetters": true
+      },
+      "description": "단어의 중간(어중)에만 올 수 있는 하점 묶음자(어두/어말 및 단독 불가)",
+            "items": {
+        "ea": { "word": "ea", "dots": [[2]], "unicode": "⠂" },
+        "bb": { "word": "bb", "dots": [[2, 3]], "unicode": "⠆" },
+        "cc": { "word": "cc", "dots": [[2, 5]], "unicode": "⠒" },
+        "dd": { "word": "dd", "dots": [[2, 5, 6]], "unicode": "⠲" },
+        "ff": { "word": "ff", "dots": [[2, 3, 5]], "unicode": "⠖" },
+        "gg": { "word": "gg", "dots": [[2, 3, 5, 6]], "unicode": "⠶" }
+      }
+    },
+    {
+      "category": "lower_groupsign",
+      "type": "prefix_groupsign",
+      "priority": 40,
+      "rule": {
+        "canStandAlone": false,
+        "canFollowLetters": false,
+        "requiresFollowingLetters": true
+      },
+      "description": "단어의 맨 앞(음절 단위 접두어)에서만 뒤이어 다른 글자가 올 때 적용되는 약어",
+            "items": {
+        "be": { "word": "be", "dots": [[2, 3]], "unicode": "⠆" },
+        "con": { "word": "con", "dots": [[2, 5]], "unicode": "⠒" },
+        "dis": { "word": "dis", "dots": [[2, 5, 6]], "unicode": "⠲" }
+      }
+    },
+    {
+      "category": "composite_wordsign_and_groupsign",
+      "type": "initial_contractions",
+      "priority": 50,
+      "rule": {
+        "canStandAlone": true,
+        "canFollowLetters": false,
+        "canPrecedeLetters": true,
+        "allowPunctuation": true,
+        "allowApostropheS": true
+      },
+      "description": "점5, 점4-5, 점4-5-6 복합점을 사용하는 초성 약어(독립 단어 및 어두/어근 결합)",
+      "items": {
+                "day": { "word": "day", "dots": [[5], [1, 4, 5]], "unicode": "⠐⠙", "rootChar": "d" },
+        "ever": { "word": "ever", "dots": [[5], [1, 5]], "unicode": "⠐⠑", "rootChar": "e" },
+        "father": { "word": "father", "dots": [[5], [1, 2, 4]], "unicode": "⠐⠋", "rootChar": "f" },
+        "here": { "word": "here", "dots": [[5], [1, 2, 5]], "unicode": "⠐⠓", "rootChar": "h" },
+        "know": { "word": "know", "dots": [[5], [1, 3]], "unicode": "⠐⠅", "rootChar": "k" },
+        "lord": { "word": "lord", "dots": [[5], [1, 2, 3]], "unicode": "⠐⠇", "rootChar": "l" },
+        "mother": { "word": "mother", "dots": [[5], [1, 3, 4]], "unicode": "⠐⠍", "rootChar": "m" },
+        "name": { "word": "name", "dots": [[5], [1, 3, 4, 5]], "unicode": "⠐⠝", "rootChar": "n" },
+        "one": { "word": "one", "dots": [[5], [1, 3, 5]], "unicode": "⠐⠕", "rootChar": "o" },
+        "part": { "word": "part", "dots": [[5], [1, 2, 3, 4]], "unicode": "⠐⠏", "rootChar": "p" },
+        "question": { "word": "question", "dots": [[5], [1, 2, 3, 4, 5]], "unicode": "⠐⠟", "rootChar": "q" },
+        "right": { "word": "right", "dots": [[5], [1, 2, 3, 5]], "unicode": "⠐⠗", "rootChar": "r" },
+        "some": { "word": "some", "dots": [[5], [2, 3, 4]], "unicode": "⠐⠎", "rootChar": "s" },
+        "time": { "word": "time", "dots": [[5], [2, 3, 4, 5]], "unicode": "⠐⠞", "rootChar": "t" },
+        "under": { "word": "under", "dots": [[5], [1, 3, 6]], "unicode": "⠐⠥", "rootChar": "u" },
+        "work": { "word": "work", "dots": [[5], [2, 4, 5, 6]], "unicode": "⠐⠺", "rootChar": "w" },
+        "young": { "word": "young", "dots": [[5], [1, 3, 4, 5, 6]], "unicode": "⠐⠽", "rootChar": "y" },
+        "character": { "word": "character", "dots": [[5], [1, 6]], "unicode": "⠐⠡", "rootChar": "ch" },
+        "through": { "word": "through", "dots": [[5], [1, 4, 5, 6]], "unicode": "⠐⠹", "rootChar": "th" },
+        "where": { "word": "where", "dots": [[5], [1, 5, 6]], "unicode": "⠐⠱", "rootChar": "wh" },
+        "ought": { "word": "ought", "dots": [[5], [1, 2, 5, 6]], "unicode": "⠐⠳", "rootChar": "ou" },
+        "there": { "word": "there", "dots": [[5], [2, 3, 4, 6]], "unicode": "⠐⠮", "rootChar": "the" },
+        "upon": { "word": "upon", "dots": [[4, 5], [1, 3, 6]], "unicode": "⠘⠥", "rootChar": "u" },
+        "word": { "word": "word", "dots": [[4, 5], [2, 4, 5, 6]], "unicode": "⠘⠺", "rootChar": "w" },
+        "these": { "word": "these", "dots": [[4, 5], [2, 3, 4, 6]], "unicode": "⠘⠮", "rootChar": "the" },
+        "those": { "word": "those", "dots": [[4, 5], [1, 4, 5, 6]], "unicode": "⠘⠹", "rootChar": "th" },
+        "whose": { "word": "whose", "dots": [[4, 5], [1, 5, 6]], "unicode": "⠘⠱", "rootChar": "wh" },
+        "cannot": { "word": "cannot", "dots": [[4, 5, 6], [1, 4]], "unicode": "⠸⠉", "rootChar": "c" },
+        "had": { "word": "had", "dots": [[4, 5, 6], [1, 2, 5]], "unicode": "⠸⠓", "rootChar": "h" },
+        "many": { "word": "many", "dots": [[4, 5, 6], [1, 3, 4]], "unicode": "⠸⠍", "rootChar": "m" },
+        "spirit": { "word": "spirit", "dots": [[4, 5, 6], [2, 3, 4]], "unicode": "⠸⠎", "rootChar": "s" },
+        "world": { "word": "world", "dots": [[4, 5, 6], [2, 4, 5, 6]], "unicode": "⠸⠺", "rootChar": "w" },
+        "their": { "word": "their", "dots": [[4, 5, 6], [2, 3, 4, 6]], "unicode": "⠸⠮", "rootChar": "the" }
+      }
+    },
+    {
+      "category": "composite_groupsign",
+      "type": "final_contractions",
+      "priority": 60,
+      "rule": {
+        "canStandAlone": false,
+        "canFollowLetters": true,
+        "canPrecedeLetters": true,
+        "allowPunctuation": true,
+        "allowApostropheS": false
+      },
+      "description": "점4-6, 점5-6, 점6 복합점을 사용하는 종성/어말 묶음자 약어",
+      "items": {
+                "ound": { "word": "ound", "dots": [[4, 6], [1, 4, 5]], "unicode": "⠨⠙", "rootChar": "d" },
+        "ance": { "word": "ance", "dots": [[4, 6], [1, 5]], "unicode": "⠨⠑", "rootChar": "e" },
+        "sion": { "word": "sion", "dots": [[4, 6], [1, 3, 4, 5]], "unicode": "⠨⠝", "rootChar": "n" },
+        "less": { "word": "less", "dots": [[4, 6], [2, 3, 4]], "unicode": "⠨⠎", "rootChar": "s" },
+        "ount": { "word": "ount", "dots": [[4, 6], [2, 3, 4, 5]], "unicode": "⠨⠞", "rootChar": "t" },
+        "ence": { "word": "ence", "dots": [[5, 6], [1, 5]], "unicode": "⠰⠑", "rootChar": "e" },
+        "ong": { "word": "ong", "dots": [[5, 6], [1, 2, 4, 5]], "unicode": "⠰⠛", "rootChar": "g" },
+        "ful": { "word": "ful", "dots": [[5, 6], [1, 2, 3]], "unicode": "⠰⠇", "rootChar": "l" },
+        "tion": { "word": "tion", "dots": [[5, 6], [1, 3, 4, 5]], "unicode": "⠰⠝", "rootChar": "n" },
+        "ness": { "word": "ness", "dots": [[5, 6], [2, 3, 4]], "unicode": "⠰⠎", "rootChar": "s" },
+        "ment": { "word": "ment", "dots": [[5, 6], [2, 3, 4, 5]], "unicode": "⠰⠞", "rootChar": "t" },
+        "ity": { "word": "ity", "dots": [[5, 6], [1, 3, 4, 5, 6]], "unicode": "⠰⠽", "rootChar": "y" },
+        "ation": { "word": "ation", "dots": [[6], [1, 3, 4, 5]], "unicode": "⠠⠝", "rootChar": "n" },
+        "ally": { "word": "ally", "dots": [[6], [1, 3, 4, 5, 6]], "unicode": "⠠⠽", "rootChar": "y" }
+      }
+    }
+  ]
+}

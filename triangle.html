@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>점자 트라이앵글 (Braille Triangle) - 3지선다 점자 맥락 판별</title>
+  
+  <meta name="theme-color" content="#0f172a"> 
+  
+  <!-- Tailwind CSS & Tone.js CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  
+  <!-- Web Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --braille-dot-size: 0.22em;
+      --braille-cell-gap: 0.12em;
+      --braille-word-gap: 0.35em;
+      --target-word-size: 2.75rem;
+      --btn-label-size: 0.875rem;
+    }
+
+    body.text-scale-normal {
+      --target-word-size: 2.75rem;
+      --btn-label-size: 0.875rem;
+    }
+    body.text-scale-large {
+      --target-word-size: 3.5rem;
+      --btn-label-size: 1.05rem;
+    }
+    body.text-scale-xlarge {
+      --target-word-size: 4.25rem;
+      --btn-label-size: 1.25rem;
+    }
+
+    #target-word {
+      font-size: var(--target-word-size) !important;
+      line-height: 1.2;
+    }
+
+    .btn-scalable {
+      font-size: var(--btn-label-size) !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden; 
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body.focus-ring-enhanced :focus-visible,
+    body.focus-ring-enhanced button:focus,
+    body.focus-ring-enhanced [tabindex]:focus-visible {
+      outline: 4px solid #facc15 !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 0 7px rgba(15, 23, 42, 0.95), 0 0 16px 2px rgba(250, 204, 21, 0.7) !important;
+      position: relative !important;
+      z-index: 40 !important;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    
+    .glass-button {
+      background: rgba(255, 255, 255, 0.92);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1.5px solid rgba(226, 232, 240, 0.9);
+    }
+    
+    .glass-button:hover:not(:disabled) {
+      background: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .glass-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+        /* 고대비 색상 팔레트 모듈 */
+    :root[data-theme="hc-yellow"] {
+      --hc-bg: #000000;
+      --hc-text: #ffff00;
+      --hc-border: #ffff00;
+      --hc-accent: #00ffff;
+      --hc-disabled: #9ca3af;
+    }
+    :root[data-theme="hc-white-black"] {
+      --hc-bg: #000000;
+      --hc-text: #ffffff;
+      --hc-border: #ffffff;
+      --hc-accent: #38bdf8;
+      --hc-disabled: #a3a3a3;
+    }
+    :root[data-theme="hc-black-white"] {
+      --hc-bg: #ffffff;
+      --hc-text: #000000;
+      --hc-border: #000000;
+      --hc-accent: #0047ab;
+      --hc-disabled: #525252;
+    }
+    :root[data-theme="hc-amber"] {
+      --hc-bg: #090a0f;
+      --hc-text: #fde047;
+      --hc-border: #facc15;
+      --hc-accent: #67e8f9;
+      --hc-disabled: #94a3b8;
+    }
+
+    /* 고대비 모드 공통 테두리 및 포커스 스타일 */
+    .hc-element {
+      background-color: var(--hc-bg);
+      color: var(--hc-text);
+      border: 2px solid var(--hc-border);
+    }
+    .hc-element:focus-visible {
+      outline: 3px solid var(--hc-accent);
+      outline-offset: 2px;
+    }
+
+    /* 고대비 테마 일괄 적용 오버라이드 */
+    :root[data-theme] body {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+    }
+    :root[data-theme] #app-bg-gradient,
+    :root[data-theme] #bg-gradient {
+      display: none !important;
+    }
+    :root[data-theme] .glass-panel,
+    :root[data-theme] .glass-card,
+    :root[data-theme] .glass-button {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border: 2px solid var(--hc-border) !important;
+    }
+    :root[data-theme] button {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border: 2px solid var(--hc-border) !important;
+    }
+    :root[data-theme] button:hover:not(:disabled) {
+      background-color: var(--hc-text) !important;
+      color: var(--hc-bg) !important;
+      border-color: var(--hc-accent) !important;
+    }
+    :root[data-theme] button:hover:not(:disabled) * {
+      color: var(--hc-bg) !important;
+    }
+    :root[data-theme] div,
+    :root[data-theme] p,
+    :root[data-theme] span,
+    :root[data-theme] h1,
+    :root[data-theme] h2,
+    :root[data-theme] h3,
+    :root[data-theme] h4,
+    :root[data-theme] label,
+    :root[data-theme] li,
+    :root[data-theme] svg {
+      color: var(--hc-text) !important;
+      border-color: var(--hc-border) !important;
+    }
+    :root[data-theme] .braille-cell {
+      border: 1.5px solid var(--hc-border) !important;
+    }
+    :root[data-theme] .braille-dot.active {
+      background-color: var(--hc-text) !important;
+    }
+    :root[data-theme] .braille-dot.inactive {
+      background-color: transparent !important;
+      border: 1.5px solid var(--hc-border) !important;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 10px; }
+
+    /* 6점 점자 표준 렌더러 */
+    .braille-word {
+      display: inline-flex;
+      gap: var(--braille-word-gap);
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .braille-cell {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: var(--braille-cell-gap); 
+      padding: 0.1em;
+      border-radius: 0.15em;
+      box-sizing: content-box;
+    }
+    
+    .braille-dot {
+      width: var(--braille-dot-size);
+      height: var(--braille-dot-size);
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
+
+    .braille-dot.active {
+      background-color: currentColor; 
+    }
+
+    body.engraving-enabled .braille-dot.inactive {
+      background-color: rgba(148, 163, 184, 0.35); 
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 h-[100dvh] w-screen relative engraving-enabled text-scale-normal focus-ring-enhanced">
+
+  <div id="app-bg-gradient" class="absolute top-0 left-0 w-full h-full z-0 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950"></div>
+
+  <!-- 보조공학 스크린 리더 실시간 안내 영역 -->
+  <div id="a11y-live-region" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <div class="relative z-20 w-full h-full flex flex-col items-center justify-center p-3 sm:p-6">
+    
+    <!-- 1. Start Screen -->
+    <div id="start-screen" class="glass-panel shadow-2xl rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center flex flex-col gap-4 max-h-[95vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between">
+        <button id="btn-back-hub" class="hidden text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-xl border border-slate-200">
+          ← 허브로 복귀
+        </button>
+        <div class="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center shadow-inner text-2xl font-black mx-auto" id="start-logo-container">
+          ▲
+        </div>
+        <button id="btn-quick-settings" class="w-10 h-10 rounded-2xl glass-button flex items-center justify-center text-slate-600 hover:text-indigo-600" aria-label="환경 및 접근성 설정 열기">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+      
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">점자 트라이앵글</h1>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1">인지과학 기반 3지선다 점자 맥락 판별 (10문항)</p>
+      </div>
+
+      <div class="bg-white/60 p-4 rounded-2xl flex flex-col gap-3 text-left border border-white">
+        <!-- 학습 언어 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">학습 언어</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" class="opt-btn btn-scalable py-2 px-3 rounded-xl border text-sm font-bold transition-all bg-emerald-500 text-white border-emerald-600 shadow-sm" data-group="lang" data-value="KO">
+              한글 점자
+            </button>
+            <button type="button" class="opt-btn btn-scalable py-2 px-3 rounded-xl border text-sm font-bold transition-all bg-white text-slate-700 border-slate-200 hover:bg-slate-50" data-group="lang" data-value="EN">
+              영어 점자 (UEB)
+            </button>
+          </div>
+        </div>
+
+        <!-- 난이도 레벨 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">난이도 레벨</label>
+          <div class="grid grid-cols-5 gap-1.5" id="level-btn-container">
+            <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-emerald-500 text-white border-emerald-600" data-group="level" data-value="1">1</button>
+            <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="2">2</button>
+            <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="3">3</button>
+            <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="4">4</button>
+            <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="5">5</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex flex-col gap-2.5 mt-1">
+        <button id="btn-start" class="btn-scalable bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 text-base flex items-center justify-center gap-2">
+          트라이앵글 시작하기
+        </button>
+        <button id="btn-show-stats" class="btn-scalable bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-6 rounded-2xl shadow-md transition-all hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2">
+          학습 성취도 및 규정 분석
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Statistics Screen -->
+    <div id="stats-screen" class="glass-panel shadow-2xl rounded-3xl w-full max-w-3xl flex flex-col hidden h-[90%] max-h-[750px] p-6 sm:p-8">
+      <div class="flex justify-between items-center mb-4 border-b border-white/50 pb-3">
+        <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+          최근 세션 분석 리포트
+        </h2>
+        <button id="btn-stats-close" class="p-2 rounded-full glass-button shadow-sm" aria-label="통계 창 닫기">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white/60 rounded-2xl p-4 shadow-sm border border-white">
+            <h3 class="text-sm font-bold text-rose-600 mb-2">취약 규정 유형 Top 3</h3>
+            <ul id="weak-types-list" class="flex flex-col gap-2"></ul>
+          </div>
+          <div class="bg-white/60 rounded-2xl p-4 shadow-sm border border-white">
+            <h3 class="text-sm font-bold text-emerald-600 mb-2">우수 규정 유형 Top 3</h3>
+            <ul id="strong-types-list" class="flex flex-col gap-2"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Dynamic Game Screen -->
+    <div id="game-screen" class="glass-panel shadow-2xl rounded-3xl w-full max-w-3xl flex flex-col hidden h-[94%] max-h-[840px] overflow-hidden">
+      <!-- 상단 바 -->
+      <div class="flex justify-between items-center p-4 sm:p-5 border-b border-white/50 bg-white/30">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-800" id="stage-title">Level 1</h2>
+            <span id="badge-mode" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">TRIANGLE</span>
+          </div>
+          <div class="w-32 sm:w-44 h-2 bg-slate-200/80 rounded-full mt-2 overflow-hidden shadow-inner">
+            <div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%;"></div>
+          </div>
+        </div>
+        
+                <div class="flex items-center gap-2 sm:gap-3">
+          <button id="btn-replay-speech" class="p-2 rounded-full glass-button shadow-sm text-slate-700 hover:text-emerald-600" title="문제 다시 듣기" aria-label="문제 다시 듣기">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          </button>
+          
+          <div class="bg-white/70 px-3 py-1 rounded-full shadow-sm border border-white text-xs sm:text-sm font-bold text-slate-700">
+            <span id="question-counter">1 / 10</span>
+          </div>
+          <button id="btn-go-home" class="p-2 rounded-full glass-button shadow-sm text-slate-700 hover:text-indigo-600" title="메인 허브로 이동" aria-label="메인 허브로 이동">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </button>
+          <button id="btn-settings-open" class="p-2 rounded-full glass-button shadow-sm" aria-label="설정 열기" title="환경 및 접근성 설정">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-700"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 문제 제시 영역 -->
+      <div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center relative overflow-y-auto custom-scrollbar">
+        <div class="mb-2 flex flex-wrap justify-center gap-1.5">
+          <span id="meta-rule-type" class="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-full text-xs font-bold border border-amber-300">규정 확인 중</span>
+          <span id="meta-mode" class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold border border-blue-300">텍스트 ➔ 점자</span>
+        </div>
+        
+        <p class="text-xs sm:text-sm font-bold text-slate-500 mb-1" id="instruction-title">제시된 텍스트에 해당하는 올바른 점자 표기를 선택하세요.</p>
+        
+        <div id="target-prompt-container" class="min-h-[70px] flex items-center justify-center p-4 rounded-2xl bg-white/70 border border-slate-200 shadow-sm w-full max-w-lg my-2">
+          <h3 id="target-word" class="font-black text-slate-800 tracking-tight break-all"></h3>
+        </div>
+      </div>
+
+      <!-- 3지선다 선택지 버튼 영역 -->
+      <div class="p-4 sm:p-6 border-t border-white/60 bg-slate-50/90 rounded-b-3xl shrink-0">
+        <div id="triangle-options-container" class="flex flex-col gap-3 max-w-xl mx-auto"></div>
+        <p class="text-[11px] text-center text-slate-400 font-medium mt-3">
+          단축키: 숫자키 1, 2, 3 (포커스 이동 시 음계 비프음 및 TTS 음성 안내)
+        </p>
+      </div>
+    </div>
+
+    <!-- 4. Result Screen -->
+    <div id="result-screen" class="glass-panel shadow-2xl rounded-3xl w-full max-w-3xl flex flex-col hidden h-[90%] max-h-[750px] p-6 sm:p-8 text-center overflow-hidden">
+      <div class="flex flex-col items-center justify-center mb-4">
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-800" id="result-title">세션 완료!</h2>
+        <div class="bg-slate-100 px-5 py-1.5 rounded-2xl shadow-inner inline-block border border-slate-200 mt-2">
+          <p class="text-lg sm:text-xl font-bold text-slate-700" id="result-score">점수: 0 / 10</p>
+        </div>
+      </div>
+      
+      <div class="flex-1 flex flex-col overflow-hidden bg-white/60 rounded-2xl p-4 shadow-inner border border-white mb-4">
+        <h3 class="text-base font-bold text-slate-700 mb-2 text-left">세부 판별 내역</h3>
+        <ul id="stage-results-list" class="flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar"></ul>
+      </div>
+
+      <div class="flex gap-3 justify-center">
+        <button id="btn-next-stage" class="btn-scalable bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all flex-1">
+          다음 레벨
+        </button>
+        <button id="btn-home" class="btn-scalable bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-6 rounded-2xl shadow-md transition-all flex-1">
+          처음으로
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 설정 모달 -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div class="absolute inset-0" id="settings-backdrop"></div>
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl relative z-10 m-4 max-h-[94vh] flex flex-col">
+      <div class="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-200/80">
+        <h3 id="settings-modal-title" class="text-xl font-extrabold text-slate-800 tracking-tight">환경 및 접근성 설정</h3>
+        <button id="btn-settings-close-x" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-full" aria-label="설정 닫기">
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-1">
+                <!-- 고대비 테마 -->
+        <div class="bg-yellow-50/80 p-3.5 rounded-2xl border-2 border-yellow-400/80 flex flex-col gap-2.5">
+          <span class="text-xs font-black text-amber-950 uppercase tracking-wider">고대비 테마 프리셋</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" class="theme-preset-btn p-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-yellow">옐로우 온 블랙</button>
+            <button type="button" class="theme-preset-btn p-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-white-black">화이트 온 블랙</button>
+            <button type="button" class="theme-preset-btn p-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-black-white">블랙 온 화이트</button>
+            <button type="button" class="theme-preset-btn p-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-amber">앰버 네온</button>
+          </div>
+        </div>
+
+        <!-- 텍스트 크기 -->
+        <div class="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200 flex flex-col gap-2">
+          <span class="text-xs font-black text-amber-900 uppercase tracking-wider">글자 크기 조절</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="text-scale-btn py-2 rounded-xl text-xs font-bold border bg-emerald-500 text-white" data-scale="normal">기본 (1.0x)</button>
+            <button type="button" class="text-scale-btn py-2 rounded-xl text-xs font-bold border bg-white text-slate-700" data-scale="large">크게 (1.25x)</button>
+            <button type="button" class="text-scale-btn py-2 rounded-xl text-xs font-bold border bg-white text-slate-700" data-scale="xlarge">최대 (1.5x)</button>
+          </div>
+        </div>
+
+        <!-- 사운드 피드백 -->
+        <div class="bg-teal-50/80 p-3.5 rounded-2xl border border-teal-300 flex flex-col gap-2.5">
+          <span class="text-xs font-black text-teal-950 uppercase tracking-wider">사운드 피드백</span>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700">TTS 음성 안내</span>
+            <input type="checkbox" id="toggle-tts-checkbox" class="w-5 h-5 accent-emerald-500" checked>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700">도·레·미 피치음</span>
+            <input type="checkbox" id="toggle-pitch-checkbox" class="w-5 h-5 accent-emerald-500" checked>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-200 mt-2">
+        <button id="btn-settings-close" class="btn-scalable w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm">
+          설정 저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // =========================================================================
+    // 1. 점자 유니코드(U+2800 ~ U+283F) DOM 렌더러
+    // =========================================================================
+    function renderBrailleHTML(text, fontSizeClass = 'text-3xl') {
+      let html = `<div class="braille-word ${fontSizeClass}">`;
+      for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i);
+        if (charCode >= 0x2800 && charCode <= 0x28FF) {
+          const pattern = charCode - 0x2800;
+          html += `<div class="braille-cell">`;
+          const dotBits = [
+            (pattern & 0x01) > 0, (pattern & 0x08) > 0,
+            (pattern & 0x02) > 0, (pattern & 0x10) > 0,
+            (pattern & 0x04) > 0, (pattern & 0x20) > 0
+          ];
+          dotBits.forEach(isActive => {
+            html += `<div class="braille-dot ${isActive ? 'active' : 'inactive'}"></div>`;
+          });
+          html += `</div>`;
+        } else {
+          html += `<span class="font-bold mx-0.5">${text[i]}</span>`;
+        }
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    // =========================================================================
+    // 2. 인지과학 기반 점자 변형 엔진 (Cognitive Braille Engine)
+    // =========================================================================
+    const CognitiveBrailleEngine = {
+      H_MIRROR: { 1: 4, 2: 5, 3: 6, 4: 1, 5: 2, 6: 3 },
+      V_INVERT: { 1: 3, 2: 2, 3: 1, 4: 6, 5: 5, 6: 4 },
+
+      unicodeToDots(char) {
+        if (!char || char.length !== 1) return [];
+        const code = char.charCodeAt(0) - 0x2800;
+        if (code < 0 || code > 63) return [];
+        const dots = [];
+        const masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20];
+        masks.forEach((m, idx) => { if (code & m) dots.push(idx + 1); });
+        return dots;
+      },
+
+      dotsToUnicode(dots) {
+        let code = 0;
+        const masks = { 1: 0x01, 2: 0x02, 3: 0x04, 4: 0x08, 5: 0x10, 6: 0x20 };
+        new Set(dots).forEach(d => { if (masks[d]) code |= masks[d]; });
+        return String.fromCharCode(0x2800 + code);
+      },
+
+      generateDistractors(brailleStr, count = 2) {
+        const distractors = new Set();
+        
+        // 1. 좌우 대칭 변이 (Horizontal Mirror)
+        const hMirrored = Array.from(brailleStr).map(ch => {
+          const dots = this.unicodeToDots(ch);
+          if (!dots.length) return ch;
+          return this.dotsToUnicode(dots.map(d => this.H_MIRROR[d] || d));
+        }).join("");
+        if (hMirrored !== brailleStr) distractors.add(hMirrored);
+
+        // 2. 상하 반전 변이 (Vertical Invert)
+        const vInverted = Array.from(brailleStr).map(ch => {
+          const dots = this.unicodeToDots(ch);
+          if (!dots.length) return ch;
+          return this.dotsToUnicode(dots.map(d => this.V_INVERT[d] || d));
+        }).join("");
+        if (vInverted !== brailleStr) distractors.add(vInverted);
+
+        // 3. 1비트 해밍 거리 변이 (점 추가/누락)
+        let attempts = 0;
+        while (distractors.size < count && attempts < 10) {
+          attempts++;
+          const chars = Array.from(brailleStr);
+          const targetIdx = Math.floor(Math.random() * chars.length);
+          const dots = this.unicodeToDots(chars[targetIdx]);
+          if (dots.length > 0) {
+            if (Math.random() < 0.5 && dots.length > 1) {
+              dots.splice(Math.floor(Math.random() * dots.length), 1);
+            } else {
+              const avail = [1, 2, 3, 4, 5, 6].filter(d => !dots.includes(d));
+              if (avail.length) dots.push(avail[Math.floor(Math.random() * avail.length)]);
+            }
+            chars[targetIdx] = this.dotsToUnicode(dots);
+            const mutStr = chars.join("");
+            if (mutStr !== brailleStr) distractors.add(mutStr);
+          }
+        }
+
+        // 4. 규정 오류 폴백 (1급 기호표/수표 삽입 오류)
+        const fallbacks = ["⠰" + brailleStr, brailleStr + "⠰", "⠼" + brailleStr];
+        for (const fb of fallbacks) {
+          if (distractors.size >= count) break;
+          if (fb !== brailleStr) distractors.add(fb);
+        }
+
+        return Array.from(distractors).slice(0, count);
+      }
+    };
+
+    // =========================================================================
+    // 3. Python 백엔드 데이터 어댑터 (Bridge Adapter)
+    // =========================================================================
+    class PythonQuizDataAdapter {
+      constructor() {
+        this.cache = { KO: {}, EN: {} };
+      }
+
+      async loadQuizPool(lang, level) {
+        if (this.cache[lang] && this.cache[lang][level]) {
+          return this.cache[lang][level];
+        }
+
+        const files = [
+          "morpheme_quizzes.json",
+          "morpheme_words.json"
+        ];
+
+        for (const targetFile of files) {
+          try {
+            const res = await fetch(targetFile);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const pool = this._extractPool(data, lang, level).map(item => this._normalizeItem(item));
+            if (pool.length) {
+              this.cache[lang][level] = pool;
+              return pool;
+            }
+          } catch (e) {
+            console.warn("[Adapter] JSON Fetch 실패:", targetFile, e);
+          }
+        }
+
+        return this._getFallbackPythonFormat(lang, level);
+      }
+
+      _extractPool(data, lang, level) {
+        if (Array.isArray(data)) return this._filterLevel(data, level);
+        const langKey = lang || "KO";
+        const langBlock = data[langKey] || data[langKey.toLowerCase()] || data[langKey.toUpperCase()];
+        if (Array.isArray(langBlock)) return this._filterLevel(langBlock, level);
+        if (langBlock && typeof langBlock === "object") {
+          return langBlock[level] || langBlock[String(level)] || [];
+        }
+        return data[level] || data[String(level)] || [];
+      }
+
+      _filterLevel(list, level) {
+        const matched = list.filter(q => q.level === undefined || Number(q.level) === Number(level));
+        return matched.length ? matched : list;
+      }
+
+      _normalizeItem(item) {
+        return {
+          ...item,
+          text: item.text || item.target_text || "",
+          braille: item.braille || item.target_braille || "",
+          distractors_braille: item.distractors_braille || [],
+          distractors_text: item.distractors_text || [],
+          rule_type: item.rule_type || item.category || "",
+          prompt_audio: item.prompt_audio || item.hint || item.explanation || ""
+        };
+      }
+
+      _getFallbackPythonFormat(lang, level) {
+        if (lang === "EN") {
+          return [
+            {
+              level: level,
+              rule_type: "EN_BRIDGE_RULE",
+              text: "react",
+              braille: "⠗⠑⠁⠉⠞",
+              distractors_braille: ["⠗⠂⠉⠞", "⠗⠑⠁⠉⠞⠰"],
+              distractors_text: ["unreact", "reacted"],
+              prompt_audio: "Choose the correct braille for react."
+            },
+            {
+              level: level,
+              rule_type: "EN_STANDALONE",
+              text: "can",
+              braille: "⠉",
+              distractors_braille: ["⠉⠁⠝", "⠉⠰"],
+              distractors_text: ["cane", "con"],
+              prompt_audio: "Choose the correct braille for can."
+            },
+            {
+              level: level,
+              rule_type: "EN_SHORTFORM",
+              text: "friend",
+              braille: "⠋⠗",
+              distractors_braille: ["⠋⠗⠊⠑⠝⠙", "⠰⠋⠗"],
+              distractors_text: ["friends", "friendly"],
+              prompt_audio: "Choose the correct braille for friend."
+            }
+          ];
+        } else {
+          return [
+            {
+              level: level,
+              rule_type: "KO_NUMBER_GRADE1",
+              text: "1945년에",
+              braille: "⠼⠁⠊⠙⠑⠝⠝",
+              distractors_braille: ["⠼⠁⠊⠙⠑⠰⠝⠝", "⠁⠊⠙⠑⠝⠝"],
+              distractors_text: ["1946년에", "1945월에"],
+              prompt_audio: "제시된 문장, 1945년에 에 맞는 올바른 점자를 고르세요."
+            },
+                                    {
+              level: level,
+              rule_type: "KO_GA_SERIES",
+              text: "가방을",
+              braille: "⠫⠘⠶⠮",
+              distractors_braille: ["⠈⠣⠘⠶⠮", "⠫⠘⠣⠶⠮"],
+              distractors_text: ["나방을", "가방를"],
+              prompt_audio: "제시된 단어 가방을 에 알맞은 점자를 고르세요."
+            },
+            {
+              level: level,
+              rule_type: "KO_IRREGULAR",
+              text: "도와서",
+              braille: "⠊⠥⠧⠠⠣",
+              distractors_braille: ["⠊⠥⠃⠣⠠⠣", "⠊⠥⠍⠗⠠⠣"],
+              distractors_text: ["돕아서", "곱아서"],
+              prompt_audio: "제시된 단어 도와서 에 알맞은 점자를 고르세요."
+            }
+          ];
+        }
+      }
+    }
+
+    // =========================================================================
+    // 4. Audio Engine & TTS (Tone.js & Web Speech API)
+    // =========================================================================
+    const appConfig = {
+      lang: "KO",
+      level: 1,
+      ttsEnabled: true,
+      pitchSoundEnabled: true,
+      contrastTheme: "off",
+      textScale: "normal"
+    };
+
+    let polySynth, sfxCorrect, sfxWrong;
+
+    async function initAudioEngine() {
+      await Tone.start();
+      if (!polySynth) {
+        polySynth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "sine" },
+          envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 0.2 }
+        }).toDestination();
+        polySynth.volume.value = -4;
+
+        sfxCorrect = new Tone.Synth({
+          oscillator: { type: "triangle" },
+          envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.3 }
+        }).toDestination();
+        sfxCorrect.volume.value = -6;
+
+        sfxWrong = new Tone.MembraneSynth().toDestination();
+        sfxWrong.volume.value = -8;
+      }
+    }
+
+    function speakText(text, cancelPrevious = true) {
+      if (!appConfig.ttsEnabled || !window.speechSynthesis) return;
+      if (cancelPrevious) window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = appConfig.lang === "KO" ? "ko-KR" : "en-US";
+      utterance.rate = 1.05;
+
+      const liveRegion = document.getElementById('a11y-live-region');
+      if (liveRegion) liveRegion.textContent = text;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function playPitch(pitch) {
+      if (!appConfig.pitchSoundEnabled || !polySynth) return;
+      polySynth.triggerAttackRelease(pitch, "16n");
+    }
+
+    function playFeedbackSound(isCorrect) {
+      if (isCorrect && sfxCorrect) {
+        sfxCorrect.triggerAttackRelease("C6", "16n");
+        setTimeout(() => sfxCorrect.triggerAttackRelease("G6", "16n"), 100);
+      } else if (!isCorrect && sfxWrong) {
+        sfxWrong.triggerAttackRelease("C2", "8n");
+      }
+    }
+
+    // =========================================================================
+    // 5. Triangle Game Controller
+    // =========================================================================
+    const adapter = new PythonQuizDataAdapter();
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let sessionResults = [];
+    let isAnsweringLocked = false;
+
+    const screens = {
+      start: document.getElementById('start-screen'),
+      game: document.getElementById('game-screen'),
+      result: document.getElementById('result-screen'),
+      stats: document.getElementById('stats-screen')
+    };
+
+    async function startTriangleGame() {
+      currentIdx = 0;
+      sessionResults = [];
+      isAnsweringLocked = false;
+
+      const pool = await adapter.loadQuizPool(appConfig.lang, appConfig.level);
+      
+      currentQuestions = [];
+      for (let i = 0; i < 10; i++) {
+        const item = pool[i % pool.length];
+        const mode = (i % 2 === 0) ? "TEXT_TO_BRAILLE" : "BRAILLE_TO_TEXT";
+        currentQuestions.push(buildSessionItem(item, mode, i + 1));
+      }
+
+      screens.start.classList.add('hidden');
+      screens.result.classList.add('hidden');
+      screens.game.classList.remove('hidden');
+
+      document.getElementById('stage-title').textContent = `Level ${appConfig.level}`;
+      document.getElementById('badge-mode').textContent = `${appConfig.lang} · TRIANGLE`;
+
+      renderQuestion();
+    }
+
+    function buildSessionItem(pyItem, mode, qNum) {
+      const isTextToBraille = (mode === "TEXT_TO_BRAILLE");
+      let options = [];
+
+      if (isTextToBraille) {
+        let dList = Array.isArray(pyItem.distractors_braille) ? [...pyItem.distractors_braille] : [];
+        if (dList.length < 2) {
+          const generated = CognitiveBrailleEngine.generateDistractors(pyItem.braille, 2);
+          dList = Array.from(new Set([...dList, ...generated]));
+        }
+
+        options = [
+          { content: pyItem.braille, is_correct: true, read_text: "1번 점자 보기" },
+          { content: dList[0] || (pyItem.braille + "⠰"), is_correct: false, read_text: "2번 점자 보기 (변형형)" },
+          { content: dList[1] || ("⠼" + pyItem.braille), is_correct: false, read_text: "3번 점자 보기 (오류형)" }
+        ];
+      } else {
+        options = [
+          { content: pyItem.text, is_correct: true, read_text: `1번, ${pyItem.text}` },
+          { content: (pyItem.distractors_text && pyItem.distractors_text[0]) || (pyItem.text + " (오답1)"), is_correct: false, read_text: `2번, ${(pyItem.distractors_text && pyItem.distractors_text[0]) || "오답"}` },
+          { content: (pyItem.distractors_text && pyItem.distractors_text[1]) || (pyItem.text + " (오답2)"), is_correct: false, read_text: `3번, ${(pyItem.distractors_text && pyItem.distractors_text[1]) || "오답"}` }
+        ];
+      }
+
+      shuffleArray(options);
+      const pitches = ["C4", "D4", "E4"];
+      const finalOptions = options.map((opt, idx) => ({
+        ...opt,
+        option_number: idx + 1,
+        key_shortcut: String(idx + 1),
+        pitch: pitches[idx]
+      }));
+
+      return {
+        q_num: qNum,
+        mode: mode,
+        rule_type: pyItem.rule_type,
+        prompt: isTextToBraille ? pyItem.text : pyItem.braille,
+        is_prompt_braille: !isTextToBraille,
+        prompt_audio: pyItem.prompt_audio || `문제 ${qNum}번.`,
+        options: finalOptions
+      };
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function renderQuestion() {
+      const q = currentQuestions[currentIdx];
+      isAnsweringLocked = false;
+
+      document.getElementById('question-counter').textContent = `${q.q_num} / 10`;
+      document.getElementById('progress-bar').style.width = `${((q.q_num - 1) / 10) * 100}%`;
+      document.getElementById('meta-rule-type').textContent = `[규정] ${q.rule_type}`;
+      
+      const modeText = q.mode === "TEXT_TO_BRAILLE" ? "텍스트 ➔ 점자 변환" : "점자 ➔ 텍스트 역해석";
+      document.getElementById('meta-mode').textContent = modeText;
+
+      const instruction = q.mode === "TEXT_TO_BRAILLE" 
+        ? "제시된 문장에 부합하는 올바른 점자 표기를 선택하세요."
+        : "제시된 점자가 나타내는 올바른 원문 텍스트를 선택하세요.";
+      document.getElementById('instruction-title').textContent = instruction;
+
+      const promptBox = document.getElementById('target-word');
+      if (q.is_prompt_braille) {
+        promptBox.innerHTML = renderBrailleHTML(q.prompt, 'text-3xl font-bold');
+      } else {
+        promptBox.textContent = q.prompt;
+      }
+
+      const container = document.getElementById('triangle-options-container');
+      container.innerHTML = '';
+
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'glass-button rounded-2xl p-4 flex items-center justify-between border-2 border-slate-200 transition-all text-left group hover:border-amber-400 focus:border-amber-500';
+        btn.dataset.key = opt.key_shortcut;
+        btn.setAttribute('aria-label', `${opt.option_number}번 보기`);
+
+        const isOptionBraille = (q.mode === "TEXT_TO_BRAILLE");
+        const bodyContent = isOptionBraille 
+          ? renderBrailleHTML(opt.content, 'text-2xl font-bold') 
+          : `<span class="text-lg font-black text-slate-800">${opt.content}</span>`;
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-slate-200 text-slate-800 font-black flex items-center justify-center text-sm shadow-inner group-hover:bg-amber-400 group-hover:text-black transition-colors">
+              ${opt.option_number}
+            </span>
+            <div>${bodyContent}</div>
+          </div>
+          <span class="text-xs font-semibold text-slate-400 group-hover:text-slate-600">[단축키 ${opt.key_shortcut}]</span>
+        `;
+
+        btn.addEventListener('focus', () => {
+          playPitch(opt.pitch);
+          speakText(opt.read_text, true);
+        });
+
+        btn.addEventListener('click', () => {
+          handleSelectOption(opt, btn);
+        });
+
+        container.appendChild(btn);
+      });
+
+      speakText(q.prompt_audio, true);
+    }
+
+    function handleSelectOption(selectedOpt, btnElement) {
+      if (isAnsweringLocked) return;
+      isAnsweringLocked = true;
+
+      const q = currentQuestions[currentIdx];
+      const isCorrect = selectedOpt.is_correct;
+
+      playFeedbackSound(isCorrect);
+
+      sessionResults.push({
+        q_num: q.q_num,
+        rule_type: q.rule_type,
+        prompt: q.prompt,
+        selected: selectedOpt.content,
+        is_correct: isCorrect
+      });
+
+      if (isCorrect) {
+        speakText("정답입니다!", false);
+        btnElement.classList.add('bg-emerald-100', 'border-emerald-500');
+      } else {
+        speakText("오답입니다.", false);
+        btnElement.classList.add('bg-rose-100', 'border-rose-500');
+      }
+
+      setTimeout(() => {
+        currentIdx++;
+        if (currentIdx < 10) {
+          renderQuestion();
+        } else {
+          showSessionResult();
+        }
+      }, 950);
+    }
+
+    // 1, 2, 3 키보드 이벤트
+    window.addEventListener('keydown', (e) => {
+      if (screens.game.classList.contains('hidden') || isAnsweringLocked) return;
+      if (['1', '2', '3'].includes(e.key)) {
+        const q = currentQuestions[currentIdx];
+        const opt = q.options.find(o => o.key_shortcut === e.key);
+        const buttons = document.querySelectorAll('#triangle-options-container button');
+        const targetBtn = buttons[parseInt(e.key) - 1];
+
+        if (opt && targetBtn) {
+          targetBtn.focus();
+          handleSelectOption(opt, targetBtn);
+          e.preventDefault();
+        }
+      }
+    });
+
+        // 세션 종료 및 결과 처리
+    function showSessionResult() {
+      screens.game.classList.add('hidden');
+      screens.result.classList.remove('hidden');
+
+      const correctCount = sessionResults.filter(r => r.is_correct).length;
+      document.getElementById('result-title').textContent = `Level ${appConfig.level} 세션 종료`;
+      document.getElementById('result-score').textContent = `점수: ${correctCount} / 10`;
+
+      speakText(`10문항을 완료했습니다. 점수는 10점 만점에 ${correctCount}점입니다.`, true);
+
+      // LocalStorage 누적 기록 (단일 데이터 구조 단일화 반영)
+      const history = JSON.parse(localStorage.getItem('braille_global_history') || '[]');
+      history.unshift({
+        game: 'triangle',
+        lang: appConfig.lang,
+        level: appConfig.level,
+        score: correctCount,
+        total: 10,
+        date: new Date().toISOString()
+      });
+      localStorage.setItem('braille_global_history', JSON.stringify(history.slice(0, 50)));
+
+      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
+      sessionResults.forEach(r => {
+        if (r && r.rule_type) {
+          if (!ruleStats[r.rule_type]) ruleStats[r.rule_type] = { errors: 0, trials: 0, games: {} };
+          ruleStats[r.rule_type].trials = (ruleStats[r.rule_type].trials || 0) + 1;
+          if (!r.is_correct) {
+            ruleStats[r.rule_type].errors = (ruleStats[r.rule_type].errors || 0) + 1;
+            if (!ruleStats[r.rule_type].games) ruleStats[r.rule_type].games = {};
+            ruleStats[r.rule_type].games['triangle'] = (ruleStats[r.rule_type].games['triangle'] || 0) + 1;
+          }
+        }
+      });
+      localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: "GAME_COMPLETE",
+          game: "triangle",
+          lang: appConfig.lang,
+          level: appConfig.level,
+          score: correctCount,
+          total: 10,
+          results: sessionResults
+        }, "*");
+      }
+
+      const listContainer = document.getElementById('stage-results-list');
+      listContainer.innerHTML = '';
+
+      sessionResults.forEach(r => {
+        const li = document.createElement('li');
+        li.className = `p-3 rounded-xl border flex justify-between items-center ${r.is_correct ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`;
+        li.innerHTML = `
+          <div class="text-left">
+            <span class="text-[11px] font-bold ${r.is_correct ? 'text-emerald-600' : 'text-rose-600'}">${r.is_correct ? '정답' : '오답'} · [${r.rule_type}]</span>
+            <div class="text-sm font-bold">${r.prompt}</div>
+          </div>
+          <div class="text-xs font-semibold text-slate-500">선택: ${r.selected}</div>
+        `;
+        listContainer.appendChild(li);
+      });
+    }
+
+    // =========================================================================
+    // 6. 세션 결과 통계 렌더링
+    // =========================================================================
+    function renderStatsReport() {
+      const weakList = document.getElementById('weak-types-list');
+      const strongList = document.getElementById('strong-types-list');
+      weakList.innerHTML = '';
+      strongList.innerHTML = '';
+
+      if (!sessionResults || sessionResults.length === 0) {
+        const emptyMsg = '<li class="text-xs text-slate-400 py-3 text-center">아직 완료된 학습 데이터가 없습니다.</li>';
+        weakList.innerHTML = emptyMsg;
+        strongList.innerHTML = emptyMsg;
+        return;
+      }
+
+      const ruleStats = {};
+      sessionResults.forEach(r => {
+        if (!ruleStats[r.rule_type]) {
+          ruleStats[r.rule_type] = { total: 0, correct: 0 };
+        }
+        ruleStats[r.rule_type].total++;
+        if (r.is_correct) ruleStats[r.rule_type].correct++;
+      });
+
+      const sortedRules = Object.entries(ruleStats).map(([rule, data]) => ({
+        rule,
+        accuracy: (data.correct / data.total) * 100,
+        ...data
+      })).sort((a, b) => a.accuracy - b.accuracy);
+
+      sortedRules.slice(0, 3).forEach(item => {
+        weakList.innerHTML += `
+          <li class="flex justify-between items-center p-2 rounded-lg bg-rose-50 border border-rose-100 text-xs">
+            <span class="font-bold text-slate-800">${item.rule}</span>
+            <span class="font-black text-rose-600">${item.correct}/${item.total} (${Math.round(item.accuracy)}%)</span>
+          </li>
+        `;
+      });
+
+      [...sortedRules].reverse().slice(0, 3).forEach(item => {
+        strongList.innerHTML += `
+          <li class="flex justify-between items-center p-2 rounded-lg bg-emerald-50 border border-emerald-100 text-xs">
+            <span class="font-bold text-slate-800">${item.rule}</span>
+            <span class="font-black text-emerald-600">${item.correct}/${item.total} (${Math.round(item.accuracy)}%)</span>
+          </li>
+        `;
+      });
+    }
+
+    // =========================================================================
+    // 7. 허브 통신 인터페이스 (postMessage & URL Params)
+    // =========================================================================
+        function checkHubParameters() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('lang')) {
+        appConfig.lang = params.get('lang').toUpperCase();
+      }
+      if (params.has('level')) {
+        appConfig.level = parseInt(params.get('level')) || 1;
+      }
+      if (params.has('theme')) {
+        appConfig.contrastTheme = params.get('theme');
+      }
+      if (params.has('scale')) {
+        appConfig.textScale = params.get('scale');
+        document.body.classList.remove('text-scale-normal', 'text-scale-large', 'text-scale-xlarge');
+        document.body.classList.add(`text-scale-${appConfig.textScale}`);
+      }
+      applyVisualSettings();
+      if (params.has('hub')) {
+        document.getElementById('btn-back-hub').classList.remove('hidden');
+      }
+
+      document.querySelectorAll(`.opt-btn[data-group="lang"]`).forEach(b => {
+        const isMatch = (b.dataset.value === appConfig.lang);
+        b.classList.toggle('bg-emerald-500', isMatch);
+        b.classList.toggle('text-white', isMatch);
+        b.classList.toggle('border-emerald-600', isMatch);
+        b.classList.toggle('bg-white', !isMatch);
+        b.classList.toggle('text-slate-700', !isMatch);
+        b.classList.toggle('border-slate-200', !isMatch);
+      });
+      document.querySelectorAll(`.opt-btn[data-group="level"]`).forEach(b => {
+        const isMatch = (parseInt(b.dataset.value) === appConfig.level);
+        b.classList.toggle('bg-emerald-500', isMatch);
+        b.classList.toggle('text-white', isMatch);
+        b.classList.toggle('border-emerald-600', isMatch);
+        b.classList.toggle('bg-white', !isMatch);
+        b.classList.toggle('text-slate-700', !isMatch);
+        b.classList.toggle('border-slate-200', !isMatch);
+      });
+    }
+
+    window.addEventListener("message", (e) => {
+      const data = e.data;
+      if (!data || typeof data !== "object") return;
+
+      if (data.type === "INIT_STAGE") {
+        appConfig.lang = data.lang || "KO";
+        appConfig.level = data.level || 1;
+        startTriangleGame();
+      }
+    });
+
+    document.getElementById('btn-back-hub').addEventListener('click', () => {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "NAVIGATE_HUB" }, "*");
+      } else {
+        window.location.href = "front_end.html";
+      }
+    });
+
+        function normalizeTheme(theme) {
+      if (theme === 'yellow') return 'hc-yellow';
+      if (theme === 'bw') return 'hc-white-black';
+      return theme;
+    }
+
+    function applyVisualSettings() {
+      const theme = normalizeTheme(appConfig.contrastTheme);
+      if (theme && theme !== 'off') {
+        document.documentElement.setAttribute('data-theme', theme);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
+    document.getElementById('btn-start').addEventListener('click', async () => {
+      try { await initAudioEngine(); } catch (e) {}
+      startTriangleGame();
+    });
+
+    document.getElementById('btn-show-stats').addEventListener('click', () => {
+      renderStatsReport();
+      screens.start.classList.add('hidden');
+      screens.stats.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-stats-close').addEventListener('click', () => {
+      screens.stats.classList.add('hidden');
+      screens.start.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-replay-speech').addEventListener('click', () => {
+      const q = currentQuestions[currentIdx];
+      if (q) speakText(q.prompt_audio, true);
+    });
+
+    document.getElementById('btn-next-stage').addEventListener('click', () => {
+      appConfig.level = Math.min(5, appConfig.level + 1);
+      startTriangleGame();
+    });
+
+        document.getElementById('btn-home').addEventListener('click', () => {
+      screens.result.classList.add('hidden');
+      screens.start.classList.remove('hidden');
+    });
+
+    const goHomeBtn = document.getElementById('btn-go-home');
+    if (goHomeBtn) {
+      goHomeBtn.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "NAVIGATE_HUB" }, "*");
+        } else {
+          window.location.href = "front_end.html";
+        }
+      });
+    }
+
+    document.querySelectorAll('.opt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        const val = btn.dataset.value;
+        document.querySelectorAll(`.opt-btn[data-group="${group}"]`).forEach(b => {
+          b.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-600');
+          b.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        });
+        btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+
+        if (group === "level") appConfig.level = parseInt(val);
+        else appConfig[group] = val;
+      });
+    });
+
+    const modal = document.getElementById('settings-modal');
+    const openModal = () => modal.classList.remove('hidden');
+    const closeModal = () => modal.classList.add('hidden');
+
+    document.getElementById('btn-quick-settings').addEventListener('click', openModal);
+    document.getElementById('btn-settings-open').addEventListener('click', openModal);
+    document.getElementById('btn-settings-close').addEventListener('click', closeModal);
+    document.getElementById('btn-settings-close-x').addEventListener('click', closeModal);
+    document.getElementById('settings-backdrop').addEventListener('click', closeModal);
+
+        document.querySelectorAll('.theme-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+        if (appConfig.contrastTheme === theme) {
+          appConfig.contrastTheme = 'off';
+        } else {
+          appConfig.contrastTheme = theme;
+        }
+        applyVisualSettings();
+      });
+    });
+
+    document.querySelectorAll('.text-scale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.body.classList.remove('text-scale-normal', 'text-scale-large', 'text-scale-xlarge');
+        appConfig.textScale = btn.dataset.scale;
+        document.body.classList.add(`text-scale-${appConfig.textScale}`);
+      });
+    });
+
+        document.getElementById('toggle-tts-checkbox').addEventListener('change', (e) => {
+      appConfig.ttsEnabled = e.target.checked;
+      localStorage.setItem('braille_tts', appConfig.ttsEnabled.toString());
+    });
+    document.getElementById('toggle-pitch-checkbox').addEventListener('change', (e) => {
+      appConfig.pitchSoundEnabled = e.target.checked;
+      localStorage.setItem('braille_pitch', appConfig.pitchSoundEnabled.toString());
+    });
+
+    checkHubParameters();
+  </script>
+</body>
+</html>

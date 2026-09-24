@@ -1,0 +1,144 @@
+{
+  "terminal_punctuation": {
+    "category": "terminal_punctuation",
+    "rule": {
+      "position": "word_end",
+      "precededBy": ["hangul", "alphabetic", "number", "closing_bracket", "closing_quote"],
+      "followedBy": ["space", "closing_quote", "closing_bracket", "end_of_line"],
+      "requiresWhitespaceAfter": true
+    },
+    "items": {
+      ".": { "word": "온점(마침표)", "dots": [[2, 5, 6]], "unicode": "⠲" },
+      "?": { "word": "물음표", "dots": [[2, 3, 6]], "unicode": "⠦" },
+      "!": { "word": "느낌표", "dots": [[2, 3, 5]], "unicode": "⠖" }
+    }
+  },
+
+  "pausal_punctuation": {
+    "category": "pausal_punctuation",
+    "rule": {
+      "position": "mid_sentence",
+      "precededBy": ["hangul", "alphabetic", "number", "closing_quote", "closing_bracket"],
+      "followedBy": ["space", "hangul", "alphabetic", "number"],
+      "requiresWhitespaceAfter": false
+    },
+    "items": {
+      ",": { "word": "반점(쉼표)", "dots": [[5]], "unicode": "⠐" },
+      "·": { "word": "가운뎃점", "dots": [[5], [2, 3]], "unicode": "⠐⠆" },
+      ":": { "word": "쌍점", "dots": [[2, 5]], "unicode": "⠒" },
+      ";": { "word": "쌍반점", "dots": [[5, 6], [2, 3]], "unicode": "⠰⠆" },
+      "/": { "word": "빗금", "dots": [[4, 5, 6], [3, 4]], "unicode": "⠸⠌" }
+    }
+  },
+
+  "opening_delimiters": {
+    "category": "opening_delimiters",
+    "rule": {
+      "position": "prefix",
+      "pairType": "opening",
+      "precededBy": ["space", "start_of_line", "opening_bracket"],
+      "followedBy": ["hangul", "alphabetic", "number", "opening_quote"],
+      "allowSpaceAfter": false
+    },
+    "items": {
+      "“": { "word": "여는 큰따옴표", "dots": [[2, 3, 6]], "unicode": "⠦" },
+      "‘": { "word": "여는 작은따옴표", "dots": [[6], [2, 3, 6]], "unicode": "⠠⠦" },
+      "《": { "word": "여는 겹낫표", "dots": [[2, 3, 6]], "unicode": "⠦" },
+      "〈": { "word": "여는 홑낫표", "dots": [[6], [2, 3, 6]], "unicode": "⠠⠦" },
+      "(": { "word": "여는 소괄호", "dots": [[2, 3, 6], [3]], "unicode": "⠦⠄" },
+      "[": { "word": "여는 대괄호", "dots": [[4, 6], [2, 3, 6]], "unicode": "⠨⠦" }
+    }
+  },
+
+  "closing_delimiters": {
+    "category": "closing_delimiters",
+    "rule": {
+      "position": "suffix",
+      "pairType": "closing",
+      "precededBy": ["hangul", "alphabetic", "number", "terminal_punctuation", "pausal_punctuation"],
+      "followedBy": ["space", "end_of_line", "terminal_punctuation", "pausal_punctuation", "closing_bracket"],
+      "allowSpaceBefore": false
+    },
+    "items": {
+      "”": { "word": "닫는 큰따옴표", "dots": [[3, 5, 6]], "unicode": "⠴" },
+      "’": { "word": "닫는 작은따옴표", "dots": [[3, 5, 6], [3]], "unicode": "⠴⠄" },
+      "》": { "word": "닫는 겹낫표", "dots": [[3, 5, 6]], "unicode": "⠴" },
+      "〉": { "word": "닫는 홑낫표", "dots": [[3, 5, 6], [3]], "unicode": "⠴⠄" },
+      ")": { "word": "닫는 소괄호", "dots": [[6], [3, 5, 6]], "unicode": "⠠⠴" },
+      "]": { "word": "닫는 대괄호", "dots": [[3, 5, 6], [5, 6]], "unicode": "⠴⠰" }
+    }
+  },
+
+  "connectors_and_symbols": {
+    "category": "connectors_and_symbols",
+    "rule": {
+      "position": "inline_or_standalone",
+      "allowSurroundingSpaces": true,
+      "allowInWord": true
+    },
+    "items": {
+      "~": { "word": "물결표", "dots": [[3, 6], [3, 6]], "unicode": "⠤⠤" },
+      "—": { "word": "줄표", "dots": [[3, 6], [3, 6]], "unicode": "⠤⠤" },
+      "-": { "word": "붙임표(하이픈)", "dots": [[3, 6]], "unicode": "⠤" },
+      "…": { "word": "줄임표", "dots": [[3, 6], [3, 6], [3, 6]], "unicode": "⠤⠤⠤" },
+      "*": { "word": "별표", "dots": [[3, 5], [3, 5]], "unicode": "⠔⠔" },
+      "'": { "word": "아포스트로피", "dots": [[5]], "unicode": "⠐" },
+      "〃": { "word": "위와 같음표", "dots": [[5], [2]], "unicode": "⠐⠂" },
+      "_": { "word": "밑줄", "dots": [[6], [3, 6]], "unicode": "⠠⠤" }
+    }
+  },
+
+  "placeholder_marks": {
+    "category": "placeholder_marks",
+    "rule": {
+      "position": "standalone_or_word_bound",
+      "treatAsCharacter": true,
+      "allowRepetition": true
+    },
+    "items": {
+      "×": { "word": "가위표(안드러냄표)", "dots": [[3, 5, 6], [3, 5, 6]], "unicode": "⠴⠴" },
+      "○": { "word": "동그라미표(안드러냄표)", "dots": [[3, 5, 6], [3, 5, 6]], "unicode": "⠴⠴" },
+      "△": { "word": "세모표(안드러냄표)", "dots": [[3, 5, 6], [3, 5, 6]], "unicode": "⠴⠴" },
+      "□": { "word": "빠짐표", "dots": [[3, 6], [3, 6]], "unicode": "⠤⠤" }
+    }
+  },
+
+  "transcriber_and_formatting_tags": {
+    "category": "transcriber_and_formatting_tags",
+    "rule": {
+      "position": "tag_boundary",
+      "isMarkup": true,
+      "requiresMatchingClose": true
+    },
+    "items": {
+      "<tn>": {
+        "word": "여는 점역자주",
+        "dots": [[6], [3]],
+        "unicode": "⠠⠄",
+        "pairRole": "open",
+        "matchingTag": "</tn>"
+      },
+      "</tn>": {
+        "word": "닫는 점역자주",
+        "dots": [[6], [3]],
+        "unicode": "⠠⠄",
+        "pairRole": "close",
+        "matchingTag": "<tn>"
+      },
+      "<i>": {
+        "word": "글씨체표 시작",
+        "dots": [[5, 6], [2, 3]],
+        "unicode": "⠰⠆",
+        "pairRole": "open",
+        "matchingTag": "<b>"
+      },
+      "<b>": {
+        "word": "글씨체표 종료",
+        "dots": [[5, 6], [3, 5, 6]],
+        "unicode": "⠰⠴",
+        "pairRole": "close",
+        "matchingTag": "<i>"
+      }
+    }
+  }
+}

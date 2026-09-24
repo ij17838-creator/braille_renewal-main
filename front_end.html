@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>점자 마스터 - 통합 학습 허브</title>
+  
+  <meta name="theme-color" content="#0f172a"> 
+  
+  <!-- Tailwind CSS & Tone.js 로드 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  
+  <!-- Inter & Noto Sans KR 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --ui-text-scale: 1;
+      --btn-label-size: 0.875rem;
+    }
+
+    body.text-scale-normal { --ui-text-scale: 1; --btn-label-size: 0.875rem; }
+    body.text-scale-large { --ui-text-scale: 1.25; --btn-label-size: 1.05rem; }
+    body.text-scale-xlarge { --ui-text-scale: 1.5; --btn-label-size: 1.25rem; }
+
+    .btn-scalable { font-size: var(--btn-label-size) !important; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body.accessible-font {
+      font-family: 'Noto Sans KR', sans-serif !important;
+      letter-spacing: 0.04em !important;
+      line-height: 1.6 !important;
+    }
+
+    body.focus-ring-enhanced :focus-visible,
+    body.focus-ring-enhanced button:focus {
+      outline: 4px solid #facc15 !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 0 7px rgba(15, 23, 42, 0.95), 0 0 16px 2px rgba(250, 204, 21, 0.7) !important;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    
+    .glass-button {
+      background: rgba(255, 255, 255, 0.9);
+      transition: all 0.2s ease;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+    }
+    
+    .glass-button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+      border-color: rgba(203, 213, 225, 1);
+    }
+
+        /* 고대비 색상 팔레트 모듈 */
+    :root[data-theme="hc-yellow"] {
+      --hc-bg: #000000;
+      --hc-text: #ffff00;
+      --hc-border: #ffff00;
+      --hc-accent: #00ffff;
+      --hc-disabled: #9ca3af;
+    }
+    :root[data-theme="hc-white-black"] {
+      --hc-bg: #000000;
+      --hc-text: #ffffff;
+      --hc-border: #ffffff;
+      --hc-accent: #38bdf8;
+      --hc-disabled: #a3a3a3;
+    }
+    :root[data-theme="hc-black-white"] {
+      --hc-bg: #ffffff;
+      --hc-text: #000000;
+      --hc-border: #000000;
+      --hc-accent: #0047ab;
+      --hc-disabled: #525252;
+    }
+    :root[data-theme="hc-amber"] {
+      --hc-bg: #090a0f;
+      --hc-text: #fde047;
+      --hc-border: #facc15;
+      --hc-accent: #67e8f9;
+      --hc-disabled: #94a3b8;
+    }
+
+    /* 고대비 모드 공통 테두리 및 포커스 스타일 */
+    .hc-element {
+      background-color: var(--hc-bg);
+      color: var(--hc-text);
+      border: 2px solid var(--hc-border);
+    }
+    .hc-element:focus-visible {
+      outline: 3px solid var(--hc-accent);
+      outline-offset: 2px;
+    }
+
+    /* 고대비 테마 일괄 적용 오버라이드 */
+    :root[data-theme] body {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+    }
+    :root[data-theme] #app-bg-gradient,
+    :root[data-theme] #bg-gradient {
+      display: none !important;
+    }
+    :root[data-theme] .glass-panel,
+    :root[data-theme] .glass-card,
+    :root[data-theme] .glass-button {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border: 2px solid var(--hc-border) !important;
+    }
+    :root[data-theme] button {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border: 2px solid var(--hc-border) !important;
+    }
+    :root[data-theme] button:hover:not(:disabled) {
+      background-color: var(--hc-text) !important;
+      color: var(--hc-bg) !important;
+      border-color: var(--hc-accent) !important;
+    }
+    :root[data-theme] button:hover:not(:disabled) * {
+      color: var(--hc-bg) !important;
+    }
+    :root[data-theme] div,
+    :root[data-theme] p,
+    :root[data-theme] span,
+    :root[data-theme] h1,
+    :root[data-theme] h2,
+    :root[data-theme] h3,
+    :root[data-theme] h4,
+    :root[data-theme] label,
+    :root[data-theme] li,
+    :root[data-theme] svg {
+      color: var(--hc-text) !important;
+      border-color: var(--hc-border) !important;
+    }
+    :root[data-theme] .braille-cell {
+      border: 1.5px solid var(--hc-border) !important;
+    }
+    :root[data-theme] .braille-dot.active {
+      background-color: var(--hc-text) !important;
+    }
+    :root[data-theme] .braille-dot.inactive {
+      background-color: transparent !important;
+      border: 1.5px solid var(--hc-border) !important;
+    }
+    :root[data-theme] #stats-modal .glass-panel,
+    :root[data-theme] #stats-modal > div:nth-child(2),
+    :root[data-theme] #stats-modal div,
+    :root[data-theme] #stats-modal span,
+    :root[data-theme] #stats-modal p,
+    :root[data-theme] #stats-modal h3,
+    :root[data-theme] #stats-modal h4,
+    :root[data-theme] #stats-modal li {
+      background-color: var(--hc-bg) !important;
+      color: var(--hc-text) !important;
+      border-color: var(--hc-border) !important;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 7px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-[100dvh] w-screen relative dot-scale-1x text-scale-normal focus-ring-enhanced flex items-center justify-center p-3 sm:p-6">
+
+  <div id="app-bg-gradient" class="fixed top-0 left-0 w-full h-full z-0 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950"></div>
+  <div id="a11y-live-region" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- 통합 메인 허브 카드 -->
+  <main class="relative z-20 glass-panel shadow-2xl rounded-3xl p-6 sm:p-8 max-w-xl w-full text-center flex flex-col gap-4 max-h-[96vh] overflow-y-auto custom-scrollbar">
+    
+    <!-- 1. 헤더 영역 (통계 버튼 추가) -->
+    <header class="flex items-center justify-between">
+      <!-- 전체 학습 통계 열기 버튼 -->
+      <button id="btn-open-stats" class="px-3 py-1.5 rounded-xl glass-button text-xs font-bold text-slate-700 hover:text-indigo-600 flex items-center gap-1.5 shadow-sm" aria-label="전체 학습 통계 리포트 열기">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <span>학습 통계</span>
+      </button>
+      
+      <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center shadow-inner text-2xl font-black">
+        ⠚⠣
+      </div>
+
+      <button id="btn-quick-settings" class="w-10 h-10 rounded-2xl glass-button flex items-center justify-center text-slate-600 hover:text-indigo-600 focus:outline-none" aria-label="접근성 및 환경 설정 열기">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </header>
+
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">점자 마스터 허브</h1>
+      <p class="text-xs sm:text-sm text-slate-600 mt-1">학습 환경을 설정하고 원하는 점자 프로그램을 선택하세요.</p>
+    </div>
+
+    <!-- 공통 환경 설정 패널 -->
+    <div class="bg-white/60 p-4 rounded-2xl flex flex-col gap-3 text-left border border-white">
+      <!-- 학습 언어 -->
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">학습 언어</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" class="opt-btn active-opt btn-scalable py-2 px-3 rounded-xl border text-sm font-bold transition-all bg-emerald-500 text-white border-emerald-600 shadow-sm" data-group="lang" data-value="KO">
+            한글 점자
+          </button>
+          <button type="button" class="opt-btn btn-scalable py-2 px-3 rounded-xl border text-sm font-bold transition-all bg-white text-slate-700 border-slate-200 hover:bg-slate-50" data-group="lang" data-value="EN">
+            영어 점자 (UEB)
+          </button>
+        </div>
+      </div>
+
+      <!-- 난이도 레벨 -->
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">난이도 레벨</label>
+        <div class="grid grid-cols-5 gap-1.5">
+          <button type="button" class="opt-btn active-opt py-1.5 rounded-lg border text-xs font-bold transition-all bg-emerald-500 text-white border-emerald-600" data-group="level" data-value="1">1</button>
+          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="2">2</button>
+          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="3">3</button>
+          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="4">4</button>
+          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="5">5</button>
+        </div>
+      </div>
+
+      <!-- 2. 공통 환경 설정 패널 내 '입력 모드' 옵션 추가 (언어/난이도 밑) -->
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">조작 / 입력 방식 (빈칸 수사대/빌더즈 연동)</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" class="opt-btn active-opt btn-scalable py-2 px-3 rounded-xl border text-xs font-bold transition-all bg-emerald-500 text-white border-emerald-600" data-group="mode" data-value="KEYBOARD">
+            키보드 (가상 6키)
+          </button>
+          <button type="button" class="opt-btn btn-scalable py-2 px-3 rounded-xl border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="mode" data-value="BLOCK">
+            블록 조립 모드
+          </button>
+        </div>
+      </div>
+    </div>
+
+        <!-- 5종 학습 프로그램 진입 카드 -->
+    <div class="grid grid-cols-2 gap-3 my-1">
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="morpheme.html">
+        <span class="text-2xl group-hover:scale-110 transition-transform">🧩</span>
+        <span class="text-sm font-black text-slate-800">형태소 & 낱말 퀴즈</span>
+        <span class="text-[11px] text-slate-500 text-center">스펠링, 약어, 문장부호 4지선다</span>
+      </button>
+
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="select.html">
+        <span class="text-2xl group-hover:scale-110 transition-transform">🎴</span>
+        <span class="text-sm font-black text-slate-800">점자 카드 셀렉트</span>
+        <span class="text-[11px] text-slate-500 text-center">4지선다형 점형 탐색 및 즉시 판별</span>
+      </button>
+
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-amber-500 text-left group" data-target="triangle.html">
+        <span class="text-2xl group-hover:scale-110 transition-transform">▲</span>
+        <span class="text-sm font-black text-slate-800">점자 트라이앵글</span>
+        <span class="text-[11px] text-slate-500 text-center">3지선다 맥락 판별 & 일자별 통계</span>
+      </button>
+
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-indigo-500 text-left group" data-target="builders.html">
+        <span class="text-2xl group-hover:scale-110 transition-transform">🏗️</span>
+        <span class="text-sm font-black text-slate-800">점자 빌더즈</span>
+        <span class="text-[11px] text-slate-500 text-center">작업대 기반 블록 결합 & 구문 분석</span>
+      </button>
+
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-blue-500 text-left group col-span-2" data-target="blank.html">
+        <span class="text-2xl group-hover:scale-110 transition-transform">🔍</span>
+        <span class="text-sm font-black text-slate-800">빈칸 수사대</span>
+        <span class="text-[11px] text-slate-500 text-center">문장 단서 추적 & 문맥 결합 규칙 진단</span>
+      </button>
+    </div>
+
+    <footer class="text-[11px] text-slate-400 font-medium">
+      GitHub Pages 환경에 최적화되어 서버 없이 모든 학습 데이터와 오디오 피드백이 실행됩니다.
+    </footer>
+  </main>
+
+  <!-- 3. 통합 학습 통계 대시보드 모달 -->
+  <div id="stats-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-2xl w-full shadow-2xl relative z-10 m-4 flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+        <div>
+          <h3 id="stats-modal-title" class="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2">
+            📊 전 프로그램 통합 학습 성취도
+          </h3>
+          <p class="text-xs text-slate-500">모든 게임에서 누적된 판별 결과 및 규정별 성취도 종합 리포트</p>
+        </div>
+        <button id="btn-stats-close" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-full" aria-label="통계 창 닫기">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 py-4 flex flex-col gap-4">
+        <!-- 전체 요약 카드 -->
+        <div class="grid grid-cols-3 gap-2.5 text-center">
+          <div class="bg-white/80 p-3 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-[11px] font-bold text-slate-400">총 학습 횟수</span>
+            <p id="stat-total-sessions" class="text-xl font-black text-slate-800">0회</p>
+          </div>
+          <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 shadow-xs">
+            <span class="text-[11px] font-bold text-emerald-600">평균 정답률</span>
+            <p id="stat-avg-accuracy" class="text-xl font-black text-emerald-700">0%</p>
+          </div>
+          <div class="bg-indigo-50 p-3 rounded-2xl border border-indigo-200 shadow-xs">
+            <span class="text-[11px] font-bold text-indigo-600">최고 연속 콤보</span>
+            <p id="stat-max-combo" class="text-xl font-black text-indigo-700">0</p>
+          </div>
+        </div>
+
+        <!-- 게임별 취약 규정 통합 분석 -->
+        <div class="bg-rose-50/80 p-4 rounded-2xl border border-rose-200">
+          <h4 class="text-xs font-black text-rose-800 uppercase tracking-wider mb-2">통합 취약 규정 Top 5 (오답 누적)</h4>
+          <ul id="integrated-weak-list" class="flex flex-col gap-2">
+            <li class="text-xs text-slate-400 text-center py-2">학습 이력이 없습니다.</li>
+          </ul>
+        </div>
+
+        <!-- 최근 완료된 게임 세션 로그 -->
+        <div class="bg-white/70 p-4 rounded-2xl border border-slate-200">
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">최근 세션 기록</h4>
+            <button id="btn-clear-stats" class="text-[11px] text-rose-500 hover:underline font-bold">기록 초기화</button>
+          </div>
+          <ul id="recent-sessions-list" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+            <li class="text-xs text-slate-400 text-center py-2">진행한 게임이 없습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 설정 및 접근성 모달 -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true">
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl relative z-10 m-4 flex flex-col gap-4">
+      <div class="flex justify-between items-center pb-2.5 border-b border-slate-200">
+        <h3 class="text-lg font-black text-slate-800">환경 및 접근성 설정</h3>
+        <button id="btn-settings-close" class="text-slate-400 hover:text-slate-700 p-1">✕</button>
+      </div>
+
+      <div class="flex flex-col gap-3">
+                <!-- 고대비 테마 -->
+        <div>
+          <span class="text-xs font-bold text-slate-600 block mb-1">고대비 테마 프리셋</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-yellow">옐로우 온 블랙</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-white-black">화이트 온 블랙</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-black-white">블랙 온 화이트</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-amber">앰버 네온</button>
+          </div>
+        </div>
+
+        <!-- 텍스트 크기 -->
+        <div>
+          <span class="text-xs font-bold text-slate-600 block mb-1">텍스트 크기</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="scale-btn py-2 rounded-xl text-xs font-bold border bg-emerald-500 text-white" data-scale="normal">1.0x</button>
+            <button type="button" class="scale-btn py-2 rounded-xl text-xs font-bold border bg-white text-slate-700" data-scale="large">1.25x</button>
+            <button type="button" class="scale-btn py-2 rounded-xl text-xs font-bold border bg-white text-slate-700" data-scale="xlarge">1.5x</button>
+          </div>
+        </div>
+
+        <!-- TTS 및 음향 -->
+        <div class="bg-teal-50/70 p-3 rounded-xl border border-teal-200 flex flex-col gap-2 text-xs">
+          <label class="flex items-center justify-between font-bold text-slate-700">
+            <span>TTS 음성 안내</span>
+            <input type="checkbox" id="chk-tts" class="w-4 h-4 accent-emerald-500" checked>
+          </label>
+          <label class="flex items-center justify-between font-bold text-slate-700">
+            <span>도·레·미 음계 비프음</span>
+            <input type="checkbox" id="chk-pitch" class="w-4 h-4 accent-emerald-500" checked>
+          </label>
+        </div>
+      </div>
+
+      <button id="btn-save-settings" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm mt-1">
+        설정 저장 및 닫기
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript 로직 결합 영역 -->
+  <script type="module">
+        // =========================================================================
+    // 1. 공통 환경 설정 및 LocalStorage 통계 구조 단일화 관리
+    // =========================================================================
+    const globalSettings = {
+      lang: localStorage.getItem('braille_lang') || 'KO',
+      level: parseInt(localStorage.getItem('braille_level') || '1'),
+      mode: localStorage.getItem('braille_input_mode') || 'KEYBOARD',
+      contrastTheme: localStorage.getItem('braille_theme') || 'off',
+      textScale: localStorage.getItem('braille_text_scale') || 'normal',
+      tts: localStorage.getItem('braille_tts') !== 'false',
+      pitch: localStorage.getItem('braille_pitch') !== 'false'
+    };
+
+    function saveSettings() {
+      localStorage.setItem('braille_lang', globalSettings.lang);
+      localStorage.setItem('braille_level', globalSettings.level.toString());
+      localStorage.setItem('braille_input_mode', globalSettings.mode);
+      localStorage.setItem('braille_theme', globalSettings.contrastTheme);
+      localStorage.setItem('braille_text_scale', globalSettings.textScale);
+      localStorage.setItem('braille_tts', globalSettings.tts.toString());
+      localStorage.setItem('braille_pitch', globalSettings.pitch.toString());
+      applyVisualSettings();
+    }
+
+        function normalizeTheme(theme) {
+          if (theme === 'yellow') return 'hc-yellow';
+          if (theme === 'bw') return 'hc-white-black';
+          return theme;
+        }
+
+        function applyVisualSettings() {
+          const b = document.body;
+          b.classList.remove('text-scale-normal', 'text-scale-large', 'text-scale-xlarge');
+
+          const theme = normalizeTheme(globalSettings.contrastTheme);
+          if (theme && theme !== 'off') {
+            document.documentElement.setAttribute('data-theme', theme);
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+
+          b.classList.add(`text-scale-${globalSettings.textScale}`);
+        }
+
+    // 통계 기록 표준 헬퍼 (LocalStorage 단일 데이터 구조 관리)
+    function recordRuleStat(game, rule, isCorrect) {
+      if (!rule || typeof rule !== 'string') return;
+      
+      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
+      if (!ruleStats[rule]) {
+        ruleStats[rule] = { errors: 0, trials: 0, games: {} };
+      }
+      
+      ruleStats[rule].trials = (ruleStats[rule].trials || 0) + 1;
+      if (!isCorrect) {
+        ruleStats[rule].errors = (ruleStats[rule].errors || 0) + 1;
+      }
+      if (game) {
+        if (!ruleStats[rule].games) ruleStats[rule].games = {};
+        ruleStats[rule].games[game] = (ruleStats[rule].games[game] || 0) + (isCorrect ? 0 : 1);
+      }
+
+      localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
+    }
+
+    function addGlobalHistory(entry) {
+      if (!entry || typeof entry !== 'object' || !entry.game) return;
+      const history = JSON.parse(localStorage.getItem('braille_global_history') || '[]');
+      history.unshift({
+        game: String(entry.game),
+        lang: entry.lang || globalSettings.lang,
+        level: Number(entry.level) || globalSettings.level,
+        score: Number(entry.score) || 0,
+        total: Number(entry.total) || 0,
+        date: entry.date || new Date().toISOString()
+      });
+      localStorage.setItem('braille_global_history', JSON.stringify(history.slice(0, 50)));
+    }
+
+    // =========================================================================
+    // 2. 프로그램 간 라우팅 및 파라미터 전달 (하위 게임 요구 규격 준수)
+    // =========================================================================
+    document.querySelectorAll('.nav-card').forEach(card => {
+      card.addEventListener('click', () => {
+        saveSettings();
+        const target = card.dataset.target;
+        
+        // 각 프로그램(triangle, blank, select 등)이 필요로 하는 파라미터 일괄 구성
+        const params = new URLSearchParams({
+          lang: globalSettings.lang,
+          level: globalSettings.level.toString(),
+          mode: globalSettings.mode,          // blank.html에서 필요로 함
+          hub: 'true',                        // triangle.html '← 허브로 복귀' 버튼 활성화에 필수
+          theme: globalSettings.contrastTheme,
+          scale: globalSettings.textScale,
+          tts: globalSettings.tts.toString(),
+          pitch: globalSettings.pitch.toString()
+        });
+
+        window.location.href = `${target}?${params.toString()}`;
+      });
+    });
+
+        // =========================================================================
+    // 3. 프로세스 간 통신 (postMessage / BroadcastChannel 수신 및 통계 기록)
+    // 규격 검증 및 LocalStorage 데이터 구조 단일화 처리
+    // =========================================================================
+    const gameBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('braille_game_bus') : null;
+
+    function handleIncomingStats(data) {
+      if (!data || typeof data !== 'object') return;
+
+      const type = data.type || (data.payload && data.source ? 'BUILDER_BUS' : null);
+
+      // 1. triangle.html 또는 타 게임 세션 완료 이벤트 (GAME_COMPLETE)
+      if (type === 'GAME_COMPLETE') {
+        if (typeof data.score === 'number' && typeof data.total === 'number') {
+          addGlobalHistory({
+            game: data.game || 'triangle',
+            lang: data.lang || globalSettings.lang,
+            level: data.level || globalSettings.level,
+            score: data.score,
+            total: data.total,
+            date: new Date().toISOString()
+          });
+
+          // 세부 문제 결과 항목이 전달되었을 경우 규칙 통계 업데이트
+          if (Array.isArray(data.results)) {
+            data.results.forEach(item => {
+              if (item && item.rule_type) {
+                recordRuleStat(data.game || 'triangle', item.rule_type, !!item.is_correct);
+              }
+            });
+          }
+        }
+      }
+
+      // 2. select.html 또는 문항별 제출 결과 (SUBMIT_RESULT)
+      if (type === 'SUBMIT_RESULT') {
+        const gameName = data.game || 'select';
+        const isCorrect = !!data.isCorrect;
+        
+        let ruleName = null;
+        if (data.quiz) {
+          ruleName = data.quiz.rule_label || data.quiz.rule_type || null;
+        } else if (data.rule_type) {
+          ruleName = data.rule_type;
+        }
+
+        if (ruleName) {
+          recordRuleStat(gameName, ruleName, isCorrect);
+        }
+
+        // 호환성을 위해 구버전 braille_select_stats도 동시 동기화
+        if (!isCorrect && ruleName) {
+          const selectStats = JSON.parse(localStorage.getItem('braille_select_stats') || '{}');
+          selectStats[ruleName] = (selectStats[ruleName] || 0) + 1;
+          localStorage.setItem('braille_select_stats', JSON.stringify(selectStats));
+        }
+      }
+
+      // 3. builders.html 오답 수신 (RECORD_ERROR)
+      if (type === 'RECORD_ERROR' || (data.source === 'braille_builders' && data.type === 'RECORD_ERROR')) {
+        const payload = data.payload || data;
+        const ruleName = payload.rule || '빌더 결합 오류';
+        recordRuleStat('builders', ruleName, false);
+
+        // 호환성을 위해 braille_builder_stats 보존
+        const bStats = JSON.parse(localStorage.getItem('braille_builder_stats') || '{}');
+        bStats[ruleName] = (bStats[ruleName] || 0) + 1;
+        localStorage.setItem('braille_builder_stats', JSON.stringify(bStats));
+      }
+
+      // 4. blank.html 오답/제출 수신 (RECORD_BLANK_RESULT)
+      if (type === 'RECORD_BLANK_RESULT') {
+        const ruleName = data.rule_name || data.rule_type || '구문 결합 규정';
+        recordRuleStat('blank', ruleName, !!data.isCorrect);
+      }
+    }
+
+        window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'NAVIGATE_HUB') {
+        window.location.href = 'front_end.html';
+      }
+      if (e.data && e.data.type === 'CHANGE_SETTINGS' && e.data.settings) {
+        const s = e.data.settings;
+        if (s.theme) globalSettings.contrastTheme = s.theme;
+        if (s.scale) globalSettings.textScale = s.scale;
+        if (typeof s.tts === 'boolean') globalSettings.tts = s.tts;
+        if (typeof s.pitch === 'boolean') globalSettings.pitch = s.pitch;
+        saveSettings();
+      }
+      handleIncomingStats(e.data);
+    });
+    if (gameBus) {
+      gameBus.onmessage = (e) => {
+        if (e.data && e.data.type === 'CHANGE_SETTINGS' && e.data.settings) {
+          const s = e.data.settings;
+          if (s.theme) globalSettings.contrastTheme = s.theme;
+          if (s.scale) globalSettings.textScale = s.scale;
+          if (typeof s.tts === 'boolean') globalSettings.tts = s.tts;
+          if (typeof s.pitch === 'boolean') globalSettings.pitch = s.pitch;
+          saveSettings();
+        }
+        handleIncomingStats(e.data);
+      };
+    }
+
+    // =========================================================================
+    // 4. 통합 통계 대시보드 렌더러 (단일화된 braille_rule_stats 데이터 연동)
+    // =========================================================================
+    function renderIntegratedStats() {
+      const history = JSON.parse(localStorage.getItem('braille_global_history') || '[]');
+      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
+      const selectStats = JSON.parse(localStorage.getItem('braille_select_stats') || '{}');
+      const builderStats = JSON.parse(localStorage.getItem('braille_builder_stats') || '{}');
+
+      // 1) 전체 요약 계산
+      const totalSessions = history.length;
+      let totalScore = 0, totalQuestions = 0;
+      history.forEach(h => {
+        totalScore += (h.score || 0);
+        totalQuestions += (h.total || 0);
+      });
+      const avgAccuracy = totalQuestions > 0 ? Math.round((totalScore / totalQuestions) * 100) : 0;
+
+      const totalSessionsEl = document.getElementById('stat-total-sessions');
+      const avgAccuracyEl = document.getElementById('stat-avg-accuracy');
+      if (totalSessionsEl) totalSessionsEl.textContent = `${totalSessions}회`;
+      if (avgAccuracyEl) avgAccuracyEl.textContent = `${avgAccuracy}%`;
+
+      // 2) 통합 취약 규칙 합산 (단일화 구조 `braille_rule_stats` 우선 반영 및 하위 호환)
+      const combinedWeakness = {};
+
+      // 1차: 신규 단일화 구조 반영
+      Object.entries(ruleStats).forEach(([rule, stat]) => {
+        const errorCount = (stat && typeof stat.errors === 'number') ? stat.errors : 0;
+        if (errorCount > 0) {
+          combinedWeakness[rule] = (combinedWeakness[rule] || 0) + errorCount;
+        }
+      });
+
+      // 2차: 기존 개별 레거시 키 보완
+      Object.entries(selectStats).forEach(([k, v]) => {
+        if (!combinedWeakness[k]) combinedWeakness[k] = v;
+      });
+      Object.entries(builderStats).forEach(([k, v]) => {
+        if (!combinedWeakness[k]) combinedWeakness[k] = (combinedWeakness[k] || 0) + v;
+      });
+
+      const weakListElem = document.getElementById('integrated-weak-list');
+      const sortedWeakness = Object.entries(combinedWeakness).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+      if (weakListElem) {
+        if (sortedWeakness.length === 0) {
+          weakListElem.innerHTML = '<li class="text-xs text-slate-400 text-center py-2">감지된 오답 취약 규칙이 없습니다.</li>';
+        } else {
+          weakListElem.innerHTML = sortedWeakness.map(([rule, count]) => `
+            <li class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-rose-100 text-xs">
+              <span class="font-bold text-slate-700">${rule}</span>
+              <span class="font-black text-rose-600 font-mono">${count}회 오류</span>
+            </li>
+          `).join('');
+        }
+      }
+
+      // 3) 최근 세션 로그 표시
+      const recentListElem = document.getElementById('recent-sessions-list');
+      if (recentListElem) {
+        if (history.length === 0) {
+          recentListElem.innerHTML = '<li class="text-xs text-slate-400 text-center py-2">완료된 세션이 없습니다.</li>';
+        } else {
+          recentListElem.innerHTML = history.slice(0, 10).map(h => {
+            const timeStr = h.date ? new Date(h.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            return `
+              <li class="flex justify-between items-center p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-slate-800 uppercase">[${h.game}]</span>
+                  <span class="text-slate-500">${h.lang} · Lv.${h.level}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="font-black text-emerald-600">${h.score} / ${h.total}</span>
+                  <span class="text-[10px] text-slate-400 font-mono">${timeStr}</span>
+                </div>
+              </li>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    // =========================================================================
+    // 5. 이벤트 바인딩 및 초기화
+    // =========================================================================
+    const statsModal = document.getElementById('stats-modal');
+    const settingsModal = document.getElementById('settings-modal');
+
+    const openStatsBtn = document.getElementById('btn-open-stats');
+    if (openStatsBtn) {
+      openStatsBtn.addEventListener('click', () => {
+        renderIntegratedStats();
+        statsModal.classList.remove('hidden');
+      });
+    }
+
+    const closeStatsBtn = document.getElementById('btn-stats-close');
+    if (closeStatsBtn) {
+      closeStatsBtn.addEventListener('click', () => {
+        statsModal.classList.add('hidden');
+      });
+    }
+
+    const clearStatsBtn = document.getElementById('btn-clear-stats');
+    if (clearStatsBtn) {
+      clearStatsBtn.addEventListener('click', () => {
+        if (confirm("모든 학습 이력 및 취약점 통계를 초기화하시겠습니까?")) {
+          localStorage.removeItem('braille_global_history');
+          localStorage.removeItem('braille_select_stats');
+          localStorage.removeItem('braille_builder_stats');
+          renderIntegratedStats();
+        }
+      });
+    }
+
+    // 모달 바깥 영역 클릭 시 닫기
+    window.addEventListener('click', (e) => {
+      if (e.target === settingsModal) settingsModal.classList.add('hidden');
+      if (e.target === statsModal) statsModal.classList.add('hidden');
+    });
+
+    // 언어 / 난이도 / 입력 방식(mode) 버튼 핸들러
+    document.querySelectorAll('.opt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        const val = btn.dataset.value;
+
+        document.querySelectorAll(`.opt-btn[data-group="${group}"]`).forEach(b => {
+          b.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
+          b.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        });
+        btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
+        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+
+        if (group === 'lang') globalSettings.lang = val;
+        if (group === 'level') globalSettings.level = parseInt(val);
+        if (group === 'mode') globalSettings.mode = val;
+        saveSettings();
+      });
+    });
+
+    // 설정 모달 열기/닫기
+    document.getElementById('btn-quick-settings').addEventListener('click', () => settingsModal.classList.remove('hidden'));
+    document.getElementById('btn-settings-close').addEventListener('click', () => settingsModal.classList.add('hidden'));
+    document.getElementById('btn-save-settings').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+      saveSettings();
+    });
+
+    // 테마 및 크기 버튼
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+        globalSettings.contrastTheme = (globalSettings.contrastTheme === theme) ? 'off' : theme;
+        applyVisualSettings();
+      });
+    });
+
+    document.querySelectorAll('.scale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        globalSettings.textScale = btn.dataset.scale;
+        document.querySelectorAll('.scale-btn').forEach(b => {
+          b.classList.remove('bg-emerald-500', 'text-white');
+          b.classList.add('bg-white', 'text-slate-700');
+        });
+        btn.classList.add('bg-emerald-500', 'text-white');
+        btn.classList.remove('bg-white', 'text-slate-700');
+        applyVisualSettings();
+      });
+    });
+
+    // 사운드 토글
+    document.getElementById('chk-tts').addEventListener('change', (e) => globalSettings.tts = e.target.checked);
+    document.getElementById('chk-pitch').addEventListener('change', (e) => globalSettings.pitch = e.target.checked);
+
+    // 페이지 진입 초기화
+    document.addEventListener('DOMContentLoaded', () => {
+      applyVisualSettings();
+
+      // 기존 저장된 활성 버튼 상태 동기화
+      const activeSelectors = [
+        `.opt-btn[data-group="lang"][data-value="${globalSettings.lang}"]`,
+        `.opt-btn[data-group="level"][data-value="${globalSettings.level}"]`,
+        `.opt-btn[data-group="mode"][data-value="${globalSettings.mode}"]`
+      ];
+      activeSelectors.forEach(sel => {
+        const btn = document.querySelector(sel);
+        if (btn) btn.click();
+      });
+    });
+  </script>
+</body>
+</html>

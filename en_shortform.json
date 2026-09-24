@@ -1,0 +1,244 @@
+{
+  "shortform_standalone_only": {
+    "category": "shortform_standalone_only",
+    "description": "단독 단어로만 사용 가능하며, 복수형(-s)이나 합성어 접두/접미사로 결합할 수 없는 약어",
+    "rule": {
+      "position": "standalone",
+      "allowPunctuation": true,
+      "allowApostropheS": true,
+      "allowPluralS": false,
+      "allowPrefix": false,
+      "allowSuffix": false,
+      "allowCompound": false,
+      "priority": 10
+    },
+    "items": {
+      "ab": { "word": "about", "dots": [[1], [1, 2]], "unicode": "⠁⠃" },
+      "abv": { "word": "above", "dots": [[1], [1, 2], [1, 2, 3, 6]], "unicode": "⠁⠃⠧" },
+      "ac": { "word": "according", "dots": [[1], [1, 4]], "unicode": "⠁⠉" },
+      "acr": { "word": "across", "dots": [[1], [1, 4], [1, 2, 3, 5]], "unicode": "⠁⠉⠗" },
+      "af": { "word": "after", "dots": [[1], [1, 2, 4]], "unicode": "⠁⠋" },
+      "afn": { "word": "afternoon", "dots": [[1], [1, 2, 4], [1, 3, 4, 5]], "unicode": "⠁⠋⠝" },
+      "afw": { "word": "afterward", "dots": [[1], [1, 2, 4], [2, 4, 5, 6]], "unicode": "⠁⠋⠺" },
+      "ag": { "word": "again", "dots": [[1], [1, 2, 4, 5]], "unicode": "⠁⠛" },
+      "agst": { "word": "against", "dots": [[1], [1, 2, 4, 5], [3, 4]], "unicode": "⠁⠛⠌" },
+      "alm": { "word": "almost", "dots": [[1], [1, 2, 3], [1, 3, 4]], "unicode": "⠁⠇⠍" },
+      "alr": { "word": "already", "dots": [[1], [1, 2, 3], [1, 2, 3, 5]], "unicode": "⠁⠇⠗" },
+      "al": { "word": "also", "dots": [[1], [1, 2, 3]], "unicode": "⠁⠇" },
+      "alth": { "word": "although", "dots": [[1], [1, 2, 3], [1, 4, 5, 6]], "unicode": "⠁⠇⠹" },
+      "alt": { "word": "altogether", "dots": [[1], [1, 2, 3], [2, 3, 4, 5]], "unicode": "⠁⠇⠞" },
+      "alw": { "word": "always", "dots": [[1], [1, 2, 3], [2, 4, 5, 6]], "unicode": "⠁⠇⠺" },
+      "bec": { "word": "because", "dots": [[2, 3], [1, 4]], "unicode": "⠆⠉" },
+      "bef": { "word": "before", "dots": [[2, 3], [1, 2, 4]], "unicode": "⠆⠋" },
+      "beh": { "word": "behind", "dots": [[2, 3], [1, 2, 5]], "unicode": "⠆⠓" },
+      "bel": { "word": "below", "dots": [[2, 3], [1, 2, 3]], "unicode": "⠆⠇" },
+      "ben": { "word": "beneath", "dots": [[2, 3], [1, 3, 4, 5]], "unicode": "⠆⠝" },
+      "bes": { "word": "beside", "dots": [[2, 3], [2, 3, 4]], "unicode": "⠆⠎" },
+      "bet": { "word": "between", "dots": [[2, 3], [2, 3, 4, 5]], "unicode": "⠆⠞" },
+      "bey": { "word": "beyond", "dots": [[2, 3], [1, 3, 4, 5, 6]], "unicode": "⠆⠽" },
+      "ei": { "word": "either", "dots": [[1, 5], [2, 4]], "unicode": "⠑⠊" },
+      "fst": { "word": "first", "dots": [[1, 2, 4], [3, 4]], "unicode": "⠋⠌" },
+      "herf": { "word": "herself", "dots": [[1, 2, 5], [1, 2, 4, 5, 6], [1, 2, 4]], "unicode": "⠓⠻⠋" },
+      "hm": { "word": "him", "dots": [[1, 2, 5], [1, 3, 4]], "unicode": "⠓⠍" },
+      "hmf": { "word": "himself", "dots": [[1, 2, 5], [1, 3, 4], [1, 2, 4]], "unicode": "⠓⠍⠋" },
+      "imm": { "word": "immediate", "dots": [[2, 4], [1, 3, 4], [1, 3, 4]], "unicode": "⠊⠍⠍" },
+      "xs": { "word": "its", "dots": [[1, 3, 4, 6], [2, 3, 4]], "unicode": "⠭⠎" },
+      "xf": { "word": "itself", "dots": [[1, 3, 4, 6], [1, 2, 4]], "unicode": "⠭⠋" },
+      "mch": { "word": "much", "dots": [[1, 3, 4], [1, 6]], "unicode": "⠍⠡" },
+      "mst": { "word": "must", "dots": [[1, 3, 4], [3, 4]], "unicode": "⠍⠌" },
+      "myf": { "word": "myself", "dots": [[1, 3, 4], [1, 3, 4, 5, 6], [1, 2, 4]], "unicode": "⠍⠽⠋" },
+      "nec": { "word": "necessary", "dots": [[1, 3, 4, 5], [1, 5], [1, 4]], "unicode": "⠝⠑⠉" },
+      "nei": { "word": "neither", "dots": [[1, 3, 4, 5], [1, 5], [2, 4]], "unicode": "⠝⠑⠊" },
+      "o'c": { "word": "o'clock", "dots": [[1, 3, 5], [3], [1, 4]], "unicode": "⠕⠄⠉" },
+      "onef": {
+        "word": "oneself",
+        "dots": [[1, 3, 5], [1, 3, 4, 5], [1, 5], [1, 2, 4]],
+        "unicode": "⠕⠝⠑⠋"
+      },
+      "ourvs": { "word": "ourselves", "dots": [[1, 2, 5, 6], [1, 2, 3, 5], [1, 2, 3, 6], [2, 3, 4]], "unicode": "⠳⠗⠧⠎" },
+      "pd": { "word": "paid", "dots": [[1, 2, 3, 4], [1, 4, 5]], "unicode": "⠏⠙" },
+      "perh": { "word": "perhaps", "dots": [[1, 2, 3, 4], [1, 2, 4, 5, 6], [1, 2, 5]], "unicode": "⠏⠻⠓" },
+      "sd": { "word": "said", "dots": [[2, 3, 4], [1, 4, 5]], "unicode": "⠎⠙" },
+      "shd": { "word": "should", "dots": [[1, 4, 6], [1, 4, 5]], "unicode": "⠩⠙" },
+      "sch": { "word": "such", "dots": [[2, 3, 4], [1, 6]], "unicode": "⠎⠡" },
+      "themvs": { "word": "themselves", "dots": [[2, 3, 4, 6], [1, 3, 4], [1, 2, 3, 6], [2, 3, 4]], "unicode": "⠮⠍⠧⠎" },
+      "thyf": { "word": "thyself", "dots": [[1, 4, 5, 6], [1, 3, 4, 5, 6], [1, 2, 4]], "unicode": "⠹⠽⠋" },
+      "td": { "word": "today", "dots": [[2, 3, 4, 5], [1, 4, 5]], "unicode": "⠞⠙" },
+      "tgr": { "word": "together", "dots": [[2, 3, 4, 5], [1, 2, 4, 5], [1, 2, 3, 5]], "unicode": "⠞⠛⠗" },
+      "tm": { "word": "tomorrow", "dots": [[2, 3, 4, 5], [1, 3, 4]], "unicode": "⠞⠍" },
+      "tn": { "word": "tonight", "dots": [[2, 3, 4, 5], [1, 3, 4, 5]], "unicode": "⠞⠝" },
+      "wd": { "word": "would", "dots": [[2, 4, 5, 6], [1, 4, 5]], "unicode": "⠺⠙" },
+      "yr": { "word": "your", "dots": [[1, 3, 4, 5, 6], [1, 2, 3, 5]], "unicode": "⠽⠗" },
+      "yrf": { "word": "yourself", "dots": [[1, 3, 4, 5, 6], [1, 2, 3, 5], [1, 2, 4]], "unicode": "⠽⠗⠋" },
+      "yrvs": { "word": "yourselves", "dots": [[1, 3, 4, 5, 6], [1, 2, 3, 5], [1, 2, 3, 6], [2, 3, 4]], "unicode": "⠽⠗⠧⠎" }
+    }
+  },
+
+  "shortform_inflected": {
+    "category": "shortform_inflected",
+    "description": "단독 단어 외에도 복수형(-s)이나 굴절 어미 결합이 허용되는 약어",
+    "rule": {
+      "position": "standalone_or_inflected",
+      "allowPunctuation": true,
+      "allowApostropheS": true,
+      "allowPluralS": true,
+      "allowPrefix": false,
+      "allowSuffix": true,
+      "allowedSuffixes": ["s", "'s", "ed", "ing", "ly", "er", "est", "ness"],
+      "allowCompound": false,
+      "priority": 20
+    },
+    "items": {
+      "chn": {
+        "word": "children",
+        "dots": [[1, 6], [1, 3, 4, 5]],
+        "unicode": "⠡⠝",
+        "allowedSuffixes": ["'s"]
+      },
+      "cd": {
+        "word": "could",
+        "dots": [[1, 4], [1, 4, 5]],
+        "unicode": "⠉⠙",
+        "allowedSuffixes": ["'s"]
+      },
+      "fr": {
+        "word": "friend",
+        "dots": [[1, 2, 4], [1, 2, 3, 5]],
+        "unicode": "⠋⠗",
+        "allowedSuffixes": ["s", "'s", "ly"]
+      },
+      "gd": {
+        "word": "good",
+        "dots": [[1, 2, 4, 5], [1, 4, 5]],
+        "unicode": "⠛⠙",
+        "allowedSuffixes": ["s", "'s", "ness"]
+      },
+      "grt": {
+        "word": "great",
+        "dots": [[1, 2, 4, 5], [1, 2, 3, 5], [2, 3, 4, 5]],
+        "unicode": "⠛⠗⠞",
+        "allowedSuffixes": ["s", "'s", "er", "est", "ly", "ness"]
+      },
+      "lr": {
+        "word": "letter",
+        "dots": [[1, 2, 3], [1, 2, 3, 5]],
+        "unicode": "⠇⠗",
+        "allowedSuffixes": ["s", "'s"]
+      },
+      "ll": {
+        "word": "little",
+        "dots": [[1, 2, 3], [1, 2, 3]],
+        "unicode": "⠇⠇",
+        "allowedSuffixes": ["'s", "ness"]
+      }
+    }
+  },
+
+  "shortform_compound_allowed": {
+    "category": "shortform_compound_allowed",
+    "description": "UEB 규정상 합성어(Compound word)나 특정 어근의 일부(Part-word)로 확장이 허용되는 약어",
+    "rule": {
+      "position": "anywhere_valid",
+      "allowPunctuation": true,
+      "allowApostropheS": true,
+      "allowPluralS": true,
+      "allowPrefix": true,
+      "allowSuffix": true,
+      "allowedSuffixes": ["s", "'s", "d", "ed", "ing", "ly", "er", "est", "ness"],
+      "allowCompound": true,
+      "priority": 30
+    },
+    "items": {
+      "bl": {
+        "word": "blind",
+        "dots": [[1, 2], [1, 2, 3]],
+        "unicode": "⠃⠇",
+        "allowedSuffixes": ["s", "'s", "ed", "ing", "er", "est", "ly", "ness"]
+      },
+      "brl": {
+        "word": "braille",
+        "dots": [[1, 2], [1, 2, 3, 5], [1, 2, 3]],
+        "unicode": "⠃⠗⠇",
+        "allowedSuffixes": ["s", "'s", "d", "ing"]
+      },
+      "conc": {
+        "word": "conceive",
+        "dots": [[1, 4], [1, 3, 5], [1, 3, 4, 5], [1, 4]],
+        "unicode": "⠉⠕⠝⠉",
+        "allowedSuffixes": ["d", "s", "'s"]
+      },
+      "concg": {
+        "word": "conceiving",
+        "dots": [[1, 4], [1, 3, 5], [1, 3, 4, 5], [1, 4], [1, 2, 4, 5]],
+        "unicode": "⠉⠕⠝⠉⠛",
+        "allowedSuffixes": []
+      },
+      "dcv": {
+        "word": "deceive",
+        "dots": [[1, 4, 5], [1, 4], [1, 2, 3, 6]],
+        "unicode": "⠙⠉⠧",
+        "allowedSuffixes": ["d", "s", "'s"]
+      },
+      "dcvg": {
+        "word": "deceiving",
+        "dots": [[1, 4, 5], [1, 4], [1, 2, 3, 6], [1, 2, 4, 5]],
+        "unicode": "⠙⠉⠧⠛",
+        "allowedSuffixes": []
+      },
+      "dcl": {
+        "word": "declare",
+        "dots": [[1, 4, 5], [1, 4], [1, 2, 3]],
+        "unicode": "⠙⠉⠇",
+        "allowedSuffixes": ["d", "s", "'s"]
+      },
+      "dclg": {
+        "word": "declaring",
+        "dots": [[1, 4, 5], [1, 4], [1, 2, 3], [1, 2, 4, 5]],
+        "unicode": "⠙⠉⠇⠛",
+        "allowedSuffixes": []
+      },
+      "percv": {
+        "word": "perceive",
+        "dots": [[1, 2, 3, 4], [1, 2, 4, 5, 6], [1, 4], [1, 2, 3, 6]],
+        "unicode": "⠏⠻⠉⠧",
+        "allowedSuffixes": ["d", "s", "'s"]
+      },
+      "percvg": {
+        "word": "perceiving",
+        "dots": [[1, 2, 3, 4], [1, 2, 4, 5, 6], [1, 4], [1, 2, 3, 6], [1, 2, 4, 5]],
+        "unicode": "⠏⠻⠉⠧⠛",
+        "allowedSuffixes": []
+      },
+      "qk": {
+        "word": "quick",
+        "dots": [[1, 2, 3, 4, 5], [1, 3]],
+        "unicode": "⠟⠅",
+        "allowedSuffixes": ["er", "est", "ly", "ness"]
+      },
+      "rcv": {
+        "word": "receive",
+        "dots": [[1, 2, 3, 5], [1, 4], [1, 2, 3, 6]],
+        "unicode": "⠗⠉⠧",
+        "allowedSuffixes": ["d", "s", "'s"]
+      },
+      "rcvg": {
+        "word": "receiving",
+        "dots": [[1, 2, 3, 5], [1, 4], [1, 2, 3, 6], [1, 2, 4, 5]],
+        "unicode": "⠗⠉⠧⠛",
+        "allowedSuffixes": []
+      },
+      "rjc": {
+        "word": "rejoice",
+        "dots": [[1, 2, 3, 5], [2, 4, 5], [1, 4]],
+        "unicode": "⠗⠚⠉",
+        "allowedSuffixes": ["d", "s", "'s"]
+      },
+      "rjcg": {
+        "word": "rejoicing",
+        "dots": [[1, 2, 3, 5], [2, 4, 5], [1, 4], [1, 2, 4, 5]],
+        "unicode": "⠗⠚⠉⠛",
+        "allowedSuffixes": []
+      }
+    }
+  }
+}

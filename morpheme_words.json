@@ -1,0 +1,186 @@
+{
+  "KO": [
+    {
+      "id": "morpheme_ko_01",
+      "level": 1,
+      "category": "기초 약자",
+      "type_label": "기초 음절 약자",
+      "target_text": "나",
+      "target_braille": "⠉",
+      "distractors_braille": ["⠁", "⠃", "⠙"],
+      "hint": "초성 ㄴ과 모음 ㅏ가 결합한 기초 약자 '나'입니다."
+    },
+    {
+      "id": "morpheme_ko_02",
+      "level": 1,
+      "category": "기초 약자",
+      "type_label": "기초 음절 약자",
+      "target_text": "가",
+      "target_braille": "⠫",
+      "distractors_braille": ["⠉", "⠞", "⠚"],
+      "hint": "초성 ㄱ과 모음 ㅏ가 결합한 기초 약자 '가'입니다."
+    },
+    {
+      "id": "morpheme_ko_03",
+      "level": 1,
+      "category": "단어 약어",
+      "type_label": "접속어 약어",
+      "target_text": "그리고",
+      "target_braille": "⠁⠥",
+      "distractors_braille": ["⠁⠕", "⠁⠢", "⠉⠥"],
+      "hint": "접속어 '그리고'의 단독 약어점자(ㄱ + ㅜ)입니다."
+    },
+    {
+      "id": "morpheme_ko_04",
+      "level": 2,
+      "category": "단어 약어",
+      "type_label": "어휘 약자 결합",
+      "target_text": "사람",
+      "target_braille": "⠇⠐⠢",
+      "distractors_braille": ["⠈⠣⠐⠢", "⠇⠐⠣", "⠈⠣⠐⠣"],
+      "hint": "약자 '사'(⠇)와 '람'(⠐⠢)이 결합한 단어입니다."
+    },
+    {
+      "id": "morpheme_ko_05",
+      "level": 2,
+      "category": "단어 약어",
+      "type_label": "접속어 약어",
+      "target_text": "하지만",
+      "target_braille": "⠚⠍",
+      "distractors_braille": ["⠚⠢", "⠉⠍", "⠚⠣"],
+      "hint": "접속어 '하지만'의 단독 약어점자(ㅎ + ㅁ)입니다."
+    },
+    {
+      "id": "morpheme_ko_06",
+      "level": 2,
+      "category": "문장 부호",
+      "type_label": "문장 부호",
+      "target_text": "물음표 (?)",
+      "target_braille": "⠦",
+      "distractors_braille": ["⠒", "⠔", "⠤"],
+      "hint": "문장의 끝에 궁금함을 나타내는 물음표(?) 점자입니다."
+    },
+    {
+      "id": "morpheme_ko_07",
+      "level": 3,
+      "category": "문장 부호",
+      "type_label": "문장 부호",
+      "target_text": "느낌표 (!)",
+      "target_braille": "⠔",
+      "distractors_braille": ["⠦", "⠒", "⠤"],
+      "hint": "감탄이나 강한 주장을 나타내는 느낌표(!) 점자입니다."
+    },
+    {
+      "id": "morpheme_ko_08",
+      "level": 3,
+      "category": "수표 및 숫자",
+      "type_label": "숫자 표기",
+      "target_text": "숫자 123",
+      "target_braille": "⠼⠁⠃⠉",
+      "distractors_braille": ["⠼⠁⠃⠙", "⠁⠃⠉", "⠼⠃⠉⠙"],
+      "hint": "수표(⠼) 뒤에 숫자 1(a), 2(b), 3(c)의 점형을 순서대로 연결합니다."
+    },
+    {
+      "id": "morpheme_ko_09",
+      "level": 3,
+      "category": "생활 낱말",
+      "type_label": "어휘 약자 결합",
+      "target_text": "하늘",
+      "target_braille": "⠚⠉⠮",
+      "distractors_braille": ["⠚⠉⠕", "⠚⠁⠉⠮", "⠚⠉⠢"],
+      "hint": "'하'(⠚)와 '늘'(ㄴ + '을' 약자 ⠮)이 결합한 단어입니다."
+    },
+    {
+      "id": "morpheme_ko_10",
+      "level": 4,
+      "category": "생활 낱말",
+      "type_label": "복합 약자 어휘",
+      "target_text": "선생님",
+      "target_braille": "⠠⠾⠠⠗⠶⠉⠕⠢",
+      "distractors_braille": ["⠠⠾⠠⠗⠉⠕⠢", "⠠⠾⠠⠗⠶⠉⠕", "⠠⠾⠉⠕⠢"],
+      "hint": "'선', '생', '님' 각각의 약자와 받침이 결합한 존칭 어휘입니다."
+    },
+    {
+      "id": "morpheme_ko_11",
+      "level": 4,
+      "category": "문장 부호",
+      "type_label": "문장 부호",
+      "target_text": "마침표 (.)",
+      "target_braille": "⠒",
+      "distractors_braille": ["⠦", "⠔", "⠤"],
+      "hint": "문장을 마칠 때 사용하는 마침표(.) 점자입니다."
+    },
+    {
+      "id": "morpheme_ko_12",
+      "level": 5,
+      "category": "수표 및 숫자",
+      "type_label": "숫자 뒤 낱말 연접",
+      "target_text": "4사분기",
+      "target_braille": "⠼⠙⠈⠣⠃⠍⠁⠅⠕",
+      "distractors_braille": ["⠼⠙⠇⠃⠍⠁⠅⠕", "⠼⠙⠈⠣⠃⠍⠁", "⠼⠙⠇⠃⠍⠁"],
+      "hint": "숫자 4 직후의 '사'는 수표 충돌 방지를 위해 풀어쓴 '사'(⠈⠣)로 표기합니다."
+    }
+  ],
+  "EN": [
+    {
+      "id": "morpheme_en_01",
+      "level": 1,
+      "category": "Single Letter Wordsign",
+      "type_label": "UEB Word Sign",
+      "target_text": "can",
+      "target_braille": "⠉",
+      "distractors_braille": ["⠃", "⠙", "⠑"],
+      "hint": "Single letter wordsign for letter 'c' is 'can'."
+    },
+    {
+      "id": "morpheme_en_02",
+      "level": 1,
+      "category": "Single Letter Wordsign",
+      "type_label": "UEB Word Sign",
+      "target_text": "people",
+      "target_braille": "⠏",
+      "distractors_braille": ["⠕", "⠟", "⠗"],
+      "hint": "Single letter wordsign for letter 'p' is 'people'."
+    },
+    {
+      "id": "morpheme_en_03",
+      "level": 2,
+      "category": "Shortform",
+      "type_label": "UEB Shortform",
+      "target_text": "friend",
+      "target_braille": "⠋⠗",
+      "distractors_braille": ["⠋⠗⠊⠑⠝⠙", "⠋⠝", "⠋⠙"],
+      "hint": "UEB shortform for 'friend' is 'fr'."
+    },
+    {
+      "id": "morpheme_en_04",
+      "level": 2,
+      "category": "Shortform",
+      "type_label": "UEB Shortform",
+      "target_text": "together",
+      "target_braille": "⠞⠛⠗",
+      "distractors_braille": ["⠞⠛", "⠞⠗", "⠞⠛⠗⠎"],
+      "hint": "UEB shortform for 'together' is 'tgr'."
+    },
+    {
+      "id": "morpheme_en_05",
+      "level": 3,
+      "category": "Numbers",
+      "type_label": "UEB Numeric",
+      "target_text": "45",
+      "target_braille": "⠼⠙⠑",
+      "distractors_braille": ["⠼⠙⠙", "⠙⠑", "⠼⠉⠑"],
+      "hint": "Numeric indicator followed by 'd' (4) and 'e' (5)."
+    },
+    {
+      "id": "morpheme_en_06",
+      "level": 4,
+      "category": "Punctuation",
+      "type_label": "UEB Punctuation",
+      "target_text": "Question Mark (?)",
+      "target_braille": "⠦",
+      "distractors_braille": ["⠔", "⠒", "⠤"],
+      "hint": "UEB symbol for Question Mark."
+    }
+  ]
+}
