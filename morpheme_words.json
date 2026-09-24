@@ -36,19 +36,9 @@
       "category": "단어 약어",
       "type_label": "어휘 약자 결합",
       "target_text": "사람",
-      "target_braille": "⠇⠐⠢",
-      "distractors_braille": ["⠈⠣⠐⠢", "⠇⠐⠣", "⠈⠣⠐⠣"],
-      "hint": "약자 '사'(⠇)와 '람'(⠐⠢)이 결합한 단어입니다."
-    },
-    {
-      "id": "morpheme_ko_05",
-      "level": 2,
-      "category": "단어 약어",
-      "type_label": "접속어 약어",
-      "target_text": "하지만",
-      "target_braille": "⠚⠍",
-      "distractors_braille": ["⠚⠢", "⠉⠍", "⠚⠣"],
-      "hint": "접속어 '하지만'의 단독 약어점자(ㅎ + ㅁ)입니다."
+      "target_braille": "⠇⠐⠣⠢",
+      "distractors_braille": ["⠇⠐⠢", "⠠⠣⠐⠣⠢", "⠇⠐⠣"],
+      "hint": "약자 '사'(⠇)와 '람'(ㄹ ⠐ + ㅏ ⠣ + 받침 ㅁ ⠢)이 결합한 단어입니다."
     },
     {
       "id": "morpheme_ko_06",
@@ -66,7 +56,7 @@
       "category": "문장 부호",
       "type_label": "문장 부호",
       "target_text": "느낌표 (!)",
-      "target_braille": "⠔",
+      "target_braille": "⠖",
       "distractors_braille": ["⠦", "⠒", "⠤"],
       "hint": "감탄이나 강한 주장을 나타내는 느낌표(!) 점자입니다."
     },
@@ -106,8 +96,8 @@
       "category": "문장 부호",
       "type_label": "문장 부호",
       "target_text": "마침표 (.)",
-      "target_braille": "⠒",
-      "distractors_braille": ["⠦", "⠔", "⠤"],
+      "target_braille": "⠲",
+      "distractors_braille": ["⠦", "⠖", "⠤"],
       "hint": "문장을 마칠 때 사용하는 마침표(.) 점자입니다."
     },
     {
@@ -116,9 +106,9 @@
       "category": "수표 및 숫자",
       "type_label": "숫자 뒤 낱말 연접",
       "target_text": "4사분기",
-      "target_braille": "⠼⠙⠈⠣⠃⠍⠁⠅⠕",
-      "distractors_braille": ["⠼⠙⠇⠃⠍⠁⠅⠕", "⠼⠙⠈⠣⠃⠍⠁", "⠼⠙⠇⠃⠍⠁"],
-      "hint": "숫자 4 직후의 '사'는 수표 충돌 방지를 위해 풀어쓴 '사'(⠈⠣)로 표기합니다."
+      "target_braille": "⠼⠙⠠⠣⠘⠍⠒⠈⠕",
+      "distractors_braille": ["⠼⠙⠇⠘⠍⠒⠈⠕", "⠼⠙⠠⠣⠘⠍", "⠼⠙⠇⠘⠍"],
+      "hint": "숫자 4 직후의 '사'는 수표 충돌 방지를 위해 풀어쓴 '사'(⠠⠣)로 표기합니다."
     }
   ],
   "EN": [

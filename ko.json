@@ -33,7 +33,7 @@
       "다": { "syllable": "다", "dots": [[2, 4]], "unicode": "⠊", "type": "ga_series" },
       "마": { "syllable": "마", "dots": [[1, 5]], "unicode": "⠑", "type": "ga_series" },
       "바": { "syllable": "바", "dots": [[4, 5]], "unicode": "⠘", "type": "ga_series" },
-      "사": { "syllable": "사", "dots": [[1, 2, 3]], "unicode": "⠇", "type": "ga_series", "expanded_unicode": "⠈⠣", "expanded_dots": [[4], [1, 2, 6]], "exception_rules": { "vowel_connection": "제18항 제1호: '사' 뒤에 바로 모음이 이어지는 경우 풀어 적음 (예: 사이 -> ⠈⠣⠊)", "after_number": "제18항 제2호: 숫자 뒤에 '사'가 올 경우 풀어 적음 (예: 4사분기 -> ⠼⠙⠈⠣...)" } },
+      "사": { "syllable": "사", "dots": [[1, 2, 3]], "unicode": "⠇", "type": "ga_series", "expanded_unicode": "⠠⠣", "expanded_dots": [[6], [1, 2, 6]], "exception_rules": { "vowel_connection": "제18항 제1호: '사' 뒤에 바로 모음이 이어지는 경우 풀어 적음 (예: 사이 -> ⠠⠣⠕)", "after_number": "제18항 제2호: 숫자 뒤에 '사'가 올 경우 풀어 적음 (예: 4사분기 -> ⠼⠙⠠⠣...)" } },
       "자": { "syllable": "자", "dots": [[4, 6]], "unicode": "⠨", "type": "ga_series" },
       "카": { "syllable": "카", "dots": [[1, 2, 4]], "unicode": "⠋", "type": "ga_series" },
       "타": { "syllable": "타", "dots": [[1, 2, 5]], "unicode": "⠓", "type": "ga_series" },

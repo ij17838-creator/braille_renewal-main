@@ -42,11 +42,11 @@
       "category": "체언 형태소",
       "rule_type": "음절 약어 결합",
       "target_text": "사람",
-      "target_morphemes": "사(약자) + 람(음절)",
-      "target_braille": "⠇⠐⠢",
-      "distractors_braille": ["⠈⠣⠐⠢", "⠇⠐⠣", "⠈⠣⠐⠣"],
-      "hint": "약자 '사'(⠇)와 '람'(⠐⠢)이 결합한 단어입니다.",
-      "explanation": "약자 '사'(⠇)에 음절 '람'이 결합된 명사 단어입니다."
+      "target_morphemes": "사(약자) + ㄹ + ㅏ + ㅁ",
+      "target_braille": "⠇⠐⠣⠢",
+      "distractors_braille": ["⠇⠐⠢", "⠠⠣⠐⠣⠢", "⠇⠐⠣"],
+      "hint": "약자 '사'(⠇) 뒤에 '람'은 ㄹ(⠐), ㅏ(⠣), 받침 ㅁ(⠢)로 적습니다.",
+      "explanation": "약자 '사'(⠇)와 풀어 적은 '람'(⠐⠣⠢)이 결합한 명사입니다."
     },
     {
       "id": "morpheme_ko_05",
@@ -103,10 +103,10 @@
       "rule_type": "문장 부호",
       "target_text": "느낌표 (!)",
       "target_morphemes": "문장부호",
-      "target_braille": "⠔",
+      "target_braille": "⠖",
       "distractors_braille": ["⠦", "⠒", "⠤"],
       "hint": "감탄이나 강조를 나타내는 느낌표(!) 점자입니다.",
-      "explanation": "표준 점자 문장부호 느낌표(⠔)입니다."
+      "explanation": "표준 점자 문장부호 느낌표(⠖)입니다."
     },
     {
       "id": "morpheme_ko_10",
@@ -115,8 +115,8 @@
       "rule_type": "숫자 뒤 풀어쓰기",
       "target_text": "4사분기",
       "target_morphemes": "4(숫자) + 사(형태소) + 분기",
-      "target_braille": "⠼⠙⠈⠣⠃⠍⠁⠅⠕",
-      "distractors_braille": ["⠼⠙⠇⠃⠍⠁⠅⠕", "⠼⠙⠈⠣⠃⠍⠁", "⠼⠙⠇⠃⠍⠁"],
+      "target_braille": "⠼⠙⠠⠣⠘⠍⠒⠈⠕",
+      "distractors_braille": ["⠼⠙⠇⠘⠍⠒⠈⠕", "⠼⠙⠠⠣⠘⠍", "⠼⠙⠇⠘⠍"],
       "hint": "숫자 4 뒤의 '사'는 수표 착오 방지를 위해 풀어 적습니다.",
       "explanation": "숫자 연접 직후 풀어쓰기 규정을 적용한 점역입니다."
     }

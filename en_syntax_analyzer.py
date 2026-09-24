@@ -53,6 +53,19 @@ class BrailleRuleValidator:
                     "rootChar": v.get("rootChar")
                 }
 
+        for item in self.contractions.values():
+            root = item.get("rootChar")
+            if not root:
+                continue
+            root_item = self.contractions.get(root)
+            if root_item is None:
+                raise ValueError(f"rootChar {root!r}가 en_contractions.json에 없습니다.")
+            if root_item["unicode"] not in (item.get("unicode") or ""):
+                raise ValueError(
+                    f"{item['word']}의 점자 {item.get('unicode')!r}에 강세 약어 {root}({root_item['unicode']})가 없습니다."
+                )
+            item["rootEntry"] = root_item
+
     def _load_shortforms(self, sf_path: str):
         """카테고리 규칙 및 항목별 개별 allowedSuffixes 로드"""
         self.shortforms = {}
@@ -67,12 +80,16 @@ class BrailleRuleValidator:
             for k, v in sec.get("items", {}).items():
                 word_key = v.get("word").lower()
                 item_suffixes = v.get("allowedSuffixes", sec_rule.get("allowedSuffixes", []))
-                self.shortforms[word_key] = {
+                entry = {
                     "shortform": k,
                     "rule": sec_rule,
                     "allowedSuffixes": set(item_suffixes),
                     "unicode": v.get("unicode")
                 }
+                root_chars = v.get("rootChars") or []
+                if root_chars:
+                    entry["rootEntries"] = [self.contractions[root] for root in root_chars]
+                self.shortforms[word_key] = entry
 
     def _load_number_rules(self, num_rules: Dict[str, Any]):
         """ueb_number_rules.json의 연결자 및 부호 집합 동적 추출"""

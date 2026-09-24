@@ -1,7 +1,9 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "data_type": "glyph_definitions",
-    "numeric_indicators": {
+  "scope": "shared_ko_en",
+  "description": "한·영 공통 수표, 1급 기호표, 숫자 0–9. 쉼표·하이픈·슬래시 등 언어별 기호는 ko_number_rules.json과 ueb_number_rules.json에 둔다.",
+  "numeric_indicators": {
     "num_prefix": {
       "name": "수표",
       "dots": [[3, 4, 5, 6]],
@@ -26,32 +28,5 @@
     "8": { "dots": [[1, 2, 5]], "unicode": "⠓", "homoglyph_letter": "h" },
     "9": { "dots": [[2, 4]], "unicode": "⠊", "homoglyph_letter": "i" },
     "0": { "dots": [[2, 4, 5]], "unicode": "⠚", "homoglyph_letter": "j" }
-  },
-  "connectors": {
-    "comma": {
-      "name": "자릿수 쉼표",
-      "dots": [[2]],
-      "unicode": "⠂"
-    },
-    "period": {
-      "name": "소수점",
-      "dots": [[2, 5, 6]],
-      "unicode": "⠲"
-    },
-    "hyphen": {
-      "name": "하이픈",
-      "dots": [[3, 6]],
-      "unicode": "⠤"
-    },
-    "fraction_slash": {
-      "name": "단순 분수선",
-      "dots": [[3, 4]],
-      "unicode": "⠌"
-    },
-    "numeric_space": {
-      "name": "숫자 빈칸",
-      "dots": [[5]],
-      "unicode": "⠐"
-    }
   }
 }

@@ -45,8 +45,7 @@ class BrailleRuleValidator:
             .get("trailing_letters", {})
             .get("exempt_units", [])
         )
-        default_units = {"년", "월", "일", "시", "분", "초", "동", "호", "층", "개", "명", "원", "권", "장", "미터", "킬로미터", "센티미터", "밀리미터", "그램", "킬로그램", "리터", "밀리리터"}
-        self.exempt_units = set(raw_units).union(default_units)
+        self.exempt_units = set(raw_units)
         # 긴 단위어를 먼저 매칭할 수 있도록 길이 기준 내림차순 정렬 튜플 구성
         self.exempt_units_sorted = tuple(sorted(self.exempt_units, key=len, reverse=True))
 

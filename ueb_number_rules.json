@@ -62,9 +62,12 @@
           { "name": "single_quote_close", "char": "’", "braille": "⠠⠴" },
           { "name": "double_quote_open", "char": "“", "braille": "⠐⠦" },
           { "name": "double_quote_close", "char": "”", "braille": "⠐⠴" },
-          { "name": "neutral_single_quote", "char": "'", "braille": "⠦ / ⠴" },
-          { "name": "parentheses", "char": "()", "braille": "⠐⠣ / ⠐⠜" },
-          { "name": "brackets", "char": "[]", "braille": "⠨⠣ / ⠨⠜" }
+          { "name": "neutral_single_quote_open", "char": "'", "braille": "⠦" },
+          { "name": "neutral_single_quote_close", "char": "'", "braille": "⠴" },
+          { "name": "parenthesis_open", "char": "(", "braille": "⠐⠣" },
+          { "name": "parenthesis_close", "char": ")", "braille": "⠐⠜" },
+          { "name": "bracket_open", "char": "[", "braille": "⠨⠣" },
+          { "name": "bracket_close", "char": "]", "braille": "⠨⠜" }
         ]
       },
       "hyphen_and_dashes": {

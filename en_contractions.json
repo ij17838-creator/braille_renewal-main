@@ -19,7 +19,29 @@
         "ed": { "word": "ed", "dots": [[1, 2, 4, 6]], "unicode": "⠫" },
         "er": { "word": "er", "dots": [[1, 2, 4, 5, 6]], "unicode": "⠻" },
         "ou": { "word": "ou", "dots": [[1, 2, 5, 6]], "unicode": "⠳" },
-        "ow": { "word": "ow", "dots": [[2, 4, 6]], "unicode": "⠪" }
+        "ow": { "word": "ow", "dots": [[2, 4, 6]], "unicode": "⠪" },
+        "st": { "word": "st", "dots": [[3, 4]], "unicode": "⠌" },
+        "ing": { "word": "ing", "dots": [[3, 4, 6]], "unicode": "⠬" },
+        "ar": { "word": "ar", "dots": [[3, 4, 5]], "unicode": "⠜" }
+      }
+    },
+    {
+      "category": "strong_wordsign_and_groupsign",
+      "type": "strong_wordsign",
+      "priority": 5,
+      "rule": {
+        "canStandAlone": true,
+        "canFollowLetters": true,
+        "canPrecedeLetters": true,
+        "allowPunctuation": true
+      },
+      "description": "단독 단어로도 쓰이고 다른 철자와도 결합하는 강세 약어",
+      "items": {
+        "and": { "word": "and", "dots": [[1, 2, 3, 4, 6]], "unicode": "⠯" },
+        "for": { "word": "for", "dots": [[1, 2, 3, 4, 5, 6]], "unicode": "⠿" },
+        "of": { "word": "of", "dots": [[1, 2, 3, 5, 6]], "unicode": "⠷" },
+        "the": { "word": "the", "dots": [[2, 3, 4, 6]], "unicode": "⠮" },
+        "with": { "word": "with", "dots": [[2, 3, 4, 5, 6]], "unicode": "⠾" }
       }
     },
     {

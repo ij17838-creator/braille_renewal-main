@@ -159,7 +159,7 @@ class SentenceSlotEngine:
         
         self.wordsigns = list(self.ko.get("abbreviation_word", {}).get("items", {}).keys())
         self.syllable_abbrs = list(self.ko.get("abbreviation_syllable", {}).get("items", {}).keys())
-        self.exempt_units = self.num_rules.get("collision_resolutions", {}).get("trailing_letters", {}).get("exempt_units", ["개", "명", "원", "년", "월", "일"])
+        self.exempt_units = self.num_rules["collision_resolutions"]["trailing_letters"]["exempt_units"]
         self.roman_units = list(self.num_rules.get("collision_resolutions", {}).get("trailing_letters", {}).get("roman_unit_symbols", {}).keys())
 
         # 동사/형용사 어간 및 불규칙 풀 빌드

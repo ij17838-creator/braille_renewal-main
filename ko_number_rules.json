@@ -7,9 +7,46 @@
     "prefix_id": "num_prefix",
     "description": "수표(⠼) 뒤에 오는 점형만 숫자로 해석"
   },
+  "symbols": {
+    "comma": {
+      "char": ",",
+      "name": "자릿수 쉼표",
+      "dots": [[2]],
+      "unicode": "⠂",
+      "persists_numeric_mode": true
+    },
+    "period": {
+      "char": ".",
+      "name": "소수점",
+      "dots": [[2, 5, 6]],
+      "unicode": "⠲",
+      "persists_numeric_mode": true
+    },
+    "hyphen": {
+      "char": "-",
+      "name": "하이픈",
+      "dots": [[3, 6]],
+      "unicode": "⠤",
+      "persists_numeric_mode": true
+    },
+    "fraction_slash": {
+      "char": "/",
+      "name": "단순 분수선",
+      "dots": [[3, 4]],
+      "unicode": "⠌",
+      "persists_numeric_mode": true
+    },
+    "numeric_space": {
+      "char": " ",
+      "name": "숫자 빈칸",
+      "dots": [[5]],
+      "unicode": "⠐",
+      "persists_numeric_mode": true
+    }
+  },
   "scope_maintenance": {
-    "persists_across_connectors": ["comma", "period", "hyphen"],
-    "description": "한국어 규정상 하이픈(-)으로 연결된 전화번호/주민번호 등은 수표를 다시 붙이지 않고 연속 유지됨"
+    "persists_across_connectors": ["comma", "period", "hyphen", "fraction_slash", "numeric_space"],
+    "description": "한국어 규정상 쉼표·소수점·하이픈·분수선으로 연결된 숫자는 수표를 다시 붙이지 않고 연속 유지됨. 점형은 symbols가 기준이다."
   },
   "termination_triggers": {
     "terminators": [
@@ -39,24 +76,17 @@
         "층",
         "개",
         "명",
-        "원"
-      ],
-      "exempt_rule_description": "한국 점자 규정 제17항: 수표 뒤에 단위어가 이어 나올 때는 1급 기호표(⠰)를 적지 아니한다.",
-      "exempt_hangul_units": [
-        "년",
-        "월",
-        "일",
-        "시",
-        "분",
-        "초",
+        "원",
         "미터",
         "킬로미터",
         "센티미터",
         "밀리미터",
         "그램",
         "킬로그램",
-        "리터"
+        "리터",
+        "밀리리터"
       ],
+      "exempt_rule_description": "한국 점자 규정 제17항: 수표 뒤에 단위어가 이어 나올 때는 1급 기호표(⠰)를 적지 아니한다. 파서와 검사기는 이 목록만 읽는다.",
       "roman_unit_symbols": {
         "m": "⠍",
         "km": "⠅⠍",

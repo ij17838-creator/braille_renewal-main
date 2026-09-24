@@ -186,14 +186,31 @@ class BrailleEngine:
         for conn in num_data.get("scope_maintenance", {}).get("terminating_connectors", []):
             self.terminating_connectors[conn["char"]] = conn["braille"]
 
-        self.rev_connectors = {v: k for k, v in self.connectors.items()}
-        self.rev_connectors.update({v: k for k, v in self.terminating_connectors.items()})
+        # 긴 점열(엔대시·엠대시)을 한 칸 기호보다 먼저 맞춘다.
+        self.numeric_sequences = []
+        for char, braille in self.terminating_connectors.items():
+            self.numeric_sequences.append((braille, char, True))
+        for char, braille in self.connectors.items():
+            self.numeric_sequences.append((braille, char, False))
+        self.numeric_sequences.sort(key=lambda item: (-len(item[0]), item[2]))
+
+        # 같은 점형은 문맥 태그와 함께 쌓는다. 나중 기호가 앞 기호를 덮지 않는다.
+        self.rev_symbol_senses = {}
+        for char, braille in self.connectors.items():
+            self._add_symbol_sense(braille, char, "numeric")
+        for char, braille in self.terminating_connectors.items():
+            self._add_symbol_sense(braille, char, "numeric_terminating")
+        for group in num_data.get("standing_alone_rules", {}).get("adjacent_delimiters", {}).values():
+            for sym in group.get("symbols", []):
+                context = "numeric_or_punctuation" if sym["char"] in ",.!" else "punctuation"
+                self._add_symbol_sense(sym["braille"], sym["char"], context)
 
         # 3. 통합 축어(Shortforms)
         self.shortforms_standalone = {}
         self.shortforms_inflected = {}
         self.shortforms_compound = {}
         self.rev_shortforms = {}
+        self.shortform_root_chars = {}
 
         sf_path = self._find_file("en_shortform.json")
         if os.path.exists(sf_path):
@@ -203,6 +220,8 @@ class BrailleEngine:
                     word = v["word"].lower()
                     self.shortforms_standalone[word] = v["unicode"]
                     self.rev_shortforms[v["unicode"]] = word
+                    if v.get("rootChars"):
+                        self.shortform_root_chars[word] = list(v["rootChars"])
 
                 inflected_rule = sf_data.get("shortform_inflected", {}).get("rule", {})
                 for k, v in sf_data.get("shortform_inflected", {}).get("items", {}).items():
@@ -221,7 +240,8 @@ class BrailleEngine:
         # 4. 통합 약어(Contractions) 및 독립 사용 가능 약어 캐시
         self.groupsigns = []
         self.standalone_contractions = {}
-        self.rev_groupsigns = {}
+        self.rev_groupsign_senses = {}
+        self.contraction_items = {}
 
         c_path = self._find_file("en_contractions.json")
         if os.path.exists(c_path):
@@ -233,12 +253,53 @@ class BrailleEngine:
                     can_standalone = rule.get("canStandAlone", False)
 
                     for text_val, item in group.get("items", {}).items():
+                        self.contraction_items[text_val] = item
                         self.groupsigns.append((text_val, item["unicode"], prio, rule))
-                        self.rev_groupsigns[item["unicode"]] = text_val
+                        self.rev_groupsign_senses.setdefault(item["unicode"], []).append({
+                            "text": text_val,
+                            "rule": rule,
+                            "priority": prio,
+                            "unicode": item["unicode"],
+                            "rootChar": item.get("rootChar"),
+                        })
                         if can_standalone:
                             self.standalone_contractions[text_val] = item["unicode"]
 
+                for senses in self.rev_groupsign_senses.values():
+                    for sense in senses:
+                        root = sense.get("rootChar")
+                        if not root:
+                            continue
+                        root_item = self.contraction_items.get(root)
+                        if root_item is None:
+                            raise ValueError(f"rootChar {root!r}가 en_contractions.json에 없습니다.")
+                        if root_item["unicode"] not in sense["unicode"]:
+                            raise ValueError(
+                                f"{sense['text']}의 점자 {sense['unicode']!r}에 강세 약어 {root}({root_item['unicode']})가 없습니다."
+                            )
+                        sense["rootEntry"] = root_item
+                        sense["rootUnicode"] = root_item["unicode"]
+
+                for word, roots in self.shortform_root_chars.items():
+                    uni = self.shortforms_standalone[word]
+                    for root in roots:
+                        root_item = self.contraction_items.get(root)
+                        if root_item is None:
+                            raise ValueError(f"{word}의 rootChars {root!r}가 en_contractions.json에 없습니다.")
+                        if not uni.startswith(root_item["unicode"]):
+                            raise ValueError(
+                                f"{word}의 점자 {uni!r}가 강세 약어 {root}({root_item['unicode']})로 시작하지 않습니다."
+                            )
+
         self.groupsigns.sort(key=lambda x: (x[2], -len(x[0])))
+
+    def _add_symbol_sense(self, braille: str, char: str, context: str):
+        if not braille:
+            return
+        bucket = self.rev_symbol_senses.setdefault(braille, [])
+        if any(item["char"] == char and item["context"] == context for item in bucket):
+            return
+        bucket.append({"char": char, "context": context})
 
     # ------------------ TEXT -> BRAILLE ------------------ #
     def text_to_braille(self, text: str) -> str:
@@ -250,7 +311,7 @@ class BrailleEngine:
         CAP_LETTER = "\u2820"  # ⠠
         CAP_WORD = "\u2820\u2820"  # ⠠⠠
 
-        for token in tokens:
+        for index, token in enumerate(tokens):
             if not token:
                 continue
 
@@ -262,12 +323,16 @@ class BrailleEngine:
                 result.append(prefix + converted)
                 continue
 
-            # 숫자 모드 유지 커넥터 (,, ., :, / 등)
+            # 쉼표·온점·쌍점·분수선·숫자 빈칸은 뒤에 숫자가 이어질 때만 수표를 유지한다.
             if in_numeric_mode and token in self.connectors:
-                result.append(self.connectors[token])
+                if self._continuation_reaches_digit(tokens, index + 1):
+                    result.append(self.connectors[token])
+                    continue
+                result.append(" " if token == " " else self.connectors[token])
+                in_numeric_mode = False
                 continue
 
-            # 숫자 모드 종료 커넥터 (-, –, — 등)
+            # 하이픈·대시는 수표를 끝내므로 다음 숫자는 수표를 다시 붙인다.
             if in_numeric_mode and token in self.terminating_connectors:
                 result.append(self.terminating_connectors[token])
                 in_numeric_mode = False
@@ -304,6 +369,17 @@ class BrailleEngine:
                 result.append(token)
 
         return "".join(result)
+
+    def _continuation_reaches_digit(self, tokens: List[str], start: int) -> bool:
+        index = start
+        while index < len(tokens):
+            token = tokens[index]
+            if token.isdigit():
+                return True
+            if token not in self.connectors:
+                return False
+            index += 1
+        return False
 
     def _translate_word(self, word: str) -> str:
         # 1. 알파벳 단어 약어 (Alphabetic Wordsigns: but, can, do 등)
@@ -373,9 +449,7 @@ class BrailleEngine:
 
                 # 2. 접두 전용 약어 (be, con, dis 등): 분절된 단독 접두사 토큰이거나 접두어 형태일 때 매칭
                 elif not can_follow and requires_following:
-                    if text_chunk == pattern:
-                        new_segments.append([braille_unicode, True])
-                    elif text_chunk.startswith(pattern) and len(text_chunk) > len(pattern):
+                    if text_chunk.startswith(pattern) and len(text_chunk) > len(pattern):
                         new_segments.append([braille_unicode, True])
                         new_segments.append([text_chunk[len(pattern):], False])
                     else:
@@ -432,14 +506,68 @@ class BrailleEngine:
         if self.num_prefix in b_token:
             return self._decode_braille_with_numeric_mode(b_token)
 
-        # 4. 약어 최장 일치 역매핑
-        text_out = b_token
-        sorted_rev_groups = sorted(self.rev_groupsigns.items(), key=lambda x: len(x[0]), reverse=True)
-        for b_sym, text_val in sorted_rev_groups:
-            text_out = text_out.replace(b_sym, text_val)
+        return self._decode_contracted(b_token)
 
-        # 5. 기본 알파벳 역치환
-        return "".join(self.rev_spelling.get(ch, ch) for ch in text_out)
+    def _groupsign_context_ok(self, token: str, i: int, blen: int, rule: dict) -> bool:
+        end = i + blen
+        prev_letter = i > 0 and token[i - 1] in self.rev_spelling
+        next_letter = end < len(token) and token[end] in self.rev_spelling
+        # 어중이고 앞뒤에 글자가 있으면 bb/cc/dd. 어두이면 be/con/dis.
+        if rule.get("requiresSurroundingLetters"):
+            return prev_letter and next_letter
+        if rule.get("requiresFollowingLetters") and not rule.get("canFollowLetters", True):
+            return i == 0 and end < len(token)
+        return True
+
+    def _punctuation_mode(self, token: str, i: int) -> bool:
+        prev_letter = i > 0 and token[i - 1] in self.rev_spelling
+        next_letter = i + 1 < len(token) and token[i + 1] in self.rev_spelling
+        if prev_letter and next_letter:
+            return False
+        if i == 0 and next_letter:
+            return False
+        return True
+
+    def _mark_in_mode(self, cell: str, contexts: tuple) -> Optional[str]:
+        for sense in self.rev_symbol_senses.get(cell, []):
+            if sense["context"] in contexts:
+                return sense["char"]
+        return None
+
+    def _decode_contracted(self, token: str) -> str:
+        i = 0
+        n = len(token)
+        out = []
+        while i < n:
+            match_text = None
+            match_len = 0
+            match_prio = 10 ** 9
+            for braille, senses in self.rev_groupsign_senses.items():
+                if not token.startswith(braille, i):
+                    continue
+                blen = len(braille)
+                for sense in senses:
+                    if not self._groupsign_context_ok(token, i, blen, sense["rule"]):
+                        continue
+                    prio = sense["priority"]
+                    if blen > match_len or (blen == match_len and prio < match_prio):
+                        match_text = sense["text"]
+                        match_len = blen
+                        match_prio = prio
+            if match_text:
+                out.append(match_text)
+                i += match_len
+                continue
+            # ⠂ ⠲ ⠖는 문장부호 모드일 때만 쉼표, 마침표, 느낌표다.
+            if token[i] in ("⠂", "⠲", "⠖") and self._punctuation_mode(token, i):
+                mark = self._mark_in_mode(token[i], ("numeric_or_punctuation", "punctuation", "numeric"))
+                if mark:
+                    out.append(mark)
+                    i += 1
+                    continue
+            out.append(self.rev_spelling.get(token[i], token[i]))
+            i += 1
+        return "".join(out)
 
     def _decode_braille_with_numeric_mode(self, token: str) -> str:
         res = []
@@ -462,18 +590,28 @@ class BrailleEngine:
                 continue
 
             if in_num:
+                matched = False
+                for braille, char, ends_mode in self.numeric_sequences:
+                    if token.startswith(braille, i):
+                        res.append(char)
+                        i += len(braille)
+                        if ends_mode:
+                            in_num = False
+                        matched = True
+                        break
+                if matched:
+                    continue
                 if ch in self.rev_digits:
                     res.append(self.rev_digits[ch])
-                elif ch in self.rev_connectors and self.rev_connectors[ch] in self.connectors:
-                    res.append(self.rev_connectors[ch])
-                elif ch in self.rev_connectors and self.rev_connectors[ch] in self.terminating_connectors:
-                    res.append(self.rev_connectors[ch])
-                    in_num = False
                 else:
                     in_num = False
                     res.append(self.rev_spelling.get(ch, ch))
             else:
-                res.append(self.rev_spelling.get(ch, ch))
+                if ch in ("⠂", "⠲", "⠖") and self._punctuation_mode(token, i):
+                    mark = self._mark_in_mode(ch, ("numeric_or_punctuation", "punctuation"))
+                    res.append(mark or self.rev_spelling.get(ch, ch))
+                else:
+                    res.append(self.rev_spelling.get(ch, ch))
             i += 1
 
         return "".join(res)
