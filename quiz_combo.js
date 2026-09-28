@@ -1,7 +1,7 @@
 /**
  * 사전 조합으로 퀴즈를 만든다.
- * morpheme은 단계를 보지 않고 전체 조합에서 무작위로 뽑는다.
- * 다른 게임은 단계가 조합의 길이만 바꾸며, 같은 목록을 순서대로 돌리지 않는다.
+ * morpheme, blank, builders는 형태소 하나만을 문제로 낸다.
+ * select는 형태소를 자유롭게 결합한 심화 문제만 낸다.
  */
 
 const CHOSUNG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
@@ -537,23 +537,13 @@ function buildEnglish(data) {
   return { byRecipe, translateWord };
 }
 
-function recipesFor(lang, game, level) {
-  const koAll = ['wordsign', 'syllable', 'pair', 'triple', 'number', 'number_unit', 'punct'];
-  const enAll = ['wordsign', 'shortform', 'shortform_suffix', 'affix', 'number', 'punct'];
-  if (game === 'morpheme') return lang === 'EN' ? enAll : koAll;
-
-  const lv = Number(level) || 1;
-  if (lang === 'EN') {
-    if (lv <= 1) return ['wordsign', 'shortform'];
-    if (lv === 2) return ['shortform', 'shortform_suffix', 'affix'];
-    if (lv === 3) return ['shortform_suffix', 'affix', 'wordsign'];
-    return ['affix', 'shortform_suffix', 'number', 'punct'];
-  }
-  if (lv <= 1) return ['wordsign', 'syllable'];
-  if (lv === 2) return ['syllable', 'pair'];
-  if (lv === 3) return ['pair', 'triple', 'wordsign'];
-  if (lv === 4) return ['triple', 'number', 'number_unit', 'pair'];
-  return ['triple', 'number_unit', 'punct', 'pair', 'number'];
+function recipesFor(lang, game) {
+  const koAtom = ['wordsign', 'syllable', 'number', 'punct'];
+  const enAtom = ['wordsign', 'shortform', 'number', 'punct'];
+  const koCombo = ['pair', 'triple', 'number_unit'];
+  const enCombo = ['shortform_suffix', 'affix'];
+  if (game === 'select') return lang === 'EN' ? enCombo : koCombo;
+  return lang === 'EN' ? enAtom : koAtom;
 }
 
 function distractorBraille(correct) {
@@ -594,6 +584,19 @@ function distractorText(text, lang) {
   return `${text}${lang === 'KO' ? '가' : 's'}`;
 }
 
+function meaningOptions(target, lang) {
+  const found = [];
+  const seen = new Set([target]);
+  for (let i = 0; i < 24 && found.length < 3; i++) {
+    const next = distractorText(target, lang);
+    if (next && !seen.has(next)) {
+      seen.add(next);
+      found.push(next);
+    }
+  }
+  return shuffle([target, ...found]);
+}
+
 function finishItem(raw, lang, seq) {
   const target = raw.text || raw.parts.map(part => part.text).join('');
   const hint = raw.parts.map(part => part.label).filter(Boolean).join(' · ');
@@ -601,6 +604,7 @@ function finishItem(raw, lang, seq) {
   const extras = [];
   for (let i = 0; i < 4; i++) extras.push(distractorText(seqText[i % seqText.length] || target, lang));
   const blocks = shuffle(seqText.concat(extras.filter(item => item && !seqText.includes(item)).slice(0, 3)));
+  const meanings = meaningOptions(target, lang);
   return {
     id: `combo_${seq}`,
     lang,
@@ -615,7 +619,8 @@ function finishItem(raw, lang, seq) {
     explanation: hint || target,
     prompt_audio: hint || target,
     distractors_braille: distractorBraille(raw.braille),
-    distractors_text: [distractorText(target, lang), distractorText(target, lang)],
+    distractors_text: meanings.filter(item => item !== target),
+    meaning_options: meanings,
     parts: raw.parts,
     tokens: seqText,
     correct_sequence: seqText,
@@ -639,7 +644,7 @@ export function createEngine(data) {
   function next(opts = {}) {
     const lang = (opts.lang || 'KO').toUpperCase() === 'EN' ? 'EN' : 'KO';
     const game = opts.game || 'select';
-    const recipes = recipesFor(lang, game, opts.level);
+    const recipes = recipesFor(lang, game);
     const bank = lang === 'EN' ? en : ko;
 
     for (let attempt = 0; attempt < 40; attempt++) {

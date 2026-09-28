@@ -213,7 +213,7 @@
               </span>
             </div>
             <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-0.5">
-              <span id="label-level-mode">Level 1 · KO · 4지선다</span>
+              <span id="label-level-mode">형태소 결합 · KO · 4지선다</span>
               <span>·</span>
               <span class="text-indigo-600 font-black" id="combo-counter">연속 0콤보</span>
             </div>
@@ -613,7 +613,7 @@
       state.currentQuiz.options = options;
 
       const readableRule = getReadableRule(quizObj.rule_type);
-      document.getElementById('label-level-mode').textContent = `Level ${state.level} · ${state.lang} · 4지선다`;
+      document.getElementById('label-level-mode').textContent = `형태소 결합 · ${state.lang} · 4지선다`;
       document.getElementById('prompt-category-tag').textContent = quizObj.category || "점자 선다형";
       document.getElementById('prompt-rule-tag').textContent = readableRule;
       document.getElementById('target-prompt-text').textContent = targetText;
@@ -761,7 +761,7 @@
         b.classList.add(`dot-scale-${cfg.dotScale}`);
       }
 
-      document.getElementById('label-level-mode').textContent = `Level ${state.level} · ${state.lang} · 4지선다`;
+      document.getElementById('label-level-mode').textContent = `형태소 결합 · ${state.lang} · 4지선다`;
     }
 
     // 9. 취약점 모달 대시보드

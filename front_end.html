@@ -206,7 +206,7 @@
 
     <div>
       <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">점자 마스터 허브</h1>
-      <p class="text-xs sm:text-sm text-slate-600 mt-1">학습 환경을 설정하고 원하는 점자 프로그램을 선택하세요.</p>
+      <p class="text-xs sm:text-sm text-slate-600 mt-1">학습 언어를 고르고, 프로그램 고유의 방식으로 연습하세요.</p>
     </div>
 
     <!-- 공통 환경 설정 패널 -->
@@ -224,62 +224,32 @@
         </div>
       </div>
 
-      <!-- 난이도 레벨 -->
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">난이도 레벨</label>
-        <div class="grid grid-cols-5 gap-1.5">
-          <button type="button" class="opt-btn active-opt py-1.5 rounded-lg border text-xs font-bold transition-all bg-emerald-500 text-white border-emerald-600" data-group="level" data-value="1">1</button>
-          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="2">2</button>
-          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="3">3</button>
-          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="4">4</button>
-          <button type="button" class="opt-btn py-1.5 rounded-lg border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="level" data-value="5">5</button>
-        </div>
-      </div>
-
-      <!-- 2. 공통 환경 설정 패널 내 '입력 모드' 옵션 추가 (언어/난이도 밑) -->
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">조작 / 입력 방식 (빈칸 수사대/빌더즈 연동)</label>
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" class="opt-btn active-opt btn-scalable py-2 px-3 rounded-xl border text-xs font-bold transition-all bg-emerald-500 text-white border-emerald-600" data-group="mode" data-value="KEYBOARD">
-            키보드 (가상 6키)
-          </button>
-          <button type="button" class="opt-btn btn-scalable py-2 px-3 rounded-xl border text-xs font-bold transition-all bg-white text-slate-700 border-slate-200" data-group="mode" data-value="BLOCK">
-            블록 조립 모드
-          </button>
-        </div>
-      </div>
     </div>
 
-        <!-- 5종 학습 프로그램 진입 카드 -->
+        <!-- 4종 학습 프로그램 진입 카드 -->
     <div class="grid grid-cols-2 gap-3 my-1">
       <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="morpheme.html">
         <span class="text-2xl group-hover:scale-110 transition-transform">🧩</span>
         <span class="text-sm font-black text-slate-800">형태소 & 낱말 퀴즈</span>
-        <span class="text-[11px] text-slate-500 text-center">스펠링, 약어, 문장부호 4지선다</span>
+        <span class="text-[11px] text-slate-500 text-center">형태소 하나를 독립 문제로, 알맞은 점자 카드 선택</span>
       </button>
 
       <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="select.html">
         <span class="text-2xl group-hover:scale-110 transition-transform">🎴</span>
         <span class="text-sm font-black text-slate-800">점자 카드 셀렉트</span>
-        <span class="text-[11px] text-slate-500 text-center">4지선다형 점형 탐색 및 즉시 판별</span>
-      </button>
-
-      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-amber-500 text-left group" data-target="triangle.html">
-        <span class="text-2xl group-hover:scale-110 transition-transform">▲</span>
-        <span class="text-sm font-black text-slate-800">점자 트라이앵글</span>
-        <span class="text-[11px] text-slate-500 text-center">3지선다 맥락 판별 & 일자별 통계</span>
+        <span class="text-[11px] text-slate-500 text-center">형태소를 자유롭게 결합한 심화 4지선다</span>
       </button>
 
       <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-indigo-500 text-left group" data-target="builders.html">
         <span class="text-2xl group-hover:scale-110 transition-transform">🏗️</span>
         <span class="text-sm font-black text-slate-800">점자 빌더즈</span>
-        <span class="text-[11px] text-slate-500 text-center">작업대 기반 블록 결합 & 구문 분석</span>
+        <span class="text-[11px] text-slate-500 text-center">제시된 점형에 맞는 뜻 블록을 클릭</span>
       </button>
 
-      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-blue-500 text-left group col-span-2" data-target="blank.html">
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-blue-500 text-left group" data-target="blank.html">
         <span class="text-2xl group-hover:scale-110 transition-transform">🔍</span>
         <span class="text-sm font-black text-slate-800">빈칸 수사대</span>
-        <span class="text-[11px] text-slate-500 text-center">문장 단서 추적 & 문맥 결합 규칙 진단</span>
+        <span class="text-[11px] text-slate-500 text-center">제시된 뜻에 맞는 점형을 직접 입력</span>
       </button>
     </div>
 
@@ -403,8 +373,6 @@
     const stored = loadSettings();
     const globalSettings = {
       lang: stored.lang,
-      level: stored.level,
-      mode: stored.mode,
       contrastTheme: stored.theme,
       textScale: stored.scale,
       tts: stored.tts,
@@ -414,8 +382,6 @@
     function saveSettings() {
       const saved = persistSettings({
         lang: globalSettings.lang,
-        level: globalSettings.level,
-        mode: globalSettings.mode,
         theme: globalSettings.contrastTheme,
         scale: globalSettings.textScale,
         tts: globalSettings.tts,
@@ -437,12 +403,9 @@
         saveSettings();
         const target = card.dataset.target;
         
-        // 각 프로그램(triangle, blank, select 등)이 필요로 하는 파라미터 일괄 구성
         const params = new URLSearchParams({
           lang: globalSettings.lang,
-          level: globalSettings.level.toString(),
-          mode: globalSettings.mode,          // blank.html에서 필요로 함
-          hub: 'true',                        // triangle.html '← 허브로 복귀' 버튼 활성화에 필수
+          hub: 'true',
           theme: globalSettings.contrastTheme,
           scale: globalSettings.textScale,
           tts: globalSettings.tts.toString(),
@@ -505,7 +468,7 @@
               <li class="flex justify-between items-center p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-slate-800 uppercase">[${h.game}]</span>
-                  <span class="text-slate-500">${h.lang} · Lv.${h.level}</span>
+                  <span class="text-slate-500">${h.lang}</span>
                 </div>
                 <div class="flex items-center gap-3">
                   <span class="font-black text-emerald-600">${h.score} / ${h.total}</span>
@@ -555,11 +518,11 @@
       if (e.target === statsModal) statsModal.classList.add('hidden');
     });
 
-    // 언어 / 난이도 / 입력 방식(mode) 버튼 핸들러
     document.querySelectorAll('.opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const group = btn.dataset.group;
         const val = btn.dataset.value;
+        if (group !== 'lang') return;
 
         document.querySelectorAll(`.opt-btn[data-group="${group}"]`).forEach(b => {
           b.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
@@ -568,9 +531,7 @@
         btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
         btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
 
-        if (group === 'lang') globalSettings.lang = val;
-        if (group === 'level') globalSettings.level = parseInt(val);
-        if (group === 'mode') globalSettings.mode = val;
+        globalSettings.lang = val;
         saveSettings();
       });
     });
@@ -615,9 +576,7 @@
 
       // 기존 저장된 활성 버튼 상태 동기화
       const activeSelectors = [
-        `.opt-btn[data-group="lang"][data-value="${globalSettings.lang}"]`,
-        `.opt-btn[data-group="level"][data-value="${globalSettings.level}"]`,
-        `.opt-btn[data-group="mode"][data-value="${globalSettings.mode}"]`
+        `.opt-btn[data-group="lang"][data-value="${globalSettings.lang}"]`
       ];
       activeSelectors.forEach(sel => {
         const btn = document.querySelector(sel);
