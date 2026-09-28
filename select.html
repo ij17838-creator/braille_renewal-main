@@ -431,11 +431,15 @@
     }
 
     function speak(text) {
-      if (!window.speechSynthesis) return;
+      const live = document.getElementById('select-live-region');
+      if (live) live.textContent = text;
+      if (!globalSettings.tts || !window.speechSynthesis) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        return;
+      }
       window.speechSynthesis.cancel();
       const ut = new SpeechSynthesisUtterance(text);
       ut.lang = state.lang === "KO" ? "ko-KR" : "en-US";
-      document.getElementById('select-live-region').textContent = text;
       window.speechSynthesis.speak(ut);
     }
 

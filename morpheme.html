@@ -390,11 +390,15 @@
     }
 
     function speak(text) {
-      if (!appState.tts || !window.speechSynthesis) return;
+      const live = document.getElementById('a11y-live-region');
+      if (live) live.textContent = text;
+      if (!appState.tts || !window.speechSynthesis) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        return;
+      }
       window.speechSynthesis.cancel();
       const ut = new SpeechSynthesisUtterance(text);
       ut.lang = appState.lang === 'KO' ? 'ko-KR' : 'en-US';
-      document.getElementById('a11y-live-region').textContent = text;
       window.speechSynthesis.speak(ut);
     }
 
@@ -606,12 +610,17 @@
 
     // 설정 모달
     const settingsModal = document.getElementById('settings-modal');
-    document.getElementById('btn-settings').onclick = () => settingsModal.classList.remove('hidden');
+    document.getElementById('btn-settings').onclick = () => {
+      document.getElementById('chk-tts').checked = appState.tts;
+      document.getElementById('chk-pitch').checked = appState.pitch;
+      settingsModal.classList.remove('hidden');
+    };
     document.getElementById('btn-settings-close').onclick = () => settingsModal.classList.add('hidden');
     document.getElementById('btn-save-settings').onclick = () => {
       appState.tts = document.getElementById('chk-tts').checked;
       appState.pitch = document.getElementById('chk-pitch').checked;
       persistSettings({ tts: appState.tts, pitch: appState.pitch, theme: appState.theme, scale: appState.scale });
+      if (!appState.tts && window.speechSynthesis) window.speechSynthesis.cancel();
       settingsModal.classList.add('hidden');
       applyVisualSettings();
     };

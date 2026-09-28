@@ -462,11 +462,15 @@
     }
 
     function speak(text) {
-      if (!appState.tts || !window.speechSynthesis) return;
+      const live = document.getElementById('a11y-live-region');
+      if (live) live.textContent = text;
+      if (!appState.tts || !window.speechSynthesis) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        return;
+      }
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = appState.lang === 'KO' ? 'ko-KR' : 'en-US';
-      document.getElementById('a11y-live-region').textContent = text;
       window.speechSynthesis.speak(u);
     }
 
@@ -846,8 +850,12 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
-        if (ttsChk) globalSettings.tts = ttsChk.checked;
+        if (ttsChk) {
+          globalSettings.tts = ttsChk.checked;
+          appState.tts = ttsChk.checked;
+        }
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
+        if (!appState.tts && window.speechSynthesis) window.speechSynthesis.cancel();
 
         persistSettings({
           theme: globalSettings.theme,
