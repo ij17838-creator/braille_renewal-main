@@ -171,7 +171,7 @@
 
     /* 점자 그리드 스타일 */
     .braille-word { display: inline-flex; gap: var(--braille-word-gap); align-items: center; justify-content: center; flex-wrap: wrap; }
-    .braille-cell { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: var(--braille-cell-gap); padding: 0.12em; border-radius: 0.2em; }
+    .braille-cell { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); grid-auto-flow: row; gap: var(--braille-cell-gap); padding: 0.12em; border-radius: 0.2em; }
     .braille-dot { width: var(--braille-dot-size); height: var(--braille-dot-size); border-radius: 50%; box-sizing: border-box; }
     .braille-dot.active { background-color: currentColor; }
     .braille-dot.inactive { background-color: rgba(148, 163, 184, 0.3); }
@@ -468,12 +468,16 @@
         if (charCode >= 0x2800 && charCode <= 0x28FF) {
           const pattern = charCode - 0x2800;
           html += `<div class="braille-cell">`;
+          // 표준 번호: 1 4 / 2 5 / 3 6. 칸을 고정해 4점이 2점 자리로 밀리지 않게 한다.
           const bits = [
-            (pattern & 0x01) > 0, (pattern & 0x08) > 0,
-            (pattern & 0x02) > 0, (pattern & 0x10) > 0,
-            (pattern & 0x04) > 0, (pattern & 0x20) > 0
+            { on: (pattern & 0x01) > 0, row: 1, col: 1 },
+            { on: (pattern & 0x08) > 0, row: 1, col: 2 },
+            { on: (pattern & 0x02) > 0, row: 2, col: 1 },
+            { on: (pattern & 0x10) > 0, row: 2, col: 2 },
+            { on: (pattern & 0x04) > 0, row: 3, col: 1 },
+            { on: (pattern & 0x20) > 0, row: 3, col: 2 }
           ];
-          bits.forEach(on => html += `<div class="braille-dot ${on ? 'active' : 'inactive'}"></div>`);
+          bits.forEach(dot => html += `<div class="braille-dot ${dot.on ? 'active' : 'inactive'}" style="grid-row:${dot.row};grid-column:${dot.col}"></div>`);
           html += `</div>`;
         } else {
           html += `<span class="font-bold mx-1 text-xl">${text[i]}</span>`;

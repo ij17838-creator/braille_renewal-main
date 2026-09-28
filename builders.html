@@ -174,7 +174,7 @@
       display: inline-grid;
       grid-template-columns: repeat(2, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      grid-auto-flow: column; /* 1,2,3(좌열) -> 4,5,6(우열) 명시적 제어 */
+      grid-auto-flow: row; /* 점 순서 1·4 / 2·5 / 3·6. column이면 4점이 2점 자리로 밀린다 */
       gap: var(--braille-cell-gap);
       padding: 0.1em;
       border-radius: 0.2em;
@@ -487,11 +487,14 @@
           const pattern = charCode - 0x2800;
           html += `<div class="braille-cell">`;
           const bits = [
-            (pattern & 0x01) > 0, (pattern & 0x08) > 0,
-            (pattern & 0x02) > 0, (pattern & 0x10) > 0,
-            (pattern & 0x04) > 0, (pattern & 0x20) > 0
+            { on: (pattern & 0x01) > 0, row: 1, col: 1 },
+            { on: (pattern & 0x08) > 0, row: 1, col: 2 },
+            { on: (pattern & 0x02) > 0, row: 2, col: 1 },
+            { on: (pattern & 0x10) > 0, row: 2, col: 2 },
+            { on: (pattern & 0x04) > 0, row: 3, col: 1 },
+            { on: (pattern & 0x20) > 0, row: 3, col: 2 }
           ];
-          bits.forEach(on => html += `<div class="braille-dot ${on ? 'active' : 'inactive'}"></div>`);
+          bits.forEach(dot => html += `<div class="braille-dot ${dot.on ? 'active' : 'inactive'}" style="grid-row:${dot.row};grid-column:${dot.col}"></div>`);
           html += `</div>`;
         } else {
           html += `<span class="font-bold mx-0.5 text-base text-slate-600">${text[i]}</span>`;
