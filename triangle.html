@@ -447,6 +447,9 @@
   </div>
 
   <script type="module">
+    import { loadQuizEngine } from './quiz_combo.js';
+    import { loadSettings, saveSettings as persistSettings, applyVisualSettings as paintSettings, recordResult, recordSession, goHub, loadQuizBank } from './shell.js';
+
     // =========================================================================
     // 1. 점자 유니코드(U+2800 ~ U+283F) DOM 렌더러
     // =========================================================================
@@ -561,27 +564,15 @@
           return this.cache[lang][level];
         }
 
-        const files = [
-          "morpheme_quizzes.json",
-          "morpheme_words.json"
-        ];
-
-        for (const targetFile of files) {
-          try {
-            const res = await fetch(targetFile);
-            if (!res.ok) continue;
-            const data = await res.json();
-            const pool = this._extractPool(data, lang, level).map(item => this._normalizeItem(item));
-            if (pool.length) {
-              this.cache[lang][level] = pool;
-              return pool;
-            }
-          } catch (e) {
-            console.warn("[Adapter] JSON Fetch 실패:", targetFile, e);
-          }
+        try {
+          const data = await loadQuizBank();
+          const pool = this._extractPool(data, lang, level).map(item => this._normalizeItem(item));
+          this.cache[lang][level] = pool;
+          return pool;
+        } catch (e) {
+          console.warn("quiz_bank.json 로드 실패", e);
+          return [];
         }
-
-        return this._getFallbackPythonFormat(lang, level);
       }
 
       _extractPool(data, lang, level) {
@@ -612,81 +603,19 @@
         };
       }
 
-      _getFallbackPythonFormat(lang, level) {
-        if (lang === "EN") {
-          return [
-            {
-              level: level,
-              rule_type: "EN_BRIDGE_RULE",
-              text: "react",
-              braille: "⠗⠑⠁⠉⠞",
-              distractors_braille: ["⠗⠂⠉⠞", "⠗⠑⠁⠉⠞⠰"],
-              distractors_text: ["unreact", "reacted"],
-              prompt_audio: "Choose the correct braille for react."
-            },
-            {
-              level: level,
-              rule_type: "EN_STANDALONE",
-              text: "can",
-              braille: "⠉",
-              distractors_braille: ["⠉⠁⠝", "⠉⠰"],
-              distractors_text: ["cane", "con"],
-              prompt_audio: "Choose the correct braille for can."
-            },
-            {
-              level: level,
-              rule_type: "EN_SHORTFORM",
-              text: "friend",
-              braille: "⠋⠗",
-              distractors_braille: ["⠋⠗⠊⠑⠝⠙", "⠰⠋⠗"],
-              distractors_text: ["friends", "friendly"],
-              prompt_audio: "Choose the correct braille for friend."
-            }
-          ];
-        } else {
-          return [
-            {
-              level: level,
-              rule_type: "KO_NUMBER_GRADE1",
-              text: "1945년에",
-              braille: "⠼⠁⠊⠙⠑⠝⠝",
-              distractors_braille: ["⠼⠁⠊⠙⠑⠰⠝⠝", "⠁⠊⠙⠑⠝⠝"],
-              distractors_text: ["1946년에", "1945월에"],
-              prompt_audio: "제시된 문장, 1945년에 에 맞는 올바른 점자를 고르세요."
-            },
-                                    {
-              level: level,
-              rule_type: "KO_GA_SERIES",
-              text: "가방을",
-              braille: "⠫⠘⠶⠮",
-              distractors_braille: ["⠈⠣⠘⠶⠮", "⠫⠘⠣⠶⠮"],
-              distractors_text: ["나방을", "가방를"],
-              prompt_audio: "제시된 단어 가방을 에 알맞은 점자를 고르세요."
-            },
-            {
-              level: level,
-              rule_type: "KO_IRREGULAR",
-              text: "도와서",
-              braille: "⠊⠥⠧⠠⠣",
-              distractors_braille: ["⠊⠥⠃⠣⠠⠣", "⠊⠥⠍⠗⠠⠣"],
-              distractors_text: ["돕아서", "곱아서"],
-              prompt_audio: "제시된 단어 도와서 에 알맞은 점자를 고르세요."
-            }
-          ];
-        }
       }
-    }
 
     // =========================================================================
     // 4. Audio Engine & TTS (Tone.js & Web Speech API)
     // =========================================================================
+    const stored = loadSettings();
     const appConfig = {
-      lang: "KO",
-      level: 1,
-      ttsEnabled: true,
-      pitchSoundEnabled: true,
-      contrastTheme: "off",
-      textScale: "normal"
+      lang: stored.lang,
+      level: stored.level,
+      ttsEnabled: stored.tts,
+      pitchSoundEnabled: stored.pitch,
+      contrastTheme: stored.theme,
+      textScale: stored.scale
     };
 
     let polySynth, sfxCorrect, sfxWrong;
@@ -742,6 +671,7 @@
     // 5. Triangle Game Controller
     // =========================================================================
     const adapter = new PythonQuizDataAdapter();
+    let quizEngine = null;
     let currentQuestions = [];
     let currentIdx = 0;
     let sessionResults = [];
@@ -759,13 +689,37 @@
       sessionResults = [];
       isAnsweringLocked = false;
 
-      const pool = await adapter.loadQuizPool(appConfig.lang, appConfig.level);
-      
+      if (!quizEngine) {
+        try {
+          quizEngine = await loadQuizEngine();
+        } catch (e) {
+          console.warn("조합 출제 엔진 로드 실패, 기존 풀 사용", e);
+        }
+      }
+
       currentQuestions = [];
-      for (let i = 0; i < 10; i++) {
-        const item = pool[i % pool.length];
-        const mode = (i % 2 === 0) ? "TEXT_TO_BRAILLE" : "BRAILLE_TO_TEXT";
-        currentQuestions.push(buildSessionItem(item, mode, i + 1));
+      if (quizEngine) {
+        for (let i = 0; i < 10; i++) {
+          const item = quizEngine.next({ lang: appConfig.lang, game: 'triangle', level: appConfig.level });
+          const mode = (i % 2 === 0) ? "TEXT_TO_BRAILLE" : "BRAILLE_TO_TEXT";
+          currentQuestions.push(buildSessionItem(item, mode, i + 1));
+        }
+      } else {
+        const pool = await adapter.loadQuizPool(appConfig.lang, appConfig.level);
+        if (!pool.length) {
+          speakText("문제 은행을 불러오지 못했습니다.");
+          return;
+        }
+        const order = pool.map((_, idx) => idx);
+        for (let i = order.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [order[i], order[j]] = [order[j], order[i]];
+        }
+        for (let i = 0; i < 10; i++) {
+          const item = pool[order[i % order.length]];
+          const mode = (i % 2 === 0) ? "TEXT_TO_BRAILLE" : "BRAILLE_TO_TEXT";
+          currentQuestions.push(buildSessionItem(item, mode, i + 1));
+        }
       }
 
       screens.start.classList.add('hidden');
@@ -954,43 +908,19 @@
 
       speakText(`10문항을 완료했습니다. 점수는 10점 만점에 ${correctCount}점입니다.`, true);
 
-      // LocalStorage 누적 기록 (단일 데이터 구조 단일화 반영)
-      const history = JSON.parse(localStorage.getItem('braille_global_history') || '[]');
-      history.unshift({
+      recordSession({
         game: 'triangle',
         lang: appConfig.lang,
         level: appConfig.level,
         score: correctCount,
-        total: 10,
-        date: new Date().toISOString()
+        total: 10
       });
-      localStorage.setItem('braille_global_history', JSON.stringify(history.slice(0, 50)));
 
-      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
       sessionResults.forEach(r => {
         if (r && r.rule_type) {
-          if (!ruleStats[r.rule_type]) ruleStats[r.rule_type] = { errors: 0, trials: 0, games: {} };
-          ruleStats[r.rule_type].trials = (ruleStats[r.rule_type].trials || 0) + 1;
-          if (!r.is_correct) {
-            ruleStats[r.rule_type].errors = (ruleStats[r.rule_type].errors || 0) + 1;
-            if (!ruleStats[r.rule_type].games) ruleStats[r.rule_type].games = {};
-            ruleStats[r.rule_type].games['triangle'] = (ruleStats[r.rule_type].games['triangle'] || 0) + 1;
-          }
+          recordResult({ game: 'triangle', rule: r.rule_type, correct: !!r.is_correct });
         }
       });
-      localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
-
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage({
-          type: "GAME_COMPLETE",
-          game: "triangle",
-          lang: appConfig.lang,
-          level: appConfig.level,
-          score: correctCount,
-          total: 10,
-          results: sessionResults
-        }, "*");
-      }
 
       const listContainer = document.getElementById('stage-results-list');
       listContainer.innerHTML = '';
@@ -1060,7 +990,7 @@
     }
 
     // =========================================================================
-    // 7. 허브 통신 인터페이스 (postMessage & URL Params)
+    // 7. 허브 이동 및 주소 파라미터
     // =========================================================================
         function checkHubParameters() {
       const params = new URLSearchParams(window.location.search);
@@ -1103,39 +1033,22 @@
       });
     }
 
-    window.addEventListener("message", (e) => {
-      const data = e.data;
-      if (!data || typeof data !== "object") return;
-
-      if (data.type === "INIT_STAGE") {
-        appConfig.lang = data.lang || "KO";
-        appConfig.level = data.level || 1;
-        startTriangleGame();
-      }
-    });
-
     document.getElementById('btn-back-hub').addEventListener('click', () => {
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: "NAVIGATE_HUB" }, "*");
-      } else {
-        window.location.href = "front_end.html";
-      }
+      persistSettings({
+        lang: appConfig.lang,
+        level: appConfig.level,
+        theme: appConfig.contrastTheme,
+        scale: appConfig.textScale,
+        tts: appConfig.ttsEnabled,
+        pitch: appConfig.pitchSoundEnabled
+      });
+      goHub();
     });
-
-        function normalizeTheme(theme) {
-      if (theme === 'yellow') return 'hc-yellow';
-      if (theme === 'bw') return 'hc-white-black';
-      return theme;
-    }
 
     function applyVisualSettings() {
-      const theme = normalizeTheme(appConfig.contrastTheme);
-      if (theme && theme !== 'off') {
-        document.documentElement.setAttribute('data-theme', theme);
-      } else {
-        document.documentElement.removeAttribute('data-theme');
-      }
+      paintSettings({ theme: appConfig.contrastTheme, scale: appConfig.textScale });
     }
+
     document.getElementById('btn-start').addEventListener('click', async () => {
       try { await initAudioEngine(); } catch (e) {}
       startTriangleGame();
@@ -1170,11 +1083,15 @@
     const goHomeBtn = document.getElementById('btn-go-home');
     if (goHomeBtn) {
       goHomeBtn.addEventListener('click', () => {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: "NAVIGATE_HUB" }, "*");
-        } else {
-          window.location.href = "front_end.html";
-        }
+        persistSettings({
+          lang: appConfig.lang,
+          level: appConfig.level,
+          theme: appConfig.contrastTheme,
+          scale: appConfig.textScale,
+          tts: appConfig.ttsEnabled,
+          pitch: appConfig.pitchSoundEnabled
+        });
+        goHub();
       });
     }
 
@@ -1196,7 +1113,17 @@
 
     const modal = document.getElementById('settings-modal');
     const openModal = () => modal.classList.remove('hidden');
-    const closeModal = () => modal.classList.add('hidden');
+    const closeModal = () => {
+      persistSettings({
+        lang: appConfig.lang,
+        level: appConfig.level,
+        theme: appConfig.contrastTheme,
+        scale: appConfig.textScale,
+        tts: appConfig.ttsEnabled,
+        pitch: appConfig.pitchSoundEnabled
+      });
+      modal.classList.add('hidden');
+    };
 
     document.getElementById('btn-quick-settings').addEventListener('click', openModal);
     document.getElementById('btn-settings-open').addEventListener('click', openModal);
@@ -1226,11 +1153,11 @@
 
         document.getElementById('toggle-tts-checkbox').addEventListener('change', (e) => {
       appConfig.ttsEnabled = e.target.checked;
-      localStorage.setItem('braille_tts', appConfig.ttsEnabled.toString());
+      persistSettings({ tts: appConfig.ttsEnabled, pitch: appConfig.pitchSoundEnabled, theme: appConfig.contrastTheme, scale: appConfig.textScale });
     });
     document.getElementById('toggle-pitch-checkbox').addEventListener('change', (e) => {
       appConfig.pitchSoundEnabled = e.target.checked;
-      localStorage.setItem('braille_pitch', appConfig.pitchSoundEnabled.toString());
+      persistSettings({ tts: appConfig.ttsEnabled, pitch: appConfig.pitchSoundEnabled, theme: appConfig.contrastTheme, scale: appConfig.textScale });
     });
 
     checkHubParameters();

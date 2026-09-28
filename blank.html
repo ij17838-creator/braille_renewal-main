@@ -422,17 +422,21 @@
   </div>
 
   <script type="module">
+    import { loadQuizEngine } from './quiz_combo.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems } from './shell.js';
+
     // 1. 상태 관리
-        const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
+    const stored = loadSettings();
 
     const appState = {
-      lang: urlParams.get('lang') || localStorage.getItem('braille_lang') || 'KO',
-      input_mode: urlParams.get('mode') || localStorage.getItem('braille_input_mode') || 'KEYBOARD',
-      level: parseInt(urlParams.get('level') || localStorage.getItem('braille_level') || '1'),
-      embossMode: localStorage.getItem('braille_emboss_mode') || 'embossed',
-      theme: urlParams.get('theme') || localStorage.getItem('braille_theme') || 'off',
-      tts: localStorage.getItem('braille_tts') !== 'false',
-      sfx: localStorage.getItem('braille_sfx') !== 'false'
+      lang: (urlParams.get('lang') || stored.lang).toUpperCase(),
+      input_mode: urlParams.get('mode') || stored.mode,
+      level: parseInt(urlParams.get('level') || stored.level, 10) || 1,
+      embossMode: stored.emboss,
+      theme: urlParams.get('theme') || stored.theme,
+      tts: stored.tts,
+      sfx: stored.sfx
     };
 
     if (appState.embossMode === 'engraved') document.body.classList.add('mode-engraved');
@@ -497,91 +501,6 @@
     let quizList = [];
     let currentQuizIndex = 0;
 
-        const FALLBACK_DATASET = {
-      KO: [
-        {
-          category: "음절 약어 원칙 (제17항)",
-          sentence_pre: "모든",
-          sentence_post: "은 소중하다.",
-          target_text: "사람",
-          target_braille: "⠇⠐⠢",
-          clue: "'사람'의 '사'는 단독 음절 약어 [1, 2, 3]점(⠇) 적용",
-          blocks: ["사", "람", "사람", "상"],
-          rule_analysis: {
-            rule_name: "한글 점자 규정 제17항 (음절 약어 '사')",
-            detail: "일반적인 음절 '사'는 단독 약어인 [1, 2, 3]점(⠇)으로 표기합니다. 예: '사람' -> '⠇⠐⠢'"
-          }
-        },
-        {
-          category: "모음 연접 예외 (제18항 제1호)",
-          sentence_pre: "우리 두 사람",
-          sentence_post: "에 벽이 있다.",
-          target_text: "사이",
-          target_braille: "⠠⠣⠕",
-          clue: "'사' 뒤에 모음('이')이 오므로 '사'를 풀어 적음",
-          blocks: ["사", "이", "사", "입"],
-          rule_analysis: {
-            rule_name: "한글 점자 규정 제18항 제1호 (모음 연접 풀어쓰기)",
-            detail: "'사' 뒤에 바로 모음(초성 'ㅇ')이 이어져 한 음절로 혼동될 우려가 있는 경우 약어(⠇) 대신 풀어 적어 '⠠⠣'로 표기합니다."
-          }
-        },
-        {
-          category: "숫자 뒤 예외 (제18항 제2호)",
-          sentence_pre: "올해",
-          sentence_post: " 실적 발표.",
-          target_text: "4사분기",
-          target_braille: "⠼⠙⠠⠣⠘⠍⠒⠈⠕",
-          clue: "숫자 4 바로 뒤의 '사'는 수표 혼동 방지를 위해 풀어 적음",
-          blocks: ["4사", "분기", "사", "4"],
-          rule_analysis: {
-            rule_name: "한글 점자 규정 제18항 제2호 (숫자 뒤 풀어쓰기)",
-            detail: "숫자 바로 뒤에 '사'가 올 경우 수표(⠼)/숫자 혼동을 방지하기 위해 약어(⠇) 대신 풀어 적어 '⠠⠣'로 표기합니다."
-          }
-        },
-        {
-          category: "용언 불규칙 활용",
-          sentence_pre: "짐을 나에게",
-          sentence_post: "주었다.",
-          target_text: "도와",
-          target_braille: "⠊⠥⠧",
-          clue: "돕다 + -아 결합 (ㅂ 불규칙 모음 축약)",
-          blocks: ["도", "와", "돕", "아", "바", "우"],
-          rule_analysis: {
-            rule_name: "ㅂ 불규칙 활용 축약 모음(ㅘ) 결합 규정",
-            detail: "어간 '돕-'이 모음 어미 '-아'와 결합 시 '와'로 축약되므로 단일 점형(⠧)으로 점역해야 합니다."
-          }
-        },
-        {
-          category: "수량/단위어 예외",
-          sentence_pre: "우리 가족은 사과",
-          sentence_post: "를 먹었다.",
-          target_text: "3개",
-          target_braille: "⠼⠉⠻",
-          clue: "숫자 3 뒤 단위어 '개' 결합",
-          blocks: ["3", "개", " ", "삼"],
-          rule_analysis: {
-            rule_name: "단위어 앞 1급 기호표 생략",
-            detail: "숫자 뒤 한글 음절 '개'는 단위어 예외 목록에 포함되므로 1급 기호표 없이 즉시 결합합니다."
-          }
-        }
-      ],
-      EN: [
-        {
-          category: "단독 축어(Shortform)",
-          sentence_pre: "He is my best",
-          sentence_post: "ever.",
-          target_text: "friend",
-          target_braille: "⠋⠗",
-          clue: "UEB 단독 축어 friend(fr) 표기",
-          blocks: ["fri", "end", "fr", "d"],
-          rule_analysis: {
-            rule_name: "UEB Shortform 독립 단어 규칙",
-            detail: "UEB 규정에서 'friend'는 단독 출현 시 2급 축어 'fr'(⠋⠗)로 점역되어야 합니다."
-          }
-        }
-      ]
-    };
-
     function normalizeQuizData(rawQuiz) {
       if (rawQuiz.sentence_pre !== undefined) return rawQuiz;
 
@@ -610,33 +529,35 @@
       };
     }
 
-    async function loadQuizDataset() {
-      const lang = appState.lang;
-      const candidates = [
-        "morpheme_quizzes.json",
-        "morpheme_words.json"
-      ];
+    let quizEngine = null;
 
-      for (const url of candidates) {
+    function refillQuizList() {
+      quizList = [];
+      for (let i = 0; i < 20; i++) {
+        quizList.push(quizEngine.next({ lang: appState.lang, game: 'blank', level: appState.level }));
+      }
+      document.getElementById('total-question-num').textContent = quizList.length;
+    }
+
+    async function loadQuizDataset() {
+      try {
+        quizEngine = await loadQuizEngine();
+        refillQuizList();
+        renderCurrentQuiz();
+        return;
+      } catch (e) {
+        console.warn("조합 출제 엔진 로드 실패, 퀴즈 은행을 사용합니다.", e);
+      }
+
+      if (!quizEngine) {
         try {
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          const rawData = await res.json();
-          let list = [];
-          if (Array.isArray(rawData)) list = rawData;
-          else list = rawData[lang] || rawData[lang.toUpperCase()] || rawData[lang.toLowerCase()] || [];
-          if (!Array.isArray(list) || !list.length) continue;
-          quizList = list.map(normalizeQuizData);
-          break;
-        } catch {
-          // 다음 후보 파일 시도
+          const rawData = await loadQuizBank();
+          quizList = bankItems(rawData, appState.lang).map(normalizeQuizData);
+        } catch (err) {
+          console.warn("quiz_bank.json 로드 실패", err);
         }
       }
 
-      if (!quizList.length) {
-        const fallback = FALLBACK_DATASET[appState.lang] || FALLBACK_DATASET.KO;
-        quizList = fallback.map(normalizeQuizData);
-      }
       document.getElementById('total-question-num').textContent = quizList.length;
       renderCurrentQuiz();
     }
@@ -818,29 +739,8 @@
         isCorrect = (joined === q.target_text || (expectedSequence !== "" && joined === expectedSequence));
       }
 
-      // 오답/학습 통계 데이터 단일화 기록 (LocalStorage: braille_rule_stats)
       const ruleName = (q.rule_analysis && q.rule_analysis.rule_name) || q.category || '구문 결합 규정';
-      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
-      if (!ruleStats[ruleName]) ruleStats[ruleName] = { errors: 0, trials: 0, games: {} };
-      ruleStats[ruleName].trials = (ruleStats[ruleName].trials || 0) + 1;
-      if (!isCorrect) {
-        ruleStats[ruleName].errors = (ruleStats[ruleName].errors || 0) + 1;
-        if (!ruleStats[ruleName].games) ruleStats[ruleName].games = {};
-        ruleStats[ruleName].games['blank'] = (ruleStats[ruleName].games['blank'] || 0) + 1;
-      }
-      localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
-
-      // postMessage 및 BroadcastChannel 노티
-      const messageData = {
-        type: 'RECORD_BLANK_RESULT',
-        game: 'blank',
-        isCorrect: !!isCorrect,
-        rule_name: ruleName,
-        target_text: q.target_text
-      };
-      try {
-        if (window.parent && window.parent !== window) window.parent.postMessage(messageData, '*');
-      } catch(e) {}
+      recordResult({ game: 'blank', rule: ruleName, correct: isCorrect });
 
       const card = document.getElementById('game-card');
 
@@ -851,13 +751,11 @@
 
         setTimeout(() => {
           currentQuizIndex++;
-          if (currentQuizIndex < quizList.length) {
-            renderCurrentQuiz();
-          } else {
-            // 풀 한 바퀴 모두 완주 시 인덱스 리셋하여 지속적 출제
+          if (currentQuizIndex >= quizList.length) {
             currentQuizIndex = 0;
-            renderCurrentQuiz();
+            if (quizEngine) refillQuizList();
           }
+          renderCurrentQuiz();
         }, 1200);
       } else {
         if (sfxWrong) sfxWrong.triggerAttackRelease("A1", "8n");
@@ -879,12 +777,16 @@
     }
 
     function navigateBack() {
-      const params = new URLSearchParams({
+      persistSettings({
         lang: appState.lang,
         mode: appState.input_mode,
-        level: appState.level
+        level: appState.level,
+        theme: appState.theme,
+        tts: appState.tts,
+        sfx: appState.sfx,
+        emboss: appState.embossMode
       });
-      window.location.href = `front_end.html?${params.toString()}`;
+      goHub();
     }
 
         document.getElementById('btn-verify-investigation').onclick = verifyAnswer;
@@ -911,11 +813,12 @@
     const closeSettingsBtn = document.getElementById('btn-settings-close-x');
     const saveSettingsBtn = document.getElementById('btn-save-settings');
 
+    const storedModal = loadSettings();
     const globalSettings = {
-      theme: localStorage.getItem('braille_theme') || 'off',
-      scale: localStorage.getItem('braille_text_scale') || 'normal',
-      tts: localStorage.getItem('braille_tts') !== 'false',
-      pitch: localStorage.getItem('braille_pitch') !== 'false'
+      theme: storedModal.theme,
+      scale: storedModal.scale,
+      tts: storedModal.tts,
+      pitch: storedModal.pitch
     };
 
         function normalizeTheme(theme) {
@@ -961,22 +864,15 @@
         if (ttsChk) globalSettings.tts = ttsChk.checked;
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
 
-                localStorage.setItem('braille_theme', globalSettings.theme);
-        localStorage.setItem('braille_text_scale', globalSettings.scale);
-        localStorage.setItem('braille_tts', globalSettings.tts.toString());
-        localStorage.setItem('braille_pitch', globalSettings.pitch.toString());
+        persistSettings({
+          theme: globalSettings.theme,
+          scale: globalSettings.scale,
+          tts: globalSettings.tts,
+          pitch: globalSettings.pitch
+        });
 
         applyVisualSettings();
         settingsModal.classList.add('hidden');
-
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({
-              type: 'CHANGE_SETTINGS',
-              settings: globalSettings
-            }, '*');
-          }
-        } catch (e) {}
       });
     }
 

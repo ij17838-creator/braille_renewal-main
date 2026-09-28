@@ -206,7 +206,7 @@
               </span>
             </div>
             <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-0.5">
-              <span id="label-mode-info">Level 1 · KO · 낱말 매칭</span>
+              <span id="label-mode-info">랜덤 · KO · 낱말 매칭</span>
               <span>·</span>
               <span class="text-indigo-600 font-black" id="combo-counter">연속 0콤보</span>
             </div>
@@ -255,8 +255,8 @@
       </section>
 
       <!-- 3. 4지선다 카드 그리드 -->
-      <section class="flex-1 p-4 sm:p-6 overflow-y-auto custom-scrollbar flex items-center justify-center">
-        <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl"></div>
+      <section class="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar flex flex-col">
+        <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl mx-auto my-auto"></div>
       </section>
 
       <!-- 4. 하단 키보드 가이드 -->
@@ -349,21 +349,25 @@
   </div>
 
   <script type="module">
+    import { loadQuizEngine } from './quiz_combo.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems } from './shell.js';
+
     // 1. 상태 객체
     const urlParams = new URLSearchParams(window.location.search);
+    const stored = loadSettings();
 
     const appState = {
-      lang: urlParams.get('lang') || localStorage.getItem('braille_lang') || 'KO',
-      level: parseInt(urlParams.get('level') || localStorage.getItem('braille_level') || '1'),
+      lang: (urlParams.get('lang') || stored.lang).toUpperCase(),
+      level: parseInt(urlParams.get('level') || stored.level, 10) || 1,
       combo: 0,
       currentQuiz: null,
       isAnsweringLocked: false,
       dataset: [],
-      quizIndex: 0,
-      theme: localStorage.getItem('braille_theme') || 'off',
-      scale: localStorage.getItem('braille_text_scale') || 'normal',
-      tts: localStorage.getItem('braille_tts') !== 'false',
-      pitch: localStorage.getItem('braille_pitch') !== 'false'
+      fallbackBag: [],
+      theme: stored.theme,
+      scale: stored.scale,
+      tts: stored.tts,
+      pitch: stored.pitch
     };
 
     // 2. 오디오 엔진
@@ -416,34 +420,48 @@
       return html + `</div>`;
     }
 
-    // 4. JSON 데이터 로더
+    // 4. 조합 출제. 단계는 풀을 나누지 않는다.
+    let quizEngine = null;
+
+    function shuffleItems(list) {
+      const copy = list.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function takeFallbackQuiz() {
+      if (!appState.fallbackBag.length) appState.fallbackBag = shuffleItems(appState.dataset);
+      return appState.fallbackBag.pop();
+    }
+
     async function loadQuizDataset() {
       try {
-        const res = await fetch('morpheme_words.json');
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        const pool = data[appState.lang] || data.KO;
-        appState.dataset = pool.filter(q => q.level <= appState.level);
-        if (appState.dataset.length === 0) appState.dataset = pool;
+        quizEngine = await loadQuizEngine();
       } catch (e) {
-        console.warn("morpheme_words.json 로드 실패 fallback 가동");
-        appState.dataset = [
-          { category: "기초 약자", type_label: "기초 음절", target_text: "나", target_braille: "⠉", distractors_braille: ["⠁", "⠃", "⠙"], hint: "초성 ㄴ과 모음 ㅏ가 결합한 약자 '나'입니다." },
-          { category: "단어 약어", type_label: "접속어 약어", target_text: "그리고", target_braille: "⠁⠥", distractors_braille: ["⠁⠕", "⠁⠢", "⠉⠥"], hint: "접속어 '그리고'의 단독 약자입니다." }
-        ];
+        console.warn("조합 출제 엔진 로드 실패, 퀴즈 은행을 사용합니다.", e);
+        try {
+          const data = await loadQuizBank();
+          appState.dataset = bankItems(data, appState.lang).slice();
+        } catch (err) {
+          appState.dataset = [];
+        }
       }
       renderNextQuiz();
     }
 
     // 5. 퀴즈 바인딩
     function renderNextQuiz() {
-      if (appState.dataset.length === 0) return;
-      const q = appState.dataset[appState.quizIndex % appState.dataset.length];
-      appState.quizIndex++;
+      const q = quizEngine
+        ? quizEngine.next({ lang: appState.lang, game: 'morpheme' })
+        : takeFallbackQuiz();
+      if (!q) return;
       appState.currentQuiz = q;
       appState.isAnsweringLocked = false;
 
-      document.getElementById('label-mode-info').textContent = `Level ${appState.level} · ${appState.lang} · 낱말 매칭`;
+      document.getElementById('label-mode-info').textContent = `랜덤 · ${appState.lang} · 낱말 매칭`;
       document.getElementById('prompt-category').textContent = q.category || '낱말 퀴즈';
       document.getElementById('prompt-type-label').textContent = q.type_label || '약자/약어';
       document.getElementById('target-prompt-text').textContent = q.target_text;
@@ -538,17 +556,11 @@
     function recordStat(isCorrect) {
       const q = appState.currentQuiz;
       if (!q) return;
-      const typeKey = q.category || q.type_label || '낱말 점자';
-
-      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
-      if (!ruleStats[typeKey]) ruleStats[typeKey] = { errors: 0, trials: 0, games: {} };
-      ruleStats[typeKey].trials = (ruleStats[typeKey].trials || 0) + 1;
-      if (!isCorrect) {
-        ruleStats[typeKey].errors = (ruleStats[typeKey].errors || 0) + 1;
-        if (!ruleStats[typeKey].games) ruleStats[typeKey].games = {};
-        ruleStats[typeKey].games['morpheme'] = (ruleStats[typeKey].games['morpheme'] || 0) + 1;
-      }
-      localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
+      recordResult({
+        game: 'morpheme',
+        rule: q.category || q.type_label || '낱말 점자',
+        correct: !!isCorrect
+      });
     }
 
     function updateTitleBadge() {
@@ -581,11 +593,15 @@
     };
 
     document.getElementById('btn-go-hub').onclick = () => {
-      const params = new URLSearchParams({
+      persistSettings({
         lang: appState.lang,
-        level: appState.level.toString()
+        level: appState.level,
+        theme: appState.theme,
+        scale: appState.scale,
+        tts: appState.tts,
+        pitch: appState.pitch
       });
-      window.location.href = `front_end.html?${params.toString()}`;
+      goHub();
     };
 
     // 설정 모달
@@ -595,8 +611,7 @@
     document.getElementById('btn-save-settings').onclick = () => {
       appState.tts = document.getElementById('chk-tts').checked;
       appState.pitch = document.getElementById('chk-pitch').checked;
-      localStorage.setItem('braille_tts', appState.tts.toString());
-      localStorage.setItem('braille_pitch', appState.pitch.toString());
+      persistSettings({ tts: appState.tts, pitch: appState.pitch, theme: appState.theme, scale: appState.scale });
       settingsModal.classList.add('hidden');
       applyVisualSettings();
     };
@@ -604,7 +619,7 @@
     // 취약 모달
     const weaknessModal = document.getElementById('weakness-modal');
     document.getElementById('btn-open-weakness').onclick = () => {
-      const stats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
+      const stats = readRuleStats();
       const sorted = Object.entries(stats)
         .filter(([k, v]) => v.errors > 0)
         .sort((a, b) => b[1].errors - a[1].errors)
@@ -653,7 +668,7 @@
       btn.onclick = () => {
         const t = btn.dataset.theme;
         appState.theme = (appState.theme === t) ? 'off' : t;
-        localStorage.setItem('braille_theme', appState.theme);
+        persistSettings({ theme: appState.theme, scale: appState.scale, tts: appState.tts, pitch: appState.pitch });
         applyVisualSettings();
       };
     });
@@ -661,7 +676,7 @@
     document.querySelectorAll('.scale-btn').forEach(btn => {
       btn.onclick = () => {
         appState.scale = btn.dataset.scale;
-        localStorage.setItem('braille_text_scale', appState.scale);
+        persistSettings({ theme: appState.theme, scale: appState.scale, tts: appState.tts, pitch: appState.pitch });
         applyVisualSettings();
       };
     });

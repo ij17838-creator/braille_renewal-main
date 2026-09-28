@@ -299,7 +299,7 @@
               <span id="workbench-reverse-parsed" class="font-black text-indigo-700 text-sm">비어 있음</span>
             </div>
             <div id="workbench-status-desc" class="text-slate-500 font-semibold text-[11px]">
-              파이썬 규칙 분석기(syntax_analyzer)가 실시간으로 조립 정합성을 평가합니다.
+              조립 순서가 정답과 맞는지 확인합니다.
             </div>
           </div>
         </div>
@@ -413,42 +413,33 @@
   </div>
 
   <script type="module">
+    import { loadQuizEngine } from './quiz_combo.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems } from './shell.js';
+
     // =========================================================================
     // 1. 상태 저장소 & 프론트엔드/파이썬 통신 인터페이스 (State & Bridge)
     // =========================================================================
+    const bootParams = new URLSearchParams(window.location.search);
+    const stored = loadSettings();
     const state = {
-      lang: "KO",                    // "KO" | "EN"
-      level: 1,                      // 1 ~ 5
-      block_granularity: "WORD",     // "SYLLABLE" | "WORD"
+      lang: (bootParams.get('lang') || stored.lang).toUpperCase(),
+      level: parseInt(bootParams.get('level') || stored.level, 10) || 1,
+      block_granularity: "WORD",
       combo: 0,
       badgeTitle: "초보 건축가",
-      currentQuiz: null,             // py 엔진(ko_generator/en_generator)이 출제한 원천 퀴즈 객체
-      assembledBlocks: [],           // 조립 작업대에 놓인 { text, poolIdx, elem } 리스트
-      isVerifying: false,            // 검증 중 상태 플래그
-      weaknessStats: JSON.parse(localStorage.getItem('braille_builder_stats') || JSON.stringify({
-        '초성 및 종성 위치 혼동': 1,
-        '수표 및 1급 기호표 충돌': 1,
-        '형태소 가교 결합 위반': 1
-      }))
+      currentQuiz: null,
+      assembledBlocks: [],
+      isVerifying: false,
+      weaknessStats: errorCounts()
     };
 
-    // GitHub Pages 및 단일/다중 탭 환경 모두를 위한 듀얼 버스 (BroadcastChannel + postMessage)
-    const gameBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('braille_game_bus') : null;
+    let quizEngine = null;
 
-    function emitToFrontEnd(type, payload = {}) {
-      const message = { source: 'braille_builders', type, payload, timestamp: Date.now() };
-      
-      // 1. iframe 부모 창(front_end.html)으로 전송
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(message, '*');
-      }
-      // 2. 브로드캐스트 버스 공유 (동일 도메인 탭 간 연동)
-      if (gameBus) {
-        gameBus.postMessage(message);
-      }
+    function localComboQuiz() {
+      if (!quizEngine) return null;
+      return quizEngine.next({ lang: state.lang, game: 'builders', level: state.level });
     }
 
-    // 규칙명 음성 안내 및 텍스트 표시용 포맷팅 헬퍼 함수
     function formatRuleName(rule) {
       if (!rule) return "취약 규칙";
       return rule;
@@ -634,29 +625,32 @@
       }
 
       state.isVerifying = true;
-      document.getElementById('workbench-status-desc').textContent = "파이썬 분석 엔진에서 정합성 및 인지 오답 규칙을 평가하고 있습니다...";
+      document.getElementById('workbench-status-desc').textContent = "점자 규칙을 확인하고 있습니다...";
 
       // 1차 클라이언트 비교 (빠른 응답 및 fallback)
       const targetSeq = state.currentQuiz.correct_sequence;
       const isSequenceCorrect = JSON.stringify(userSeq) === JSON.stringify(targetSeq);
 
-      // 상위 front_end 프로그램 및 Python syntax_analyzer로 검증 요청 발송
-      emitToFrontEnd('VERIFY_BLOCKS', {
-        quiz: state.currentQuiz,
-        userSequence: userSeq,
-        isLocalMatch: isSequenceCorrect
+      applyVerificationResult({
+        isCorrect: isSequenceCorrect,
+        ruleViolated: isSequenceCorrect ? null : (state.currentQuiz.meta?.type || state.currentQuiz.rule_type || "규칙 결합 오류"),
+        message: isSequenceCorrect ? "정답입니다!" : "올바르지 않은 블록이 조립되었거나 순서가 일치하지 않습니다."
       });
+    }
 
-      // front_end 응답이 지연되거나 단독 실행 모드일 경우 자체 판정 수행
-      setTimeout(() => {
-        if (state.isVerifying) {
-          applyVerificationResult({
-            isCorrect: isSequenceCorrect,
-            ruleViolated: isSequenceCorrect ? null : (state.currentQuiz.meta?.type || state.currentQuiz.rule_type || "규칙 결합 오류"),
-            message: isSequenceCorrect ? "정답입니다!" : "올바르지 않은 블록이 조립되었거나 순서가 일치하지 않습니다."
-          });
-        }
-      }, 400);
+    async function showNextQuiz() {
+      const generated = localComboQuiz();
+      if (generated) {
+        applyNewQuiz(generated);
+        return;
+      }
+      try {
+        const bank = await loadQuizBank();
+        const list = bankItems(bank, state.lang);
+        if (list.length) applyNewQuiz(list[Math.floor(Math.random() * list.length)]);
+      } catch (e) {
+        console.warn("quiz_bank.json 로드 실패", e);
+      }
     }
 
         function applyVerificationResult(resultData) {
@@ -667,6 +661,8 @@
             playSound('correct');
             state.combo++;
             updateTitleAndBadges();
+            const ruleName = state.currentQuiz.rule_type || state.currentQuiz.category || "점자 조립";
+            recordResult({ game: 'builders', rule: ruleName, correct: true });
             speak(`정답입니다! 연속 ${state.combo}콤보 달성.`);
 
             document.getElementById('workbench-status-desc').textContent = "규칙 검증 통과! 다음 문제를 준비합니다.";
@@ -674,24 +670,13 @@
 
             setTimeout(() => {
               workbench.classList.remove('animate-pop', 'bg-emerald-50', 'border-emerald-400');
-              // 상위 프로그램에 다음 퀴즈 요청
-              emitToFrontEnd('REQUEST_NEXT_QUIZ', { lastResult: 'CORRECT', combo: state.combo, game: 'builders' });
+              showNextQuiz();
             }, 750);
           } else {
         playSound('wrong');
         const failRule = resultData.ruleViolated || state.currentQuiz.meta?.type || "점자 규칙 오인";
-        
-        state.weaknessStats[failRule] = (state.weaknessStats[failRule] || 0) + 1;
-        localStorage.setItem('braille_builder_stats', JSON.stringify(state.weaknessStats));
-
-        // 단일화된 LocalStorage 구조 (braille_rule_stats) 업데이트
-        const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
-        if (!ruleStats[failRule]) ruleStats[failRule] = { errors: 0, trials: 0, games: {} };
-        ruleStats[failRule].errors = (ruleStats[failRule].errors || 0) + 1;
-        ruleStats[failRule].trials = (ruleStats[failRule].trials || 0) + 1;
-        if (!ruleStats[failRule].games) ruleStats[failRule].games = {};
-        ruleStats[failRule].games['builders'] = (ruleStats[failRule].games['builders'] || 0) + 1;
-        localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
+        recordResult({ game: 'builders', rule: failRule, correct: false });
+        state.weaknessStats = errorCounts();
 
         state.combo = 0;
         updateTitleAndBadges();
@@ -703,8 +688,6 @@
         setTimeout(() => {
           workbench.classList.remove('animate-shake', 'bg-rose-50', 'border-rose-400');
         }, 500);
-
-        emitToFrontEnd('RECORD_ERROR', { rule: failRule, targetText: state.currentQuiz.target_text });
       }
     }
 
@@ -735,16 +718,19 @@
       const list = document.getElementById('modal-weakness-list');
       const badgeContainer = document.getElementById('modal-badge-list');
 
+      state.weaknessStats = errorCounts();
       const sorted = Object.entries(state.weaknessStats)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
 
-      list.innerHTML = sorted.map(([k, v]) => `
+      list.innerHTML = sorted.length
+        ? sorted.map(([k, v]) => `
         <li class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-rose-100 text-xs font-bold">
           <span class="text-slate-700">${k}</span>
           <span class="text-rose-600">${v}회 오류 검출</span>
         </li>
-      `).join('');
+      `).join('')
+        : '<li class="text-xs text-slate-400 text-center py-2">기록된 오답이 없습니다.</li>';
 
       badgeContainer.innerHTML = `
         <span class="px-3 py-1 rounded-lg text-xs font-black bg-purple-100 text-purple-700 border border-purple-200">
@@ -756,54 +742,6 @@
       `;
 
       modal.classList.remove('hidden');
-    }
-
-    // =========================================================================
-    // 6. 이벤트 라우팅 & 상위 front_end 프로그램 메시지 리스너
-    // =========================================================================
-    function handleIncomingMessage(eventData) {
-      const { type, payload } = eventData || {};
-      if (!type) return;
-
-      switch (type) {
-        case 'LOAD_QUIZ':
-          // 파이썬 제너레이터가 생성하여 front_end가 건네준 퀴즈
-          applyNewQuiz(payload);
-          break;
-
-        case 'VERIFICATION_RESULT':
-          // 파이썬 syntax_analyzer 혹은 front_end의 정밀 규칙 검증 피드백 수신
-          applyVerificationResult(payload);
-          break;
-
-                case 'APPLY_THEME':
-          // 테마 및 고대비 접근성 스타일 동기화
-          if (payload.contrastTheme) {
-            const theme = normalizeTheme(payload.contrastTheme);
-            if (theme && theme !== 'off') {
-              document.documentElement.setAttribute('data-theme', theme);
-            } else {
-              document.documentElement.removeAttribute('data-theme');
-            }
-          }
-          if (payload.accessibleFont) document.body.classList.add("accessible-font");
-          if (payload.textScale) {
-            document.body.classList.remove("text-scale-normal", "text-scale-large", "text-scale-xlarge");
-            document.body.classList.add(`text-scale-${payload.textScale}`);
-          }
-          break;
-
-        case 'SYNC_WEAKNESS':
-          if (payload.stats) {
-            state.weaknessStats = payload.stats;
-          }
-          break;
-      }
-    }
-
-    window.addEventListener('message', (e) => handleIncomingMessage(e.data));
-    if (gameBus) {
-      gameBus.onmessage = (e) => handleIncomingMessage(e.data);
     }
 
     // 키보드 인터랙션 (1~9, Enter, Backspace)
@@ -850,11 +788,8 @@
     const goHomeBtnBuilders = document.getElementById('btn-go-home');
     if (goHomeBtnBuilders) {
       goHomeBtnBuilders.addEventListener('click', () => {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: "NAVIGATE_HUB" }, "*");
-        } else {
-          window.location.href = "front_end.html";
-        }
+        persistSettings({ lang: state.lang, level: state.level, theme: globalSettings.theme, scale: globalSettings.scale, tts: globalSettings.tts, pitch: globalSettings.pitch });
+        goHub();
       });
     }
 
@@ -864,41 +799,19 @@
       
       // 가장 빈도가 높은 취약 규칙 추출
       const sorted = Object.entries(state.weaknessStats).sort((a, b) => b[1] - a[1]);
-      const targetRule = sorted.length > 0 ? sorted[0][0] : null;
-
-      emitToFrontEnd('REQUEST_WEAKNESS_QUIZ', {
-        targetRule: targetRule,
-        lang: state.lang,
-        level: state.level
-      });
-      
-      speak(`${formatRuleName(targetRule)} 집중 훈련 문제를 요청합니다.`);
+      const targetRule = sorted.length > 0 ? sorted[0][0] : "점자 조립";
+      speak(`${formatRuleName(targetRule)} 문제를 다시 풀어 보세요.`);
+      showNextQuiz();
     });
 
-        // 배포 및 초기화 루틴: 로드 완료 신호 발송
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       applyVisualSettings();
-      emitToFrontEnd('BUILDERS_READY');
-
-      // Standalone Fallback: front_end가 없는 단독 브라우저 실행 시 Mock 데이터 테스트
-      setTimeout(() => {
-        if (!state.currentQuiz) {
-          console.info("[builders.html] 단독 테스트 실행: 가상 파이썬 엔진 퀴즈 로드");
-          applyNewQuiz({
-            input_mode: "BLOCK",
-            level: 1,
-            lang: "KO",
-            category: "핵심 단어",
-            block_granularity: "SYLLABLE",
-            target_text: "하늘",
-            target_braille: "⠚⠉⠮",
-            correct_sequence: ["하", "늘"],
-            available_blocks: ["하", "달", "늘", "별"],
-            meta: { type: "초성 및 모음 결합" },
-            prompt_audio: "문제 제시어는 하늘입니다. 올바른 점자 블록을 순서대로 조립하세요."
-          });
-        }
-      }, 500);
+      try {
+        quizEngine = await loadQuizEngine();
+      } catch (e) {
+        console.warn("조합 출제 엔진 로드 실패", e);
+      }
+      await showNextQuiz();
     });
 
     // =========================================================================
@@ -909,11 +822,12 @@
     const closeSettingsBtn = document.getElementById('btn-settings-close-x');
     const saveSettingsBtn = document.getElementById('btn-save-settings');
 
+    const storedModal = loadSettings();
     const globalSettings = {
-      theme: localStorage.getItem('braille_theme') || 'off',
-      scale: localStorage.getItem('braille_text_scale') || 'normal',
-      tts: localStorage.getItem('braille_tts') !== 'false',
-      pitch: localStorage.getItem('braille_pitch') !== 'false'
+      theme: storedModal.theme,
+      scale: storedModal.scale,
+      tts: storedModal.tts,
+      pitch: storedModal.pitch
     };
 
         function normalizeTheme(theme) {
@@ -959,22 +873,15 @@
         if (ttsChk) globalSettings.tts = ttsChk.checked;
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
 
-                localStorage.setItem('braille_theme', globalSettings.theme);
-        localStorage.setItem('braille_text_scale', globalSettings.scale);
-        localStorage.setItem('braille_tts', globalSettings.tts.toString());
-        localStorage.setItem('braille_pitch', globalSettings.pitch.toString());
+        persistSettings({
+          theme: globalSettings.theme,
+          scale: globalSettings.scale,
+          tts: globalSettings.tts,
+          pitch: globalSettings.pitch
+        });
 
         applyVisualSettings();
         settingsModal.classList.add('hidden');
-
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({
-              type: 'CHANGE_SETTINGS',
-              settings: globalSettings
-            }, '*');
-          }
-        } catch (e) {}
       });
     }
 

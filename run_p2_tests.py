@@ -102,7 +102,7 @@ def test_canonical_roundtrip():
     period = marks_data["terminal_punctuation"]["items"]["."]["unicode"]
     assert bang == "⠖" and period == "⠲"
 
-    for path in ("morpheme_words.json", "morpheme_quizzes.json"):
+    for path in ("quiz_bank.json",):
         with open(os.path.join(base_dir, path), "r", encoding="utf-8") as f:
             quiz = json.load(f)
         for item in quiz.get("KO", []):

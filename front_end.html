@@ -391,83 +391,42 @@
 
   <!-- JavaScript 로직 결합 영역 -->
   <script type="module">
-        // =========================================================================
-    // 1. 공통 환경 설정 및 LocalStorage 통계 구조 단일화 관리
-    // =========================================================================
+    import {
+      loadSettings,
+      saveSettings as persistSettings,
+      applyVisualSettings as paintSettings,
+      readRuleStats,
+      readHistory,
+      clearLearningData
+    } from './shell.js';
+
+    const stored = loadSettings();
     const globalSettings = {
-      lang: localStorage.getItem('braille_lang') || 'KO',
-      level: parseInt(localStorage.getItem('braille_level') || '1'),
-      mode: localStorage.getItem('braille_input_mode') || 'KEYBOARD',
-      contrastTheme: localStorage.getItem('braille_theme') || 'off',
-      textScale: localStorage.getItem('braille_text_scale') || 'normal',
-      tts: localStorage.getItem('braille_tts') !== 'false',
-      pitch: localStorage.getItem('braille_pitch') !== 'false'
+      lang: stored.lang,
+      level: stored.level,
+      mode: stored.mode,
+      contrastTheme: stored.theme,
+      textScale: stored.scale,
+      tts: stored.tts,
+      pitch: stored.pitch
     };
 
     function saveSettings() {
-      localStorage.setItem('braille_lang', globalSettings.lang);
-      localStorage.setItem('braille_level', globalSettings.level.toString());
-      localStorage.setItem('braille_input_mode', globalSettings.mode);
-      localStorage.setItem('braille_theme', globalSettings.contrastTheme);
-      localStorage.setItem('braille_text_scale', globalSettings.textScale);
-      localStorage.setItem('braille_tts', globalSettings.tts.toString());
-      localStorage.setItem('braille_pitch', globalSettings.pitch.toString());
-      applyVisualSettings();
-    }
-
-        function normalizeTheme(theme) {
-          if (theme === 'yellow') return 'hc-yellow';
-          if (theme === 'bw') return 'hc-white-black';
-          return theme;
-        }
-
-        function applyVisualSettings() {
-          const b = document.body;
-          b.classList.remove('text-scale-normal', 'text-scale-large', 'text-scale-xlarge');
-
-          const theme = normalizeTheme(globalSettings.contrastTheme);
-          if (theme && theme !== 'off') {
-            document.documentElement.setAttribute('data-theme', theme);
-          } else {
-            document.documentElement.removeAttribute('data-theme');
-          }
-
-          b.classList.add(`text-scale-${globalSettings.textScale}`);
-        }
-
-    // 통계 기록 표준 헬퍼 (LocalStorage 단일 데이터 구조 관리)
-    function recordRuleStat(game, rule, isCorrect) {
-      if (!rule || typeof rule !== 'string') return;
-      
-      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
-      if (!ruleStats[rule]) {
-        ruleStats[rule] = { errors: 0, trials: 0, games: {} };
-      }
-      
-      ruleStats[rule].trials = (ruleStats[rule].trials || 0) + 1;
-      if (!isCorrect) {
-        ruleStats[rule].errors = (ruleStats[rule].errors || 0) + 1;
-      }
-      if (game) {
-        if (!ruleStats[rule].games) ruleStats[rule].games = {};
-        ruleStats[rule].games[game] = (ruleStats[rule].games[game] || 0) + (isCorrect ? 0 : 1);
-      }
-
-      localStorage.setItem('braille_rule_stats', JSON.stringify(ruleStats));
-    }
-
-    function addGlobalHistory(entry) {
-      if (!entry || typeof entry !== 'object' || !entry.game) return;
-      const history = JSON.parse(localStorage.getItem('braille_global_history') || '[]');
-      history.unshift({
-        game: String(entry.game),
-        lang: entry.lang || globalSettings.lang,
-        level: Number(entry.level) || globalSettings.level,
-        score: Number(entry.score) || 0,
-        total: Number(entry.total) || 0,
-        date: entry.date || new Date().toISOString()
+      const saved = persistSettings({
+        lang: globalSettings.lang,
+        level: globalSettings.level,
+        mode: globalSettings.mode,
+        theme: globalSettings.contrastTheme,
+        scale: globalSettings.textScale,
+        tts: globalSettings.tts,
+        pitch: globalSettings.pitch
       });
-      localStorage.setItem('braille_global_history', JSON.stringify(history.slice(0, 50)));
+      globalSettings.contrastTheme = saved.theme;
+      globalSettings.textScale = saved.scale;
+    }
+
+    function applyVisualSettings() {
+      paintSettings({ theme: globalSettings.contrastTheme, scale: globalSettings.textScale });
     }
 
     // =========================================================================
@@ -494,119 +453,9 @@
       });
     });
 
-        // =========================================================================
-    // 3. 프로세스 간 통신 (postMessage / BroadcastChannel 수신 및 통계 기록)
-    // 규격 검증 및 LocalStorage 데이터 구조 단일화 처리
-    // =========================================================================
-    const gameBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('braille_game_bus') : null;
-
-    function handleIncomingStats(data) {
-      if (!data || typeof data !== 'object') return;
-
-      const type = data.type || (data.payload && data.source ? 'BUILDER_BUS' : null);
-
-      // 1. triangle.html 또는 타 게임 세션 완료 이벤트 (GAME_COMPLETE)
-      if (type === 'GAME_COMPLETE') {
-        if (typeof data.score === 'number' && typeof data.total === 'number') {
-          addGlobalHistory({
-            game: data.game || 'triangle',
-            lang: data.lang || globalSettings.lang,
-            level: data.level || globalSettings.level,
-            score: data.score,
-            total: data.total,
-            date: new Date().toISOString()
-          });
-
-          // 세부 문제 결과 항목이 전달되었을 경우 규칙 통계 업데이트
-          if (Array.isArray(data.results)) {
-            data.results.forEach(item => {
-              if (item && item.rule_type) {
-                recordRuleStat(data.game || 'triangle', item.rule_type, !!item.is_correct);
-              }
-            });
-          }
-        }
-      }
-
-      // 2. select.html 또는 문항별 제출 결과 (SUBMIT_RESULT)
-      if (type === 'SUBMIT_RESULT') {
-        const gameName = data.game || 'select';
-        const isCorrect = !!data.isCorrect;
-        
-        let ruleName = null;
-        if (data.quiz) {
-          ruleName = data.quiz.rule_label || data.quiz.rule_type || null;
-        } else if (data.rule_type) {
-          ruleName = data.rule_type;
-        }
-
-        if (ruleName) {
-          recordRuleStat(gameName, ruleName, isCorrect);
-        }
-
-        // 호환성을 위해 구버전 braille_select_stats도 동시 동기화
-        if (!isCorrect && ruleName) {
-          const selectStats = JSON.parse(localStorage.getItem('braille_select_stats') || '{}');
-          selectStats[ruleName] = (selectStats[ruleName] || 0) + 1;
-          localStorage.setItem('braille_select_stats', JSON.stringify(selectStats));
-        }
-      }
-
-      // 3. builders.html 오답 수신 (RECORD_ERROR)
-      if (type === 'RECORD_ERROR' || (data.source === 'braille_builders' && data.type === 'RECORD_ERROR')) {
-        const payload = data.payload || data;
-        const ruleName = payload.rule || '빌더 결합 오류';
-        recordRuleStat('builders', ruleName, false);
-
-        // 호환성을 위해 braille_builder_stats 보존
-        const bStats = JSON.parse(localStorage.getItem('braille_builder_stats') || '{}');
-        bStats[ruleName] = (bStats[ruleName] || 0) + 1;
-        localStorage.setItem('braille_builder_stats', JSON.stringify(bStats));
-      }
-
-      // 4. blank.html 오답/제출 수신 (RECORD_BLANK_RESULT)
-      if (type === 'RECORD_BLANK_RESULT') {
-        const ruleName = data.rule_name || data.rule_type || '구문 결합 규정';
-        recordRuleStat('blank', ruleName, !!data.isCorrect);
-      }
-    }
-
-        window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'NAVIGATE_HUB') {
-        window.location.href = 'front_end.html';
-      }
-      if (e.data && e.data.type === 'CHANGE_SETTINGS' && e.data.settings) {
-        const s = e.data.settings;
-        if (s.theme) globalSettings.contrastTheme = s.theme;
-        if (s.scale) globalSettings.textScale = s.scale;
-        if (typeof s.tts === 'boolean') globalSettings.tts = s.tts;
-        if (typeof s.pitch === 'boolean') globalSettings.pitch = s.pitch;
-        saveSettings();
-      }
-      handleIncomingStats(e.data);
-    });
-    if (gameBus) {
-      gameBus.onmessage = (e) => {
-        if (e.data && e.data.type === 'CHANGE_SETTINGS' && e.data.settings) {
-          const s = e.data.settings;
-          if (s.theme) globalSettings.contrastTheme = s.theme;
-          if (s.scale) globalSettings.textScale = s.scale;
-          if (typeof s.tts === 'boolean') globalSettings.tts = s.tts;
-          if (typeof s.pitch === 'boolean') globalSettings.pitch = s.pitch;
-          saveSettings();
-        }
-        handleIncomingStats(e.data);
-      };
-    }
-
-    // =========================================================================
-    // 4. 통합 통계 대시보드 렌더러 (단일화된 braille_rule_stats 데이터 연동)
-    // =========================================================================
     function renderIntegratedStats() {
-      const history = JSON.parse(localStorage.getItem('braille_global_history') || '[]');
-      const ruleStats = JSON.parse(localStorage.getItem('braille_rule_stats') || '{}');
-      const selectStats = JSON.parse(localStorage.getItem('braille_select_stats') || '{}');
-      const builderStats = JSON.parse(localStorage.getItem('braille_builder_stats') || '{}');
+      const history = readHistory();
+      const ruleStats = readRuleStats();
 
       // 1) 전체 요약 계산
       const totalSessions = history.length;
@@ -622,23 +471,10 @@
       if (totalSessionsEl) totalSessionsEl.textContent = `${totalSessions}회`;
       if (avgAccuracyEl) avgAccuracyEl.textContent = `${avgAccuracy}%`;
 
-      // 2) 통합 취약 규칙 합산 (단일화 구조 `braille_rule_stats` 우선 반영 및 하위 호환)
       const combinedWeakness = {};
-
-      // 1차: 신규 단일화 구조 반영
       Object.entries(ruleStats).forEach(([rule, stat]) => {
         const errorCount = (stat && typeof stat.errors === 'number') ? stat.errors : 0;
-        if (errorCount > 0) {
-          combinedWeakness[rule] = (combinedWeakness[rule] || 0) + errorCount;
-        }
-      });
-
-      // 2차: 기존 개별 레거시 키 보완
-      Object.entries(selectStats).forEach(([k, v]) => {
-        if (!combinedWeakness[k]) combinedWeakness[k] = v;
-      });
-      Object.entries(builderStats).forEach(([k, v]) => {
-        if (!combinedWeakness[k]) combinedWeakness[k] = (combinedWeakness[k] || 0) + v;
+        if (errorCount > 0) combinedWeakness[rule] = errorCount;
       });
 
       const weakListElem = document.getElementById('integrated-weak-list');
@@ -707,9 +543,7 @@
     if (clearStatsBtn) {
       clearStatsBtn.addEventListener('click', () => {
         if (confirm("모든 학습 이력 및 취약점 통계를 초기화하시겠습니까?")) {
-          localStorage.removeItem('braille_global_history');
-          localStorage.removeItem('braille_select_stats');
-          localStorage.removeItem('braille_builder_stats');
+          clearLearningData();
           renderIntegratedStats();
         }
       });
