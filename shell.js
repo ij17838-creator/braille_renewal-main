@@ -1,7 +1,10 @@
+import { unitsFor } from './curriculum.js';
+
 const KEYS = {
   lang: 'braille_lang',
   level: 'braille_level',
   mode: 'braille_input_mode',
+  study: 'braille_study_mode',
   theme: 'braille_theme',
   scale: 'braille_text_scale',
   tts: 'braille_tts',
@@ -22,6 +25,16 @@ function readJson(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+export function loadStudyMode() {
+  return localStorage.getItem(KEYS.study) === 'free' ? 'free' : 'path';
+}
+
+export function saveStudyMode(mode) {
+  const next = mode === 'free' ? 'free' : 'path';
+  localStorage.setItem(KEYS.study, next);
+  return next;
 }
 
 export function loadSettings() {
@@ -151,15 +164,23 @@ function sessionMet(correct, total) {
   return total > 0 && correct * 100 >= total * PASS_PERCENT;
 }
 
+// 항목 키는 "단원id:글자"다. 다른 단원에서 복습으로 다시 나와도 그 키의 단원 오답 목록을 고친다.
+function unitIdFromItem(item) {
+  const mark = item.indexOf(':');
+  if (mark <= 0) return '';
+  return item.slice(0, mark);
+}
+
 export function recordItem({ lang, unitId, itemId, skill, correct } = {}) {
-  const id = unitId ? String(unitId) : '';
+  const sessionId = unitId ? String(unitId) : '';
   const item = itemId == null ? '' : String(itemId);
   const skillName = normalizeSkill(skill);
-  if (!id || !item || !skillName) return readProgress();
+  const ownerId = unitIdFromItem(item) || sessionId;
+  if (!ownerId || !item || !skillName) return readProgress();
   const data = readProgress();
   const langState = ensureLang(data, lang);
-  langState.current = id;
-  const unit = ensureUnit(langState, id);
+  langState.current = sessionId || ownerId;
+  const unit = ensureUnit(langState, ownerId);
   const wrong = unit.wrong.filter((key) => key !== item);
   if (!correct) wrong.push(item);
   unit.wrong = wrong;
@@ -183,10 +204,52 @@ export function isUnitPassed(lang, unitId) {
   return !!(unit && unit.passed);
 }
 
-export function isUnitOpen(lang, unitId) {
-  const langState = readProgress()[langKey(lang)];
-  if (!langState || typeof langState !== 'object') return false;
-  return langState.current === unitId;
+function savedUnits(lang) {
+  const saved = readProgress()[langKey(lang)];
+  return saved && saved.units && typeof saved.units === 'object' ? saved.units : {};
+}
+
+// 순차에서는 첫 단원만 처음부터 열린다.
+// 그 뒤 단원은 앞 단원을 모두 통과해야 열린다. 지금 보는 단원이라는 이유로는 열리지 않는다.
+// Free에서 통과로 해금된 앞 단원(opened)은 순차로 돌아와도 들어갈 수 있다.
+// Free 모드에서는 목록에 있는 단원을 모두 고를 수 있다.
+export function isUnitOpen(lang, unitId, orderedIds) {
+  const id = unitId ? String(unitId) : '';
+  const ids = Array.isArray(orderedIds) ? orderedIds.map(String) : [];
+  const index = ids.indexOf(id);
+  if (index < 0) return false;
+  if (loadStudyMode() === 'free') return true;
+  const units = savedUnits(lang);
+  if (units[id] && (units[id].passed || units[id].opened)) return true;
+  if (index === 0) return true;
+  for (let i = 0; i < index; i += 1) {
+    const prev = units[ids[i]];
+    if (!prev || !prev.passed) return false;
+  }
+  return true;
+}
+
+// Free에서 이 단원을 통과하면, 그 앞 단원은 통과로 치지 않고 해금만 한다.
+function grantEarlierUnits(langState, lang, unitId) {
+  if (loadStudyMode() !== 'free') return;
+  const code = langKey(lang) === 'EN' ? 'en' : 'ko';
+  const ids = unitsFor(code).map((unit) => unit.id);
+  const index = ids.indexOf(String(unitId));
+  if (index <= 0) return;
+  for (let i = 0; i < index; i += 1) {
+    const prev = ensureUnit(langState, ids[i]);
+    if (!prev.passed) prev.opened = true;
+  }
+}
+
+export function focusUnit(lang, unitId) {
+  const id = unitId ? String(unitId) : '';
+  if (!id) return readProgress();
+  const data = readProgress();
+  const langState = ensureLang(data, lang);
+  langState.current = id;
+  writeProgress(data);
+  return data;
 }
 
 function saveSkillScore({ lang, unitId, skill, game, correct, total }) {
@@ -200,8 +263,12 @@ function saveSkillScore({ lang, unitId, skill, game, correct, total }) {
   const met = sessionMet(correct, total);
   if (met || !unit[`${skillName}Done`]) unit[skillName] = Number(correct) || 0;
   if (met) unit[`${skillName}Done`] = true;
-  // 읽기·쓰기를 모두 넘긴 이 단원만 통과다. 다음 단원은 열지 않는다.
-  if (met && unit.readDone && unit.writeDone) unit.passed = true;
+  // 읽기·쓰기를 모두 넘긴 이 단원만 통과다. 다음 단원은 통과로 열지 않는다.
+  // Free에서는 이 통과가 앞 단원을 해금한다.
+  if (met && unit.readDone && unit.writeDone) {
+    unit.passed = true;
+    grantEarlierUnits(langState, lang, id);
+  }
   writeProgress(data);
   return !!(met && unit.passed);
 }

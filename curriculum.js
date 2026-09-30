@@ -1,11 +1,15 @@
 /**
  * 단원표. 화면은 쓰지 않고, 단원 목록과 학습 카드만 돌려준다.
  * 점의 자리만 정적 카드이고 나머지는 JSON 구간을 자른다.
+ *
+ * 카드 하나는 조립 순서(steps)를 함께 가진다.
+ * 예) ㄱ 4점 ⠈ + ㅏ 1·2·6점 ⠣
  */
 
 const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
 const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+const TENSE = { 'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ' };
 
 const BUNDLE_NAMES = new Set([
   'ko.json',
@@ -45,6 +49,10 @@ export function unitById(id) {
   return table.units.find((unit) => unit.id === key) || null;
 }
 
+export function isComposeUnit(unit) {
+  return unit?.source?.kind === 'compose';
+}
+
 export function cardsFor(unit, data) {
   if (!unit) return [];
   if (unit.source?.kind === 'static') {
@@ -56,17 +64,26 @@ export function cardsFor(unit, data) {
   return cards;
 }
 
+/**
+ * 이 단원과 앞 단원의 재료. 생성기는 여기 있는 것만 쓴다.
+ * 문장 단원처럼 재료를 이어 붙이는 단원은 재료를 갖지 않는다.
+ */
+export function materialsFor(unit, data) {
+  if (!unit) return [];
+  return unitsFor(unit.lang)
+    .filter((item) => item.order <= unit.order && !isComposeUnit(item))
+    .map((item) => ({ unit: item, cards: cardsFor(item, data) }));
+}
+
 function cardsFromSlice(slice, data) {
   if (slice.ranges) return syllableCards(slice, data);
+  if (slice.role === 'exception') return exceptionCards(slice, data);
   const node = nodeAt(data, slice.bundle, slice.path || []);
-  if (slice.role === 'exception') return exceptionCards(node);
-  if (slice.role === 'rule') {
-    const card = ruleCard(node, nodeAt(data, slice.patternFrom?.bundle, slice.patternFrom?.path || []));
-    return card ? [card] : [];
-  }
+  const prefix = prefixStep(slice, data);
+  if (slice.role === 'contraction' && Array.isArray(node)) return contractionCards(node, slice);
   return glyphEntries(node)
     .filter(([, item]) => acceptItem(item, slice.filter))
-    .map(([key, item]) => glyphCard(key, item, slice.role));
+    .map(([key, item]) => glyphCard(key, item, slice.role, prefix));
 }
 
 function nodeAt(data, bundle, path) {
@@ -115,18 +132,79 @@ function glyphEntries(node) {
   return Object.entries(node).filter(([, value]) => isGlyph(value));
 }
 
-function cellsOf(dots) {
+// ---------------------------------------------------------------------------
+// 점과 조립 순서
+// ---------------------------------------------------------------------------
+
+const DOT_BIT = { 1: 0x01, 2: 0x02, 3: 0x04, 4: 0x08, 5: 0x10, 6: 0x20 };
+
+export function cellGlyph(cell) {
+  let pattern = 0;
+  for (const dot of cell || []) pattern |= DOT_BIT[dot] || 0;
+  return String.fromCharCode(0x2800 + pattern);
+}
+
+export function cellsOf(dots) {
   if (!Array.isArray(dots) || dots.length === 0) return [];
   const cells = typeof dots[0] === 'number' ? [dots] : dots;
   return cells
-    .filter((cell) => Array.isArray(cell) && cell.length > 0)
+    .filter((cell) => Array.isArray(cell))
     .map((cell) => cell.slice());
 }
 
 function dotTextFromCells(cells) {
   if (!cells.length) return '생략';
-  return cells.map((cell) => `${cell.join('·')}점`).join(' + ');
+  return cells.map((cell) => (cell.length ? `${cell.join('·')}점` : '빈 칸')).join(' + ');
 }
+
+function stepPattern(step) {
+  return step.pattern != null && step.pattern !== '' ? step.pattern : step.cells.map(cellGlyph).join('');
+}
+
+function stepText(step) {
+  if (!step.cells.length) return `${step.label} ${step.note || '적지 않음'}`;
+  const cells = step.cells.map((cell) => (cell.length ? `${cell.join('·')}점 ${cellGlyph(cell)}` : '빈 칸'));
+  return `${step.label} ${cells.join(' ')}`;
+}
+
+export function stepsPattern(steps) {
+  return (steps || []).map(stepPattern).join('');
+}
+
+/** 조립 순서 해설. 예) ㄱ 4점 ⠈ + ㅏ 1·2·6점 ⠣ */
+export function assemblyText(steps) {
+  return (steps || []).map(stepText).join(' + ');
+}
+
+export function makeStep(label, dots, pattern, note) {
+  return { label, cells: cellsOf(dots), pattern: pattern || '', note: note || '' };
+}
+
+export function makeCard({ letter, steps, line, kind, extra }) {
+  const cells = steps.flatMap((step) => step.cells);
+  return {
+    letter,
+    kind,
+    pattern: steps.map(stepPattern).join(''),
+    dots: cells,
+    dotText: dotTextFromCells(cells),
+    line: line || '',
+    steps,
+    explain: assemblyText(steps),
+    ...(extra || {})
+  };
+}
+
+function staticCard(card) {
+  const step = makeStep(card.letter, card.dots, card.pattern);
+  const made = makeCard({ letter: card.letter, steps: [step], line: card.line, kind: 'static' });
+  if (card.pattern) made.pattern = card.pattern;
+  return made;
+}
+
+// ---------------------------------------------------------------------------
+// 글 한 조각 카드
+// ---------------------------------------------------------------------------
 
 function letterOf(key, item, role) {
   if (role === 'mark' || role === 'digit') return key;
@@ -157,66 +235,44 @@ function lineFor(role, letter, text, item, key) {
   return `${label}의 점형은 ${text}입니다.`;
 }
 
-function glyphCard(key, item, role) {
-  const dots = cellsOf(item.dots);
-  const pattern = item.unicode || '';
+function prefixStep(slice, data) {
+  if (!slice.prefix) return null;
+  const node = nodeAt(data, slice.prefix.bundle, slice.prefix.path || []);
+  if (!isGlyph(node)) return null;
+  return makeStep(node.name || '수표', node.dots, node.unicode);
+}
+
+function glyphCard(key, item, role, prefix) {
   const letter = letterOf(key, item, role);
-  const dotText = dotTextFromCells(dots);
-  return {
-    letter,
-    pattern,
-    dots,
-    dotText,
-    line: lineFor(role, letter, dotText, item, key)
-  };
+  const omitted = item.isOmitted || (role === 'chosung' && cellsOf(item.dots).length === 0);
+  const main = makeStep(letter, item.dots, item.unicode, omitted ? '적지 않음' : '');
+  const steps = prefix && role === 'digit' ? [prefix, main] : [main];
+  const card = makeCard({ letter, steps, kind: role });
+  card.line = lineFor(role, letter, card.dotText, item, key);
+  return card;
 }
 
-function staticCard(card) {
-  const dots = cellsOf(card.dots);
-  return {
-    letter: card.letter,
-    pattern: card.pattern || '',
-    dots,
-    dotText: dotTextFromCells(dots),
-    line: card.line || ''
-  };
-}
-
-function exceptionCards(items) {
-  if (!items || typeof items !== 'object') return [];
+function contractionCards(groups, slice) {
   const cards = [];
-  for (const [key, item] of Object.entries(items)) {
-    if (!item || !item.exception_rules) continue;
-    const dots = cellsOf(item.expanded_dots || item.dots);
-    const pattern = item.expanded_unicode || item.unicode || '';
-    const dotText = dotTextFromCells(dots);
-    for (const text of Object.values(item.exception_rules)) {
-      cards.push({
-        letter: item.syllable || key,
-        pattern,
-        dots,
-        dotText,
-        line: String(text)
-      });
+  for (const group of groups) {
+    if (!group || !group.items) continue;
+    const rule = group.rule || {};
+    const standalone = !!(rule.canStandAlone || rule.standingAloneOnly) && !rule.requiresFollowingLetters;
+    for (const [key, item] of glyphEntries(group.items)) {
+      if (!acceptItem(item, slice.filter)) continue;
+      const card = glyphCard(key, item, 'contraction', null);
+      card.standalone = standalone;
+      cards.push(card);
     }
   }
   return cards;
 }
 
-function ruleCard(rule, glyph) {
-  if (!rule || typeof rule !== 'object') return null;
-  const dots = glyph ? cellsOf(glyph.dots) : [];
-  const pattern = glyph?.unicode || '';
-  return {
-    letter: '숫자 뒤',
-    pattern,
-    dots,
-    dotText: dotTextFromCells(dots),
-    line: rule.note || ''
-  };
-}
+// ---------------------------------------------------------------------------
+// 한글 음절: 풀어 쓰기와 약자 판별
+// ---------------------------------------------------------------------------
 
-function composeSyllable(cho, jung, jong) {
+export function composeSyllable(cho, jung, jong) {
   const ci = CHO.indexOf(cho);
   const ji = JUNG.indexOf(jung);
   const ki = JONG.indexOf(jong || '');
@@ -224,59 +280,178 @@ function composeSyllable(cho, jung, jong) {
   return String.fromCharCode(0xAC00 + (ci * 21 + ji) * 28 + ki);
 }
 
+export function decomposeSyllable(ch) {
+  const code = String(ch || '').charCodeAt(0) - 0xAC00;
+  if (code < 0 || code > 11171) return null;
+  return [CHO[Math.floor(code / 588)], JUNG[Math.floor((code % 588) / 28)], JONG[code % 28]];
+}
+
+/**
+ * 약자가 대신 적히는 조합을 가려낸다.
+ * 풀어 쓴 음절 카드에는 여기에 걸리는 조합이 들어가지 않는다.
+ *   - abbreviation_syllable에 있는 음절
+ *   - 가·나·다 계열 첫소리 + ㅏ (된소리 포함, 받침이 붙어도 약자 + 받침)
+ *   - 모음 + 받침이 억·언·얼 계열인 경우
+ */
+export function abbreviationIndex(ko) {
+  const items = ko?.abbreviation_syllable?.items || {};
+  const syllables = new Set();
+  const gaOnsets = new Set();
+  const vowelCoda = new Set();
+  for (const [syllable, item] of Object.entries(items)) {
+    syllables.add(syllable);
+    const parts = decomposeSyllable(syllable);
+    if (!parts) continue;
+    if (item.type === 'ga_series' && parts[1] === 'ㅏ' && !parts[2]) gaOnsets.add(parts[0]);
+    if (item.type === 'vowel_coda_series' && parts[2]) vowelCoda.add(`${parts[1]}|${parts[2]}`);
+  }
+  return {
+    syllables,
+    gaOnsets,
+    vowelCoda,
+    applies(cho, jung, jong) {
+      const syllable = composeSyllable(cho, jung, jong);
+      if (syllable && syllables.has(syllable)) return true;
+      if (jung === 'ㅏ' && gaOnsets.has(TENSE[cho] || cho)) return true;
+      if (jong && vowelCoda.has(`${jung}|${jong}`)) return true;
+      return false;
+    }
+  };
+}
+
+function jamoMaps(ko) {
+  return {
+    cho: ko?.chosung?.items,
+    jung: ko?.jungsung?.items,
+    jong: ko?.jongsung?.items
+  };
+}
+
+function spellSteps(cho, jung, jong, maps) {
+  const choItem = maps.cho?.[cho];
+  const jungItem = maps.jung?.[jung];
+  const jongItem = jong ? maps.jong?.[jong] : null;
+  if (!choItem || !jungItem || (jong && !jongItem)) return null;
+  const steps = [];
+  if (choItem.isOmitted || cellsOf(choItem.dots).length === 0) {
+    steps.push(makeStep(cho, [], '', '생략'));
+  } else {
+    steps.push(makeStep(cho, choItem.dots, choItem.unicode));
+  }
+  steps.push(makeStep(jung, jungItem.dots, jungItem.unicode));
+  if (jongItem) steps.push(makeStep(jong, jongItem.dots, jongItem.unicode));
+  return steps;
+}
+
 function syllableCards(slice, data) {
   const ko = resolveBundle(data, slice.bundle);
-  const choMap = ko?.chosung?.items;
-  const jungMap = ko?.jungsung?.items;
-  const jongMap = ko?.jongsung?.items;
-  if (!choMap || !jungMap || !jongMap) return [];
-  const abbreviations = new Set(Object.keys(ko.abbreviation_syllable?.items || {}));
+  const maps = jamoMaps(ko);
+  if (!maps.cho || !maps.jung || !maps.jong) return [];
+  const abbreviation = abbreviationIndex(ko);
   const ranges = slice.ranges || {};
   const cards = [];
   for (const cho of ranges.cho || []) {
     for (const jung of ranges.jung || []) {
       for (const jong of ranges.jong || ['']) {
         const syllable = composeSyllable(cho, jung, jong);
-        if (!syllable || abbreviations.has(syllable)) continue;
-        const card = spellSyllable(syllable, cho, jung, jong, choMap, jungMap, jongMap);
-        if (card) cards.push(card);
+        if (!syllable || abbreviation.applies(cho, jung, jong)) continue;
+        const steps = spellSteps(cho, jung, jong, maps);
+        if (!steps) continue;
+        const card = makeCard({ letter: syllable, steps, kind: 'syllable' });
+        card.line = `풀어 적은 ${syllable}(${steps.map((step) => step.label).join('+')})의 점형은 ${card.dotText}입니다.`;
+        cards.push(card);
       }
     }
   }
   return cards;
 }
 
-function spellSyllable(syllable, cho, jung, jong, choMap, jungMap, jongMap) {
-  const choItem = choMap[cho];
-  const jungItem = jungMap[jung];
-  const jongItem = jong ? jongMap[jong] : null;
-  if (!choItem || !jungItem || (jong && !jongItem)) return null;
-  const cells = [];
-  const patterns = [];
-  const parts = [];
-  if (choItem.isOmitted || cellsOf(choItem.dots).length === 0) {
-    parts.push(`${cho}(생략)`);
-  } else {
-    cells.push(...cellsOf(choItem.dots));
-    if (choItem.unicode) patterns.push(choItem.unicode);
-    parts.push(cho);
-  }
-  cells.push(...cellsOf(jungItem.dots));
-  if (jungItem.unicode) patterns.push(jungItem.unicode);
-  parts.push(jung);
-  if (jongItem) {
-    cells.push(...cellsOf(jongItem.dots));
-    if (jongItem.unicode) patterns.push(jongItem.unicode);
-    parts.push(jong);
-  }
-  const dotText = dotTextFromCells(cells);
-  return {
-    letter: syllable,
-    pattern: patterns.join(''),
-    dots: cells,
-    dotText,
-    line: `풀어 적은 ${syllable}(${parts.join('+')})의 점형은 ${dotText}입니다.`
+// ---------------------------------------------------------------------------
+// 예외: 약자와 풀어 쓴 형태를 같이 보여 준다
+// ---------------------------------------------------------------------------
+
+function exceptionCards(slice, data) {
+  const ko = resolveBundle(data, slice.bundle);
+  const items = ko?.abbreviation_syllable?.items;
+  if (!items) return [];
+  const maps = jamoMaps(ko);
+  const numbers = resolveBundle(data, 'numbers.json');
+  const prefix = numbers?.numeric_indicators?.num_prefix;
+  const grade1 = numbers?.grade1_indicators?.grade1_symbol;
+  const digitItem = (digit) => numbers?.digits?.[digit];
+  const cards = [];
+
+  const numberSteps = (digit) => {
+    const item = digitItem(digit);
+    if (!prefix || !item) return null;
+    return [makeStep(prefix.name || '수표', prefix.dots, prefix.unicode), makeStep(digit, item.dots, item.unicode)];
   };
+
+  const push = (letter, steps, wrongSteps, note, line) => {
+    const card = makeCard({ letter, steps, kind: 'exception' });
+    const wrong = wrongSteps.map(stepPattern).join('');
+    card.contrast = wrong;
+    card.explain = `${card.explain}. ${note}`;
+    card.line = line(card.pattern, wrong);
+    cards.push(card);
+  };
+
+  for (const [syllable, item] of Object.entries(items)) {
+    if (!item.exception_rules) continue;
+    const parts = decomposeSyllable(syllable);
+    if (!parts) continue;
+    const abbrStep = makeStep(`${syllable} 약자`, item.dots, item.unicode);
+    const spelled = spellSteps(parts[0], parts[1], parts[2], maps);
+    if (!spelled) continue;
+
+    for (const follower of slice.followers || []) {
+      const fp = decomposeSyllable(follower);
+      if (!fp || fp[0] !== 'ㅇ') continue;
+      const fsteps = spellSteps(fp[0], fp[1], fp[2], maps);
+      if (!fsteps) continue;
+      push(
+        `${syllable}${follower}`,
+        [...spelled, ...fsteps],
+        [abbrStep, ...fsteps],
+        `${syllable} 뒤에 모음이 바로 이어지므로 약자를 쓰지 않고 풀어 적습니다.`,
+        (right, wrong) => `${syllable}${follower}: 약자 ${wrong}(×), 풀어 쓴 ${right}(○)`
+      );
+    }
+
+    for (const digit of slice.digits || []) {
+      const num = numberSteps(digit);
+      if (!num) continue;
+      push(
+        `${digit}${syllable}`,
+        [...num, ...spelled],
+        [...num, abbrStep],
+        `숫자 뒤의 ${syllable}는 약자를 쓰지 않고 풀어 적습니다.`,
+        (right, wrong) => `${digit}${syllable}: 약자 ${wrong}(×), 풀어 쓴 ${right}(○)`
+      );
+    }
+  }
+
+  const rule = ko?.special_rules?.number_prefix_rule;
+  const ruleDigit = slice.ruleDigit;
+  const num = ruleDigit ? numberSteps(ruleDigit) : null;
+  if (rule && num && grade1) {
+    const affected = new Set(rule.affected_initials || []);
+    for (const [syllable, item] of Object.entries(items)) {
+      if (item.exception_rules || item.type !== 'ga_series') continue;
+      const parts = decomposeSyllable(syllable);
+      if (!parts || !affected.has(parts[0])) continue;
+      const mark = makeStep(grade1.name || '1급 기호표', grade1.dots, grade1.unicode);
+      const abbr = makeStep(`${syllable} 약자`, item.dots, item.unicode);
+      push(
+        `${ruleDigit}${syllable}`,
+        [...num, mark, abbr],
+        [...num, abbr],
+        `숫자 뒤에 ${parts[0]}이 오면 숫자로 읽히지 않도록 사이에 ${mark.label}를 넣습니다.`,
+        (right, wrong) => `${ruleDigit}${syllable}: 그대로 이으면 ${wrong}(×), ${mark.label} 넣은 ${right}(○)`
+      );
+    }
+  }
+  return cards;
 }
 
 async function demoIfMain() {
@@ -286,14 +461,18 @@ async function demoIfMain() {
   if (import.meta.url.toLowerCase() !== href.toLowerCase()) return;
 
   const ko = await readJson('ko.json');
+  const numbers = await readJson('numbers.json');
+  const bundles = { 'ko.json': ko, 'numbers.json': numbers };
   console.log('한글 단원');
   for (const unit of unitsFor('ko')) {
     console.log(`${unit.order}. ${unit.title}`);
   }
   console.log('');
-  console.log('초성 카드');
-  for (const card of cardsFor(unitById('ko-initial'), { 'ko.json': ko })) {
-    console.log(`${card.letter} → ${card.pattern || '(없음)'}, ${card.dotText}`);
+  for (const id of ['ko-initial', 'ko-syllable', 'ko-exception']) {
+    console.log(id);
+    for (const card of cardsFor(unitById(id), bundles).slice(0, 6)) {
+      console.log(`${card.letter} → ${card.pattern || '(없음)'}  ${card.explain}`);
+    }
   }
 }
 

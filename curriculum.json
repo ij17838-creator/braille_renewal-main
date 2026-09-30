@@ -102,7 +102,7 @@
         "letter": "고",
         "pattern": "⠈⠥",
         "dots": [[4], [1, 3, 6]],
-        "line": "약자가 아닌 음절은 첫소리, 모음, 받침 순으로 풀어 적습니다."
+        "line": "약자가 아닌 음절은 첫소리, 모음 순으로 풀어 적습니다. 약자는 아직 나오지 않습니다."
       },
       "source": {
         "kind": "slice",
@@ -111,16 +111,16 @@
             "bundle": "ko.json",
             "role": "syllable",
             "ranges": {
-              "cho": ["ㄱ", "ㄴ", "ㅁ", "ㅅ", "ㅇ", "ㄲ"],
-              "jung": ["ㅏ", "ㅓ", "ㅗ", "ㅣ"],
-              "jong": ["", "ㄱ", "ㄴ", "ㅁ"]
+              "cho": ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅎ"],
+              "jung": ["ㅏ", "ㅓ", "ㅗ", "ㅜ", "ㅡ", "ㅣ"],
+              "jong": [""]
             }
           }
         ]
       },
       "skill": {
         "read": "이어진 점형을 한 음절로 읽는다",
-        "write": "음절을 첫소리·모음·받침으로 풀어 적는다"
+        "write": "음절을 첫소리와 모음으로 풀어 적는다"
       }
     },
     {
@@ -214,7 +214,12 @@
         "kind": "slice",
         "slices": [
           { "bundle": "numbers.json", "path": ["numeric_indicators"], "role": "indicator" },
-          { "bundle": "numbers.json", "path": ["digits"], "role": "digit" },
+          {
+            "bundle": "numbers.json",
+            "path": ["digits"],
+            "role": "digit",
+            "prefix": { "bundle": "numbers.json", "path": ["numeric_indicators", "num_prefix"] }
+          },
           { "bundle": "ko_marks.json", "path": ["terminal_punctuation", "items"], "role": "mark" },
           { "bundle": "ko_marks.json", "path": ["pausal_punctuation", "items"], "role": "mark" },
           { "bundle": "ko_marks.json", "path": ["opening_delimiters", "items"], "role": "mark" },
@@ -233,10 +238,10 @@
       "order": 10,
       "title": "예외",
       "teach": {
-        "letter": "사",
-        "pattern": "⠠⠣",
-        "dots": [[6], [1, 2, 6]],
-        "line": "사 뒤에 모음이 오거나 숫자 뒤에 혼동되는 첫소리가 오면 약자 대신 풀어 적거나 기호표를 넣습니다."
+        "letter": "사이",
+        "pattern": "⠠⠣⠕",
+        "dots": [[6], [1, 2, 6], [1, 3, 5]],
+        "line": "사 뒤에 모음이 바로 오거나 숫자 뒤에 사가 오면 약자 ⠇ 대신 풀어 적습니다. 숫자 뒤에 ㄴ·ㄷ·ㅁ·ㅋ·ㅌ·ㅍ·ㅎ이 오면 1급 기호표를 넣습니다."
       },
       "source": {
         "kind": "slice",
@@ -244,16 +249,11 @@
           {
             "bundle": "ko.json",
             "path": ["abbreviation_syllable", "items"],
-            "role": "exception"
-          },
-          {
-            "bundle": "ko.json",
-            "path": ["special_rules", "number_prefix_rule"],
-            "role": "rule",
-            "patternFrom": {
-              "bundle": "numbers.json",
-              "path": ["grade1_indicators", "grade1_symbol"]
-            }
+            "role": "exception",
+            "needs": ["numbers.json"],
+            "followers": ["이", "용", "유", "업"],
+            "digits": ["1", "2", "3", "4"],
+            "ruleDigit": "5"
           }
         ]
       },
@@ -274,7 +274,8 @@
         "line": "앞 단원의 점형을 이어 짧은 문장을 읽고 씁니다."
       },
       "source": {
-        "kind": "slice",
+        "kind": "compose",
+        "from": "passed_units",
         "slices": []
       },
       "skill": {
@@ -320,7 +321,12 @@
         "slices": [
           { "bundle": "numbers.json", "path": ["numeric_indicators"], "role": "indicator" },
           { "bundle": "numbers.json", "path": ["grade1_indicators"], "role": "indicator" },
-          { "bundle": "numbers.json", "path": ["digits"], "role": "digit" }
+          {
+            "bundle": "numbers.json",
+            "path": ["digits"],
+            "role": "digit",
+            "prefix": { "bundle": "numbers.json", "path": ["numeric_indicators", "num_prefix"] }
+          }
         ]
       },
       "skill": {
@@ -408,7 +414,8 @@
         "line": "앞 단원의 점형을 이어 짧은 영어 문장을 읽고 씁니다."
       },
       "source": {
-        "kind": "slice",
+        "kind": "compose",
+        "from": "passed_units",
         "slices": []
       },
       "skill": {

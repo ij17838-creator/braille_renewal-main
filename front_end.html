@@ -177,6 +177,20 @@
 
     .custom-scrollbar::-webkit-scrollbar { width: 7px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+
+    .braille-glyph {
+      font-family: "Segoe UI Symbol", "Apple Braille", "Noto Sans Symbols 2", sans-serif;
+      line-height: 1;
+    }
+
+    .unit-chip:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    #unit-menu {
+      text-align: left;
+    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-800 min-h-[100dvh] w-screen relative dot-scale-1x text-scale-normal focus-ring-enhanced flex items-center justify-center p-3 sm:p-6">
@@ -226,6 +240,26 @@
 
     </div>
 
+    <section id="unit-hub" class="flex flex-col gap-2 text-left">
+      <div class="flex items-center gap-2">
+        <div class="grid grid-cols-2 gap-1.5 flex-1" role="group" aria-label="학습 모드">
+          <button type="button" id="mode-path" class="mode-btn btn-scalable py-2 px-3 rounded-xl border text-sm font-bold transition-all bg-emerald-500 text-white border-emerald-600 shadow-sm" data-mode="path" aria-pressed="true">순차</button>
+          <button type="button" id="mode-free" class="mode-btn btn-scalable py-2 px-3 rounded-xl border text-sm font-bold transition-all bg-white text-slate-700 border-slate-200" data-mode="free" aria-pressed="false">Free</button>
+        </div>
+        <button type="button" id="btn-manual" class="btn-scalable shrink-0 px-3 py-2 rounded-xl glass-button text-sm font-black text-slate-700 hover:text-indigo-600 shadow-sm" aria-haspopup="dialog" aria-controls="manual-modal">설명서</button>
+      </div>
+      <p id="mode-hint" class="text-[11px] text-slate-500 text-center">앞 단원을 통과해야 다음 단원이 열립니다.</p>
+      <div id="unit-picker" class="relative">
+        <button type="button" id="unit-toggle" class="w-full glass-button rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-sm" aria-expanded="false" aria-controls="unit-menu" aria-haspopup="listbox">
+          <span id="unit-line" class="text-base sm:text-lg font-black text-slate-800 text-left">한글 1단원 · 점의 자리</span>
+          <span id="unit-toggle-mark" class="text-slate-400 text-sm shrink-0" aria-hidden="true">▾</span>
+        </button>
+        <div id="unit-menu" class="hidden mt-1 glass-panel rounded-2xl shadow-sm p-2 max-h-64 overflow-y-auto custom-scrollbar" role="listbox" aria-label="단원">
+          <div id="unit-list" class="flex flex-col gap-1"></div>
+        </div>
+      </div>
+    </section>
+
         <!-- 4종 학습 프로그램 진입 카드 -->
     <div class="grid grid-cols-2 gap-3 my-1">
       <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="morpheme.html">
@@ -257,6 +291,112 @@
       GitHub Pages 환경에 최적화되어 서버 없이 모든 학습 데이터와 오디오 피드백이 실행됩니다.
     </footer>
   </main>
+
+  <!-- 점자·점형 설명서 -->
+  <div id="manual-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="manual-title">
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-2xl w-full shadow-2xl relative z-10 m-4 flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+        <div class="text-left">
+          <h3 id="manual-title" class="text-lg sm:text-xl font-black text-slate-800">설명서</h3>
+          <p id="manual-unit" class="text-xs text-slate-500">사용법과 선택한 단원의 점자</p>
+        </div>
+        <button id="btn-manual-close" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-full" aria-label="설명서 닫기">✕</button>
+      </div>
+      <div class="flex-1 overflow-y-auto custom-scrollbar py-4 flex flex-col gap-3 text-left">
+        <section class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-about-title">
+          <h4 id="manual-about-title" class="text-sm font-black text-slate-800">이 프로그램</h4>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">점자 마스터 허브는 한글 점자와 영어 점자(UEB)를 단원별로 익히는 학습 프로그램입니다. 허브에서 언어와 단원을 고른 뒤, 네 가지 게임으로 읽고 씁니다. 문제와 음성은 이 브라우저 안에서 만들어지며, 학습 기록도 이 기기에 남습니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">한 스테이지는 10문제이고, 단원을 통과하기 전에는 결과의 계속하기로 다음 스테이지를 횟수 제한 없이 이어 갈 수 있습니다. 10문제를 마치면 정답 수와 정답률이 나옵니다. 10문제 중 8문제 이상(80%)을 맞히면 그 연습이 완료됩니다. 읽기 게임 하나와 쓰기 게임(빈칸 수사대)을 모두 완료하면 그 단원을 통과하고 허브로 돌아갑니다. 기준에 못 미치면 같은 단원을 이어서 풀 수 있습니다.</p>
+        </section>
+
+        <section class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-hub-title">
+          <h4 id="manual-hub-title" class="text-sm font-black text-slate-800">허브 화면의 버튼</h4>
+          <ul class="text-xs sm:text-sm text-slate-600 leading-relaxed flex flex-col gap-1.5 list-disc pl-4">
+            <li><span class="font-bold text-slate-800">학습 통계</span> — 총 학습 횟수, 평균 정답률, 최고 연속 콤보, 오답이 많은 규정, 최근 세션을 봅니다. 기록 초기화는 통계와 단원 진행을 함께 지웁니다.</li>
+            <li><span class="font-bold text-slate-800">톱니바퀴</span> — 고대비, 글자 크기, 음성 설정을 엽니다.</li>
+            <li><span class="font-bold text-slate-800">한글 점자 / 영어 점자 (UEB)</span> — 연습할 언어를 바꿉니다. 단원 목록도 그 언어로 바뀝니다.</li>
+            <li><span class="font-bold text-slate-800">순차</span> — 앞 단원을 통과해야 다음 단원이 열립니다. 첫 단원만 처음부터 열려 있습니다.</li>
+            <li><span class="font-bold text-slate-800">Free</span> — 모든 단원을 고를 수 있습니다. 한 단원을 통과하면 그 앞 단원은 통과로 치지 않고 들어갈 수 있게만 열립니다. 순차로 돌아와도 그렇게 열린 단원은 들어갈 수 있습니다.</li>
+            <li><span class="font-bold text-slate-800">설명서</span> — 이 창입니다. 바깥을 누르거나 Esc로 닫습니다.</li>
+            <li><span class="font-bold text-slate-800">단원 이름</span> — 누르면 단원 목록이 열립니다. 통과, 해금, 잠김이 옆에 표시됩니다. 잠긴 단원은 고를 수 없습니다.</li>
+            <li><span class="font-bold text-slate-800">네 개의 게임 카드</span> — 지금 고른 단원으로 들어갑니다. 잠긴 단원에서는 들어가지 않습니다.</li>
+          </ul>
+        </section>
+
+        <section class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-settings-title">
+          <h4 id="manual-settings-title" class="text-sm font-black text-slate-800">환경 및 접근성 설정</h4>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">허브와 각 게임의 톱니바퀴에서 같은 설정을 바꿉니다. 바꾼 값은 이 브라우저에 저장되어 다음에도 이어집니다.</p>
+          <ul class="text-xs sm:text-sm text-slate-600 leading-relaxed flex flex-col gap-1.5 list-disc pl-4">
+            <li><span class="font-bold text-slate-800">고대비 테마</span> — 옐로우 온 블랙, 화이트 온 블랙, 블랙 온 화이트, 앰버 네온. 켠 테마를 다시 누르면 기본 화면으로 돌아갑니다.</li>
+            <li><span class="font-bold text-slate-800">텍스트 크기</span> — 1.0x, 1.25x, 1.5x. 버튼과 안내 글자가 커집니다.</li>
+            <li><span class="font-bold text-slate-800">TTS 음성 안내</span> — 문제, 정답, 오답, 스테이지 결과를 읽어 줍니다. 한글은 한국어, 영어는 영어로 읽습니다.</li>
+            <li><span class="font-bold text-slate-800">도·레·미 음계 비프음</span> — 정답·오답 효과음과, 빈칸 수사대에서 점을 누를 때의 음이 납니다. 1점은 도, 2점은 레, 3점은 미, 4점은 파, 5점은 솔, 6점은 라입니다.</li>
+            <li><span class="font-bold text-slate-800">설정 저장 및 닫기</span> — 고른 값을 저장하고 창을 닫습니다.</li>
+          </ul>
+        </section>
+
+        <section class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-games-title">
+          <h4 id="manual-games-title" class="text-sm font-black text-slate-800">게임에서 공통으로 쓰는 버튼</h4>
+          <ul class="text-xs sm:text-sm text-slate-600 leading-relaxed flex flex-col gap-1.5 list-disc pl-4">
+            <li><span class="font-bold text-slate-800">스피커</span> — 지금 문제를 다시 읽어 줍니다. 형태소 퀴즈와 카드 셀렉트는 R 키로도 듣습니다.</li>
+            <li><span class="font-bold text-slate-800">취약 분석</span> — 오답이 많은 유형을 보여 줍니다. 집중 복습을 누르면 그 유형을 다시 냅니다.</li>
+            <li><span class="font-bold text-slate-800">집 아이콘</span> — 허브로 돌아갑니다. 빈칸 수사대의 왼쪽 화살표도 같습니다.</li>
+            <li><span class="font-bold text-slate-800">스테이지 표시</span> — 지금 스테이지와 10문제 중 몇 번째인지를 보여 줍니다. 연속으로 맞히면 콤보가 오르고, 틀리면 0이 됩니다.</li>
+          </ul>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">맞히면 다음 문제로 넘어갑니다. 틀리면 정답이 표시되고, 단원 문제에는 점 번호를 이어 붙인 해설이 나옵니다. 10문제가 끝나면 계속하기로 같은 단원을 더 풀거나, 홈으로 돌아갈 수 있습니다. 단원을 통과한 뒤에는 허브로 돌아갑니다.</p>
+        </section>
+
+        <section class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-morpheme-title">
+          <h4 id="manual-morpheme-title" class="text-sm font-black text-slate-800">형태소 &amp; 낱말 퀴즈 · 읽기</h4>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">형태소 하나를 글로 보여 주고, 그에 맞는 점자 카드 네 장 중 하나를 고릅니다. 카드를 누르거나 숫자 키 1~4로 고릅니다. 이 게임의 점수는 그 단원의 읽기 연습으로 기록됩니다.</p>
+        </section>
+
+        <section class="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-select-title">
+          <h4 id="manual-select-title" class="text-sm font-black text-slate-800">점자 카드 셀렉트 · 읽기 심화</h4>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">형태소를 이어서 만든 낱말이나 구를 보여 주고, 알맞은 점자 카드 네 장 중 하나를 고릅니다. 조작은 형태소 퀴즈와 같습니다. 카드를 누르거나 1~4를 누르고, R로 문제를 다시 듣습니다. 앞 단원에서 익힌 재료를 묶어 내는 심화 읽기입니다. 점수 역시 읽기 연습으로 기록됩니다.</p>
+        </section>
+
+        <section class="bg-amber-50/80 border border-amber-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-builders-title">
+          <h4 id="manual-builders-title" class="text-sm font-black text-slate-800">점자 빌더즈 · 읽기</h4>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">점형을 보여 주고, 그 뜻에 맞는 글자 블록을 하나 고릅니다. 블록을 누르거나 숫자 키 1~9로 고른 뒤, 선택한 뜻 확인 또는 Enter로 제출합니다. 작업대에 올라간 블록을 누르거나, 작업대 비우기 또는 Backspace로 선택을 해제할 수 있습니다. 점수를 읽기 연습으로 기록합니다.</p>
+        </section>
+
+        <section class="bg-sky-50/80 border border-sky-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-blank-title">
+          <h4 id="manual-blank-title" class="text-sm font-black text-slate-800">빈칸 수사대 · 쓰기</h4>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">뜻을 보여 주고, 그 점형을 직접 넣습니다. 점이 들어간 칸을 만든 뒤 점자 입력으로 한 칸을 확정하고, 칸이 모이면 판정 요청으로 제출합니다. 이 게임만 쓰기 연습으로 기록됩니다. 읽기와 쓰기를 모두 넘겨야 단원을 통과합니다.</p>
+          <ul class="text-xs sm:text-sm text-slate-600 leading-relaxed flex flex-col gap-1.5 list-disc pl-4">
+            <li><span class="font-bold text-slate-800">1~6 버튼</span> — 그 번호의 점을 켜거나 끕니다. 키보드에서는 1=F(도), 2=D(레), 3=S(미), 4=J(파), 5=K(솔), 6=L(라)입니다.</li>
+            <li><span class="font-bold text-slate-800">점자 입력 (Enter)</span> — 지금 켠 점들로 한 칸을 확정합니다.</li>
+            <li><span class="font-bold text-slate-800">띄어쓰기 (Space)</span> — 빈 칸을 넣습니다. 아직 확정하지 않은 점이 있으면 그 칸을 먼저 넣습니다.</li>
+            <li><span class="font-bold text-slate-800">지우기</span> — 넣은 점형을 모두 지웁니다. Backspace는 켜 둔 점을 끄거나, 점이 없으면 마지막 칸만 지웁니다.</li>
+            <li><span class="font-bold text-slate-800">판정 요청</span> — 넣은 점형이 제시된 뜻과 맞는지 확인합니다. 점형 입력 칸을 누르면 입력이 초기화됩니다.</li>
+            <li><span class="font-bold text-slate-800">스피커</span> — 단서를 다시 듣습니다.</li>
+          </ul>
+        </section>
+
+        <h4 class="text-sm font-black text-slate-800 px-1 pt-1">선택한 단원의 점자</h4>
+        <article id="teach-card" class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm" aria-label="단원 설명">
+          <p id="teach-status" class="text-[11px] font-black text-emerald-700 text-right min-h-[1rem]"></p>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p class="text-[11px] font-bold text-slate-500">글자</p>
+              <p id="teach-letter" class="text-3xl font-black text-slate-900 mt-1">점</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-bold text-slate-500">점형</p>
+              <p id="teach-pattern" class="braille-glyph text-4xl text-slate-900 mt-1">⠿</p>
+            </div>
+            <div>
+              <p class="text-[11px] font-bold text-slate-500">점 번호</p>
+              <p id="teach-dots" class="text-sm sm:text-base font-black text-slate-900 mt-2">1·2·3·4·5·6점</p>
+            </div>
+          </div>
+          <p id="teach-line" class="text-sm text-slate-600 mt-3 text-center"></p>
+        </article>
+        <div id="unit-cards" class="grid grid-cols-3 sm:grid-cols-4 gap-2" aria-label="이 단원의 글자"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- 3. 통합 학습 통계 대시보드 모달 -->
   <div id="stats-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
@@ -367,8 +507,15 @@
       applyVisualSettings as paintSettings,
       readRuleStats,
       readHistory,
-      clearLearningData
+      readProgress,
+      clearLearningData,
+      isUnitPassed,
+      isUnitOpen,
+      focusUnit,
+      loadStudyMode,
+      saveStudyMode
     } from './shell.js';
+    import { unitsFor, cardsFor } from './curriculum.js';
 
     const stored = loadSettings();
     const globalSettings = {
@@ -376,7 +523,8 @@
       contrastTheme: stored.theme,
       textScale: stored.scale,
       tts: stored.tts,
-      pitch: stored.pitch
+      pitch: stored.pitch,
+      study: loadStudyMode()
     };
 
     function saveSettings() {
@@ -395,16 +543,268 @@
       paintSettings({ theme: globalSettings.contrastTheme, scale: globalSettings.textScale });
     }
 
+    let currentUnits = [];
+    let activeUnitId = '';
+    let chosenId = '';
+    let renderToken = 0;
+    const bundleCache = new Map();
+
+    function langCode(lang) {
+      return String(lang || 'KO').toUpperCase() === 'EN' ? 'en' : 'ko';
+    }
+
+    function langLabel(lang) {
+      return String(lang || 'KO').toUpperCase() === 'EN' ? '영어' : '한글';
+    }
+
+    function unitLine(lang, unit) {
+      if (!unit) return `${langLabel(lang)} 단원`;
+      return `${langLabel(lang)} ${unit.order}단원 · ${unit.title}`;
+    }
+
+    function dotLabel(dots) {
+      if (!Array.isArray(dots) || dots.length === 0) return '생략';
+      const cells = typeof dots[0] === 'number' ? [dots] : dots;
+      const parts = cells
+        .filter((cell) => Array.isArray(cell) && cell.length > 0)
+        .map((cell) => `${cell.join('·')}점`);
+      return parts.length ? parts.join(' + ') : '생략';
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function unitRecord(lang, unitId) {
+      const data = readProgress();
+      const key = String(lang || 'KO').toUpperCase();
+      const saved = data[key] && data[key].units ? data[key].units[unitId] : null;
+      return saved && typeof saved === 'object' ? saved : null;
+    }
+
+    function statusText(lang, unitId) {
+      const saved = unitRecord(lang, unitId);
+      if (!saved) return '';
+      if (saved.passed || isUnitPassed(lang, unitId)) return '통과';
+      if (saved.opened) return '해금';
+      const bits = [];
+      if (saved.readDone) bits.push('읽기 완료');
+      if (saved.writeDone) bits.push('쓰기 완료');
+      return bits.join(' · ');
+    }
+
+    function orderedIds(units) {
+      return units.map((unit) => unit.id);
+    }
+
+    function chooseUnit(units, lang) {
+      const ids = orderedIds(units);
+      const open = (id) => isUnitOpen(lang, id, ids);
+      if (chosenId && units.some((unit) => unit.id === chosenId && open(unit.id))) return chosenId;
+      const saved = (readProgress()[String(lang || 'KO').toUpperCase()] || {}).current || '';
+      if (saved && units.some((unit) => unit.id === saved && open(unit.id))) {
+        chosenId = saved;
+        return saved;
+      }
+      const frontier = units.find((unit) => open(unit.id) && !isUnitPassed(lang, unit.id));
+      const pick = frontier || units.find((unit) => open(unit.id)) || units[0];
+      chosenId = pick ? pick.id : '';
+      return chosenId;
+    }
+
+    async function readBundle(name) {
+      if (bundleCache.has(name)) return bundleCache.get(name);
+      const res = await fetch(new URL(name, import.meta.url));
+      if (!res.ok) throw new Error(name);
+      const json = await res.json();
+      bundleCache.set(name, json);
+      return json;
+    }
+
+    async function cardsOf(unit) {
+      if (!unit) return [];
+      if (unit.source?.kind === 'static') return cardsFor(unit, {});
+      const names = new Set();
+      for (const slice of unit.source?.slices || []) {
+        if (slice.bundle) names.add(slice.bundle);
+        if (slice.prefix?.bundle) names.add(slice.prefix.bundle);
+        for (const need of slice.needs || []) names.add(need);
+      }
+      const data = {};
+      await Promise.all([...names].map(async (name) => {
+        data[name] = await readBundle(name);
+      }));
+      return cardsFor(unit, data);
+    }
+
+    function paintTeach(unit, lang) {
+      const teach = unit?.teach || {};
+      const letter = document.getElementById('teach-letter');
+      const pattern = document.getElementById('teach-pattern');
+      const dots = document.getElementById('teach-dots');
+      const line = document.getElementById('teach-line');
+      const status = document.getElementById('teach-status');
+      if (letter) letter.textContent = teach.letter || '';
+      if (pattern) pattern.textContent = teach.pattern || '생략';
+      if (dots) dots.textContent = dotLabel(teach.dots);
+      if (line) line.textContent = teach.line || '';
+      if (status) status.textContent = unit ? statusText(lang, unit.id) : '';
+    }
+
+    function paintCardGrid(cards) {
+      const box = document.getElementById('unit-cards');
+      if (!box) return;
+      if (!cards.length) {
+        box.innerHTML = '';
+        return;
+      }
+      box.innerHTML = cards.map((card) => `
+        <div class="bg-white/80 rounded-xl border border-slate-200 p-2 text-center">
+          <p class="text-[10px] font-bold text-slate-400">글자</p>
+          <p class="text-lg font-black text-slate-900">${escapeHtml(card.letter)}</p>
+          <p class="text-[10px] font-bold text-slate-400 mt-1">점형</p>
+          <p class="braille-glyph text-2xl text-slate-900">${escapeHtml(card.pattern || '생략')}</p>
+          <p class="text-[10px] font-bold text-slate-400 mt-1">점 번호</p>
+          <p class="text-[11px] font-black text-slate-700">${escapeHtml(card.dotText || dotLabel(card.dots))}</p>
+        </div>
+      `).join('');
+    }
+
+    function freeMode() {
+      return globalSettings.study === 'free';
+    }
+
+    function closeUnitMenu() {
+      const menu = document.getElementById('unit-menu');
+      const toggle = document.getElementById('unit-toggle');
+      const mark = document.getElementById('unit-toggle-mark');
+      if (menu) menu.classList.add('hidden');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      if (mark) mark.textContent = '▾';
+    }
+
+    function toggleUnitMenu() {
+      const menu = document.getElementById('unit-menu');
+      const open = menu && menu.classList.contains('hidden');
+      closeUnitMenu();
+      if (!open || !menu) return;
+      menu.classList.remove('hidden');
+      const toggle = document.getElementById('unit-toggle');
+      const mark = document.getElementById('unit-toggle-mark');
+      if (toggle) toggle.setAttribute('aria-expanded', 'true');
+      if (mark) mark.textContent = '▴';
+      const selected = menu.querySelector('[aria-selected="true"]');
+      if (selected) selected.focus();
+    }
+
+    function paintMode() {
+      const free = freeMode();
+      document.querySelectorAll('.mode-btn').forEach((btn) => {
+        const on = btn.dataset.mode === (free ? 'free' : 'path');
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.classList.toggle('bg-emerald-500', on);
+        btn.classList.toggle('text-white', on);
+        btn.classList.toggle('border-emerald-600', on);
+        btn.classList.toggle('shadow-sm', on);
+        btn.classList.toggle('bg-white', !on);
+        btn.classList.toggle('text-slate-700', !on);
+        btn.classList.toggle('border-slate-200', !on);
+      });
+      const hint = document.getElementById('mode-hint');
+      if (hint) {
+        hint.textContent = free
+          ? '모든 단원을 고를 수 있습니다. 단원을 통과하면 그 앞 단원이 모두 해금됩니다.'
+          : '앞 단원을 통과해야 다음 단원이 열립니다.';
+      }
+    }
+
+    function paintUnitList(units, lang, selectedId) {
+      const list = document.getElementById('unit-list');
+      if (!list) return;
+      const ids = orderedIds(units);
+      list.innerHTML = units.map((unit) => {
+        const open = isUnitOpen(lang, unit.id, ids);
+        const selected = unit.id === selectedId;
+        const saved = unitRecord(lang, unit.id);
+        const passed = isUnitPassed(lang, unit.id);
+        const granted = !!(saved && saved.opened) && !passed;
+        const badge = passed ? '통과' : granted ? '해금' : open ? '' : '잠김';
+        const label = [
+          selected ? '현재' : '',
+          `${unit.order}단원 ${unit.title}`,
+          badge
+        ].filter(Boolean).join(' ');
+        const tone = selected
+          ? 'bg-emerald-500 text-white border-emerald-600'
+          : 'bg-white text-slate-700 border-slate-200';
+        return `
+          <button type="button" role="option" class="unit-chip w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 text-left ${tone}" data-unit="${escapeHtml(unit.id)}" ${open ? '' : 'disabled'} aria-selected="${selected ? 'true' : 'false'}" aria-label="${escapeHtml(label)}">
+            <span>${escapeHtml(`${unit.order}단원 · ${unit.title}`)}</span>
+            <span class="shrink-0 ${selected ? 'text-emerald-50' : badge === '통과' ? 'text-emerald-700' : badge === '해금' ? 'text-indigo-600' : 'text-slate-400'}">${escapeHtml(badge)}</span>
+          </button>
+        `;
+      }).join('');
+      list.querySelectorAll('.unit-chip').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          const id = btn.dataset.unit || '';
+          if (!isUnitOpen(globalSettings.lang, id, orderedIds(currentUnits))) return;
+          chosenId = id;
+          focusUnit(globalSettings.lang, id);
+          closeUnitMenu();
+          renderHub({ focusToggle: true });
+        });
+      });
+    }
+
+    async function renderHub(opts = {}) {
+      const token = ++renderToken;
+      const lang = globalSettings.lang;
+      const units = unitsFor(langCode(lang));
+      currentUnits = units;
+      const id = chooseUnit(units, lang);
+      activeUnitId = id;
+      const unit = units.find((item) => item.id === id) || null;
+      const line = document.getElementById('unit-line');
+      if (line) line.textContent = unitLine(lang, unit);
+      const manualUnit = document.getElementById('manual-unit');
+      if (manualUnit) manualUnit.textContent = unit ? unitLine(lang, unit) : '사용법과 선택한 단원의 점자';
+      paintMode();
+      paintUnitList(units, lang, id);
+      paintTeach(unit, lang);
+      if (opts.focusToggle) {
+        const toggle = document.getElementById('unit-toggle');
+        if (toggle) toggle.focus();
+      }
+      const box = document.getElementById('unit-cards');
+      if (box) box.replaceChildren();
+      try {
+        const cards = unit ? await cardsOf(unit) : [];
+        if (token !== renderToken) return;
+        paintCardGrid(cards);
+      } catch {
+        if (token !== renderToken) return;
+        paintCardGrid([]);
+      }
+    }
+
     // =========================================================================
     // 2. 프로그램 간 라우팅 및 파라미터 전달 (하위 게임 요구 규격 준수)
     // =========================================================================
     document.querySelectorAll('.nav-card').forEach(card => {
       card.addEventListener('click', () => {
+        const ids = orderedIds(currentUnits);
+        if (!activeUnitId || !isUnitOpen(globalSettings.lang, activeUnitId, ids)) return;
         saveSettings();
         const target = card.dataset.target;
-        
+
         const params = new URLSearchParams({
           lang: globalSettings.lang,
+          unit: activeUnitId,
           hub: 'true',
           theme: globalSettings.contrastTheme,
           scale: globalSettings.textScale,
@@ -486,6 +886,7 @@
     // =========================================================================
     const statsModal = document.getElementById('stats-modal');
     const settingsModal = document.getElementById('settings-modal');
+    const manualModal = document.getElementById('manual-modal');
 
     const openStatsBtn = document.getElementById('btn-open-stats');
     if (openStatsBtn) {
@@ -507,7 +908,9 @@
       clearStatsBtn.addEventListener('click', () => {
         if (confirm("모든 학습 이력 및 취약점 통계를 초기화하시겠습니까?")) {
           clearLearningData();
+          chosenId = '';
           renderIntegratedStats();
+          renderHub();
         }
       });
     }
@@ -516,7 +919,43 @@
     window.addEventListener('click', (e) => {
       if (e.target === settingsModal) settingsModal.classList.add('hidden');
       if (e.target === statsModal) statsModal.classList.add('hidden');
+      if (e.target === manualModal) manualModal.classList.add('hidden');
+      const picker = document.getElementById('unit-picker');
+      if (picker && !picker.contains(e.target)) closeUnitMenu();
     });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      closeUnitMenu();
+      if (manualModal && !manualModal.classList.contains('hidden')) manualModal.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.mode-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const next = btn.dataset.mode === 'free' ? 'free' : 'path';
+        if (globalSettings.study === next) return;
+        globalSettings.study = saveStudyMode(next);
+        closeUnitMenu();
+        renderHub();
+      });
+    });
+
+    const unitToggle = document.getElementById('unit-toggle');
+    if (unitToggle) unitToggle.addEventListener('click', () => toggleUnitMenu());
+
+    const openManualBtn = document.getElementById('btn-manual');
+    if (openManualBtn) {
+      openManualBtn.addEventListener('click', () => {
+        closeUnitMenu();
+        if (manualModal) manualModal.classList.remove('hidden');
+      });
+    }
+    const closeManualBtn = document.getElementById('btn-manual-close');
+    if (closeManualBtn) {
+      closeManualBtn.addEventListener('click', () => {
+        if (manualModal) manualModal.classList.add('hidden');
+      });
+    }
 
     document.querySelectorAll('.opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -531,8 +970,10 @@
         btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
         btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
 
+        if (globalSettings.lang !== val) chosenId = '';
         globalSettings.lang = val;
         saveSettings();
+        renderHub();
       });
     });
 
@@ -570,19 +1011,15 @@
     document.getElementById('chk-tts').addEventListener('change', (e) => globalSettings.tts = e.target.checked);
     document.getElementById('chk-pitch').addEventListener('change', (e) => globalSettings.pitch = e.target.checked);
 
-    // 페이지 진입 초기화
-    document.addEventListener('DOMContentLoaded', () => {
+    function bootHub() {
       applyVisualSettings();
+      const btn = document.querySelector(`.opt-btn[data-group="lang"][data-value="${globalSettings.lang}"]`);
+      if (btn) btn.click();
+      else renderHub();
+    }
 
-      // 기존 저장된 활성 버튼 상태 동기화
-      const activeSelectors = [
-        `.opt-btn[data-group="lang"][data-value="${globalSettings.lang}"]`
-      ];
-      activeSelectors.forEach(sel => {
-        const btn = document.querySelector(sel);
-        if (btn) btn.click();
-      });
-    });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootHub);
+    else bootHub();
   </script>
 </body>
 </html>

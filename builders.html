@@ -415,7 +415,7 @@
   </div>
 
   <script type="module">
-    import { loadQuizEngine } from './quiz_combo.js';
+    import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
     import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
 
     // =========================================================================
@@ -691,6 +691,8 @@
         applyNewQuiz(generated);
         return;
       }
+      // 단원 문제는 그 단원 재료에서만 낸다. 못 만들면 다른 문제로 채우지 않는다.
+      if (state.unitId && quizEngine) return;
       try {
         const bank = await loadQuizBank();
         const list = bankItems(bank, state.lang);
@@ -699,6 +701,12 @@
         console.warn("quiz_bank.json 로드 실패", e);
       }
     }
+
+        // 단원 문제의 해설은 조립 순서다. 단원 밖 문제에는 붙이지 않는다.
+        function unitExplanation(quiz) {
+          if (!state.unitId || !quiz || !quiz.explanation) return '';
+          return `해설: ${quiz.explanation.replace(/\.$/, '')}. `;
+        }
 
         function applyVerificationResult(resultData) {
           state.isVerifying = false;
@@ -714,16 +722,17 @@
             if (!outcome.consumed) return;
             speak(`정답입니다! 연속 ${state.combo}콤보 달성.`);
 
+            const steps = unitExplanation(state.currentQuiz);
             document.getElementById('workbench-status-desc').textContent = outcome.stageDone
-              ? "스테이지를 모두 풀었습니다. 학습 결과를 확인하세요."
-              : "규칙 검증 통과! 다음 문제를 준비합니다.";
+              ? `스테이지를 모두 풀었습니다. ${steps}학습 결과를 확인하세요.`
+              : `규칙 검증 통과! ${steps}다음 문제를 준비합니다.`;
             workbench.classList.add('animate-pop', 'bg-emerald-50', 'border-emerald-400');
 
             setTimeout(() => {
               workbench.classList.remove('animate-pop', 'bg-emerald-50', 'border-emerald-400');
               if (outcome.stageDone) stage.showResult();
               else showNextQuiz();
-            }, 750);
+            }, state.unitId ? 2200 : 750);
           } else {
         playSound('wrong');
         const failRule = resultData.ruleViolated || state.currentQuiz.meta?.type || "점자 규칙 오인";
@@ -735,18 +744,19 @@
         const outcome = stage.onAnswer(false, 0);
         if (!outcome.consumed) return;
         const answerText = state.currentQuiz.target_text || '';
-        speak(`오답입니다. 정답은 ${answerText} 입니다.`);
+        const steps = unitExplanation(state.currentQuiz);
+        speak(`오답입니다. 정답은 ${answerText} 입니다. ${steps.replace(/[\u2800-\u28FF]/g, '')}`);
 
         document.getElementById('workbench-status-desc').textContent = outcome.stageDone
-          ? `오답입니다. 정답: ${answerText}. 학습 결과를 확인하세요.`
-          : `오답입니다. 정답: ${answerText}`;
+          ? `오답입니다. 정답: ${answerText}. ${steps}학습 결과를 확인하세요.`
+          : `오답입니다. 정답: ${answerText}. ${steps}`;
         workbench.classList.add('animate-shake', 'bg-rose-50', 'border-rose-400');
 
         setTimeout(() => {
           workbench.classList.remove('animate-shake', 'bg-rose-50', 'border-rose-400');
           if (outcome.stageDone) stage.showResult();
           else showNextQuiz();
-        }, 1100);
+        }, state.unitId ? 4500 : 1100);
       }
     }
 
@@ -865,15 +875,21 @@
       showNextQuiz();
     });
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    // curriculum.js가 top-level await를 쓰므로 이 모듈은 DOMContentLoaded 뒤에 실행될 수 있다.
+    // 시작은 스크립트 맨 끝에서 한다.
+    async function bootBuilders() {
       applyVisualSettings();
       try {
         quizEngine = await loadQuizEngine();
       } catch (e) {
         console.warn("조합 출제 엔진 로드 실패", e);
       }
+      if (quizEngine && state.unitId && !canOpenUnit(state.unitId, state.lang)) {
+        goHub();
+        return;
+      }
       await showNextQuiz();
-    });
+    }
 
     // =========================================================================
     // 설정 모달 및 환경 동기화
@@ -966,6 +982,9 @@
         applyVisualSettings();
       });
     });
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootBuilders);
+    else bootBuilders();
   </script>
 </body>
 </html>

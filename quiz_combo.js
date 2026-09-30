@@ -3,9 +3,36 @@
  * morpheme, blank, builders는 형태소 하나만을 문제로 낸다.
  * select는 형태소를 자유롭게 결합한 심화 문제만 낸다.
  * unitId가 있으면 그 단원 source의 카드만 낸다. 읽기는 morpheme·select·builders, 쓰기는 blank.
+ * 단원 문제는 그 단원과 앞 단원의 재료만 쓰고, 앞 단원을 통과하지 못했으면 내지 않는다.
+ * 통과한 단원에서 틀린 항목은 다음 단원 10문제 가운데 둘이나 셋으로 다시 낸다.
+ * 해설은 조립 순서다. 예) ㄱ 4점 ⠈ + ㅏ 1·2·6점 ⠣
  */
-import { cardsFor, unitById } from './curriculum.js';
-import { STAGE_SIZE, wrongItemKeys } from './shell.js';
+import {
+  cardsFor,
+  unitById,
+  unitsFor,
+  materialsFor,
+  isComposeUnit,
+  abbreviationIndex,
+  assemblyText,
+  makeStep,
+  stepsPattern
+} from './curriculum.js';
+import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed } from './shell.js';
+
+const BLANK_CELL = '\u2800';
+const SPACE_STEP = makeStep('띄어쓰기', [[]], BLANK_CELL);
+const LANG_CODE = { ko: 'KO', en: 'EN' };
+
+/** 앞 단원을 모두 통과해야 열리는 단원인지 본다. 게임 화면이 들어가기 전에 쓴다. */
+export function canOpenUnit(unitId, lang) {
+  const unit = unitById(unitId);
+  if (!unit) return false;
+  const code = LANG_CODE[unit.lang];
+  if (lang && String(lang).toUpperCase() !== code) return false;
+  const ids = unitsFor(unit.lang).map((item) => item.id);
+  return isUnitOpen(code, unit.id, ids);
+}
 
 const CHOSUNG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 const JUNGSUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
@@ -559,8 +586,63 @@ function recipesFor(lang, game) {
   return lang === 'EN' ? enAtom : koAtom;
 }
 
-function distractorBraille(correct) {
-  const found = new Set();
+function patternDistance(a, b) {
+  const x = Array.from(a);
+  const y = Array.from(b);
+  if (x.length !== y.length) return 99;
+  let distance = 0;
+  for (let i = 0; i < x.length; i++) {
+    let diff = (x[i].codePointAt(0) ^ y[i].codePointAt(0)) & 0xFF;
+    while (diff) {
+      distance += diff & 1;
+      diff >>= 1;
+    }
+  }
+  return distance;
+}
+
+// 같은 재료 안에서 점 모양이 가장 닮은 점형을 고른다. 약자와 풀어 쓴 형태가 짝이면 그 짝이 먼저다.
+function nearPatterns(card, scope) {
+  const out = [];
+  const seen = new Set([card.pattern]);
+  if (card.contrast && !seen.has(card.contrast)) {
+    seen.add(card.contrast);
+    out.push(card.contrast);
+  }
+  const ranked = [];
+  scope.forEach(({ cards }) => {
+    cards.forEach((other) => {
+      if (!other.pattern || seen.has(other.pattern)) return;
+      seen.add(other.pattern);
+      const distance = patternDistance(card.pattern, other.pattern);
+      if (distance < 99) ranked.push({ pattern: other.pattern, score: distance + Math.random() * 1.5 });
+    });
+  });
+  ranked.sort((a, b) => a.score - b.score).forEach((item) => out.push(item.pattern));
+  return out.slice(0, 3);
+}
+
+// 뜻 보기와 블록은 이 단원과 앞 단원의 글자만 쓴다. 점형이 같은 글자는 정답과 구분이 안 되므로 뺀다.
+function nearTexts(unit, card, scope) {
+  const current = new Set();
+  const before = new Set();
+  scope.forEach(({ unit: owner, cards }) => {
+    const bucket = owner.id === unit.id ? current : before;
+    cards.forEach((other) => {
+      if (!other.letter || other.letter === card.letter || other.pattern === card.pattern) return;
+      bucket.add(other.letter);
+    });
+  });
+  const list = shuffle(Array.from(current));
+  shuffle(Array.from(before)).forEach((letter) => {
+    if (!current.has(letter)) list.push(letter);
+  });
+  return list.slice(0, 3);
+}
+
+function distractorBraille(correct, preferred = []) {
+  const found = new Set(preferred.filter((item) => item && item !== correct));
+  if (found.size >= 3) return Array.from(found).slice(0, 3);
   const mirroredH = mirrorBraille(correct, { 1: 4, 2: 5, 3: 6, 4: 1, 5: 2, 6: 3 });
   const mirroredV = mirrorBraille(correct, { 1: 3, 2: 2, 3: 1, 4: 6, 5: 5, 6: 4 });
   [mirroredH, mirroredV].forEach(item => {
@@ -612,15 +694,22 @@ function meaningOptions(target, lang) {
 
 function finishItem(raw, lang, seq) {
   const target = raw.text || raw.parts.map(part => part.text).join('');
-  const hint = raw.parts.map(part => part.label).filter(Boolean).join(' · ');
-  const explanation = raw.dotText
-    ? `${target}은 ${raw.dotText}, 점형 ${raw.braille}`
-    : (hint || target);
+  const hint = raw.hint || raw.parts.map(part => part.label).filter(Boolean).join(' · ');
+  const explanation = raw.explanation || hint || target;
   const seqText = raw.parts.map(part => part.text);
-  const extras = [];
-  for (let i = 0; i < 4; i++) extras.push(distractorText(seqText[i % seqText.length] || target, lang));
-  const blocks = shuffle(seqText.concat(extras.filter(item => item && !seqText.includes(item)).slice(0, 3)));
-  const meanings = meaningOptions(target, lang);
+  let blocks;
+  let meanings;
+  if (Array.isArray(raw.distractTexts)) {
+    // 단원 문제: 재료 밖의 글자(잠긴 약자·약어)가 보기에 끼지 않게 재료에서만 고른다.
+    const extras = raw.distractTexts.filter(item => item && item !== target);
+    meanings = shuffle([target, ...extras.slice(0, 3)]);
+    blocks = shuffle(seqText.concat(extras.filter(item => !seqText.includes(item)).slice(0, 3)));
+  } else {
+    const extras = [];
+    for (let i = 0; i < 4; i++) extras.push(distractorText(seqText[i % seqText.length] || target, lang));
+    blocks = shuffle(seqText.concat(extras.filter(item => item && !seqText.includes(item)).slice(0, 3)));
+    meanings = meaningOptions(target, lang);
+  }
   return {
     id: raw.key || `combo_${seq}`,
     lang,
@@ -633,8 +722,8 @@ function finishItem(raw, lang, seq) {
     braille: raw.braille,
     hint: hint || target,
     explanation,
-    prompt_audio: hint || target,
-    distractors_braille: distractorBraille(raw.braille),
+    prompt_audio: raw.hint ? `${target}. ${raw.hint}` : (hint || target),
+    distractors_braille: distractorBraille(raw.braille, raw.distractBraille || []),
     distractors_text: meanings.filter(item => item !== target),
     meaning_options: meanings,
     parts: raw.parts,
@@ -646,9 +735,180 @@ function finishItem(raw, lang, seq) {
     sentence_pre: lang === 'KO' ? '제시어' : 'Prompt',
     sentence_post: lang === 'KO' ? '의 점자' : 'in braille',
     clue: `${target}. ${hint || ''}`.trim(),
-    rule_analysis: { rule_name: raw.rule, detail: hint || target },
+    rule_analysis: { rule_name: raw.rule, detail: explanation },
     meta: { type: raw.rule }
   };
+}
+
+// ---------------------------------------------------------------------------
+// 짧은 문장. 재료 카드의 점형을 그대로 이어 붙이고, 재료 밖의 것은 쓰지 않는다.
+// ---------------------------------------------------------------------------
+
+function tokenOf(kind, text, braille, steps, label) {
+  return { kind, text, braille, steps, label: label || kind };
+}
+
+function groupByKind(cards) {
+  const by = {};
+  cards.forEach((card) => {
+    (by[card.kind] = by[card.kind] || []).push(card);
+  });
+  return by;
+}
+
+// 수표는 한 번만 붙이고 숫자만 잇는다. 첫 자리는 0으로 시작하지 않는다.
+function numberToken(digitCards) {
+  const pool = digitCards.filter((card) => card.steps && card.steps.length === 2);
+  if (!pool.length) return null;
+  const lead = pool.filter((card) => card.letter !== '0');
+  const chosen = [pick(lead.length ? lead : pool)];
+  if (Math.random() < 0.5) chosen.push(pick(pool));
+  const steps = [chosen[0].steps[0], ...chosen.map((card) => card.steps[1])];
+  return tokenOf('number', chosen.map((card) => card.letter).join(''), stepsPattern(steps), steps, '숫자');
+}
+
+function assembleSentence(tokens, mark) {
+  const parts = [];
+  const steps = [];
+  let text = '';
+  let braille = '';
+  tokens.forEach((token, index) => {
+    if (index > 0) {
+      text += ' ';
+      braille += BLANK_CELL;
+      steps.push(SPACE_STEP);
+    }
+    text += token.text;
+    braille += token.braille;
+    steps.push(...token.steps);
+    parts.push({ text: token.text, braille: token.braille, label: token.label });
+  });
+  if (mark) {
+    text += mark.letter;
+    braille += mark.pattern;
+    steps.push(...mark.steps);
+    parts.push({ text: mark.letter, braille: mark.pattern, label: mark.letter });
+  }
+  return { text, braille, steps, parts, tokens, mark };
+}
+
+function sentenceMaker(generators, marks) {
+  const kinds = Object.keys(generators);
+  if (!kinds.length) return null;
+
+  function token(kind) {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const made = generators[kind]();
+      if (made && made.text && made.braille) return made;
+    }
+    return null;
+  }
+
+  return {
+    sentence() {
+      const count = 2 + Math.floor(Math.random() * 2);
+      const tokens = [];
+      for (let i = 0; i < count; i++) {
+        const made = token(pick(kinds));
+        if (!made) return null;
+        tokens.push(made);
+      }
+      return assembleSentence(tokens, marks.length ? pick(marks) : null);
+    },
+    // 한 칸 조각만 바꾼 문장. 점형이 겹치면 뜻 보기에서 정답이 둘이 되므로 점형이 다른 것만 모은다.
+    variants(sentence) {
+      const out = [];
+      const seenBraille = new Set([sentence.braille]);
+      const seenText = new Set([sentence.text]);
+      for (let i = 0; i < 30 && out.length < 3; i++) {
+        const index = Math.floor(Math.random() * sentence.tokens.length);
+        const old = sentence.tokens[index];
+        const swapped = generators[old.kind] ? token(old.kind) : null;
+        if (!swapped || swapped.braille === old.braille) continue;
+        const tokens = sentence.tokens.slice();
+        tokens[index] = swapped;
+        const alt = assembleSentence(tokens, sentence.mark);
+        if (seenBraille.has(alt.braille) || seenText.has(alt.text)) continue;
+        seenBraille.add(alt.braille);
+        seenText.add(alt.text);
+        out.push({ text: alt.text, braille: alt.braille });
+      }
+      return out;
+    }
+  };
+}
+
+// 음절 낱말: 통과한 약자·풀어 쓴 음절을 잇는다.
+// 사 바로 뒤에 ㅇ 첫소리가 오면 풀어 써야 하므로 그 조합은 만들지 않고,
+// 받침은 억·언·얼 계열로 바뀌는 조합을 피해서 붙인다.
+function koreanWord(pieces, jongs, abbr) {
+  const count = 1 + Math.floor(Math.random() * 3);
+  let text = '';
+  let braille = '';
+  let steps = [];
+  let last = '';
+  for (let i = 0; i < count; i++) {
+    let piece = null;
+    for (let attempt = 0; attempt < 8 && !piece; attempt++) {
+      const candidate = pick(pieces);
+      const head = decompose(candidate.letter);
+      if (last === '사' && head && head[0] === 'ㅇ') continue;
+      piece = candidate;
+    }
+    if (!piece) break;
+    let syllable = piece.letter;
+    let cells = piece.pattern;
+    let pieceSteps = piece.steps;
+    const parts = decompose(piece.letter);
+    if (jongs.length && parts && !parts[2] && (piece.kind === 'syllable' || piece.kind === 'ga') && Math.random() < 0.35) {
+      const jong = pick(jongs);
+      const composed = compose(parts[0], parts[1], jong.letter);
+      // 가 계열은 약자 + 받침이 맞는 표기다. 그 밖에는 받침을 붙여 약자(억·언·얼, 것)로 바뀌면 붙이지 않는다.
+      const blocked = piece.kind === 'ga' ? abbr.syllables.has(composed) : abbr.applies(parts[0], parts[1], jong.letter);
+      if (composed && !blocked) {
+        syllable = composed;
+        cells += jong.pattern;
+        pieceSteps = pieceSteps.concat(jong.steps.map((step) => ({ ...step, label: `받침 ${step.label}` })));
+      }
+    }
+    text += syllable;
+    braille += cells;
+    steps = steps.concat(pieceSteps);
+    last = syllable;
+  }
+  return text ? tokenOf('word', text, braille, steps, '낱말') : null;
+}
+
+function koreanTokens(cards, ko) {
+  const by = groupByKind(cards);
+  const abbr = abbreviationIndex(ko);
+  const pieces = [].concat(by.syllable || [], by.ga || [], by.eok || []);
+  const jongs = (by.jongsung || []).filter((card) => JONGSUNG.includes(card.letter));
+  const generators = {};
+  if (pieces.length) generators.word = () => koreanWord(pieces, jongs, abbr);
+  if (by.word && by.word.length) {
+    generators.wordsign = () => {
+      const card = pick(by.word);
+      return tokenOf('wordsign', card.letter, card.pattern, card.steps, '단어 약어');
+    };
+  }
+  if (by.digit && by.digit.length) generators.number = () => numberToken(by.digit);
+  const marks = (by.mark || []).filter((card) => ['.', '?', '!'].includes(card.letter));
+  return sentenceMaker(generators, marks);
+}
+
+function englishTokens(cards) {
+  const by = groupByKind(cards);
+  const words = [].concat(by.wordsign || [], by.shortform || [], (by.contraction || []).filter((card) => card.standalone));
+  const generators = {};
+  if (words.length) {
+    generators.word = () => {
+      const card = pick(words);
+      return tokenOf('word', card.letter, card.pattern, card.steps, card.kind);
+    };
+  }
+  if (by.digit && by.digit.length) generators.number = () => numberToken(by.digit);
+  return sentenceMaker(generators, []);
 }
 
 export function createEngine(data) {
@@ -666,59 +926,150 @@ export function createEngine(data) {
   const rounds = new Map();
   let seq = 0;
 
-  function buildRound(unitId, lang, cards) {
-    const wrong = new Set(wrongItemKeys(lang, unitId));
-    const keyOf = (card) => `${unitId}:${card.letter}`;
-    const wrongCards = shuffle(cards.filter((card) => wrong.has(keyOf(card))));
-    const others = shuffle(cards.filter((card) => !wrong.has(keyOf(card))));
-    const round = [];
+  function itemKey(owner, card) {
+    return `${owner.id}:${card.letter}`;
+  }
+
+  // 통과한 앞 단원의 오답 키만 모은다. 날짜로 거르지 않는다.
+  function reviewEntries(unit, lang) {
+    const found = [];
+    scopeOf(unit).forEach(({ unit: owner, cards }) => {
+      if (owner.id === unit.id || !isUnitPassed(lang, owner.id)) return;
+      const wrong = new Set(wrongItemKeys(lang, owner.id));
+      cards.forEach((card) => {
+        if (wrong.has(itemKey(owner, card))) found.push({ card, owner });
+      });
+    });
+    return found;
+  }
+
+  function buildRound(unit, lang) {
+    const cards = scopeOf(unit).find((item) => item.unit.id === unit.id)?.cards || [];
+    const pool = shuffle(reviewEntries(unit, lang));
+    const reviewN = pool.length ? 2 + Math.floor(Math.random() * 2) : 0;
+    const review = [];
+    for (let i = 0; i < reviewN; i += 1) review.push(pool[i % pool.length]);
+
+    const wrong = new Set(wrongItemKeys(lang, unit.id));
+    const wrongCards = shuffle(cards.filter((card) => wrong.has(itemKey(unit, card))));
+    const others = shuffle(cards.filter((card) => !wrong.has(itemKey(unit, card))));
+    const fresh = [];
     const seen = new Set();
+    const need = STAGE_SIZE - review.length;
     for (const card of wrongCards.concat(others)) {
-      const key = keyOf(card);
+      const key = itemKey(unit, card);
       if (seen.has(key)) continue;
       seen.add(key);
-      round.push(card);
-      if (round.length >= STAGE_SIZE) break;
+      fresh.push({ card, owner: unit });
+      if (fresh.length >= need) break;
     }
-    if (round.length < STAGE_SIZE && cards.length) {
+    if (fresh.length < need && cards.length) {
       const fill = shuffle(cards);
       let i = 0;
-      while (round.length < STAGE_SIZE) {
-        round.push(fill[i % fill.length]);
+      while (fresh.length < need) {
+        fresh.push({ card: fill[i % fill.length], owner: unit });
         i += 1;
       }
     }
-    return round;
+    return shuffle(review.concat(fresh));
   }
 
-  function fromUnit(unitId, lang) {
-    const unit = unitById(unitId);
-    if (!unit) return null;
-    const cards = cardsFor(unit, bundles).filter((card) => card.letter && card.pattern);
-    if (!cards.length) return null;
-    let queue = rounds.get(unitId);
-    if (!queue || !queue.length) {
-      queue = buildRound(unitId, lang, cards);
-      rounds.set(unitId, queue);
+  // 단원마다 카드는 한 번만 자른다. 재료는 그 단원과 앞 단원이다.
+  const scopes = new Map();
+
+  function scopeOf(unit) {
+    if (!scopes.has(unit.id)) {
+      const scope = materialsFor(unit, bundles).map(({ unit: owner, cards }) => ({
+        unit: owner,
+        cards: cards.filter((card) => card.letter && card.pattern)
+      }));
+      scopes.set(unit.id, scope);
     }
-    const card = queue.shift();
-    const key = `${unitId}:${card.letter}`;
-    seq += 1;
-    return finishItem({
-      key,
+    return scopes.get(unit.id);
+  }
+
+  function fromCard(unit, card, owner = unit) {
+    const scope = scopeOf(unit);
+    const review = owner.id !== unit.id;
+    return {
+      key: itemKey(owner, card),
       text: card.letter,
       braille: card.pattern,
-      dotText: card.dotText,
-      parts: [{ text: card.letter, braille: card.pattern, label: card.letter }],
-      rule: unit.title
-    }, lang, seq);
+      parts: [{ text: card.letter, braille: card.pattern, label: owner.title }],
+      rule: owner.title,
+      hint: review ? `${owner.title} 복습` : `${unit.title} 단원`,
+      explanation: card.explain || card.dotText,
+      distractBraille: nearPatterns(card, scope),
+      distractTexts: nearTexts(unit, card, scope)
+    };
+  }
+
+  // 짧은 문장: 통과한 단원의 재료만 이어 붙인다.
+  const recentSentences = new Map();
+
+  function passedCards(unit) {
+    const code = LANG_CODE[unit.lang];
+    const cards = [];
+    scopeOf(unit).forEach(({ unit: owner, cards: list }) => {
+      if (owner.id !== unit.id && isUnitPassed(code, owner.id)) cards.push(...list);
+    });
+    return cards;
+  }
+
+  function fromSentence(unit) {
+    const maker = unit.lang === 'en' ? englishTokens(passedCards(unit)) : koreanTokens(passedCards(unit), data.ko);
+    if (!maker) return null;
+    const recentList = recentSentences.get(unit.id) || [];
+    let sentence = null;
+    for (let attempt = 0; attempt < 12 && !sentence; attempt++) {
+      const made = maker.sentence();
+      if (made && !recentList.includes(made.text)) sentence = made;
+    }
+    if (!sentence) sentence = maker.sentence();
+    if (!sentence) return null;
+    recentList.push(sentence.text);
+    if (recentList.length > 5) recentList.shift();
+    recentSentences.set(unit.id, recentList);
+    const variants = maker.variants(sentence);
+    return {
+      key: `${unit.id}:문장`,
+      text: sentence.text,
+      braille: sentence.braille,
+      parts: sentence.parts,
+      rule: unit.title,
+      hint: `${unit.title} 단원`,
+      explanation: assemblyText(sentence.steps),
+      distractBraille: variants.map((item) => item.braille),
+      distractTexts: variants.map((item) => item.text)
+    };
+  }
+
+  function fromUnit(unitId) {
+    const unit = unitById(unitId);
+    if (!unit) return null;
+    const lang = LANG_CODE[unit.lang] || 'KO';
+    if (!canOpenUnit(unit.id, lang)) return null;
+    seq += 1;
+    if (isComposeUnit(unit)) {
+      const raw = fromSentence(unit);
+      return raw ? finishItem(raw, lang, seq) : null;
+    }
+    const cards = scopeOf(unit).find((item) => item.unit.id === unit.id)?.cards || [];
+    if (!cards.length) return null;
+    let queue = rounds.get(unit.id);
+    if (!queue || !queue.length) {
+      queue = buildRound(unit, lang);
+      rounds.set(unit.id, queue);
+    }
+    const picked = queue.shift();
+    return finishItem(fromCard(unit, picked.card, picked.owner), lang, seq);
   }
 
   function next(opts = {}) {
     const lang = (opts.lang || 'KO').toUpperCase() === 'EN' ? 'EN' : 'KO';
     const game = opts.game || 'select';
     const unitId = opts.unitId || '';
-    if (unitId) return fromUnit(unitId, lang);
+    if (unitId) return fromUnit(unitId);
     const recipes = recipesFor(lang, game);
     const bank = lang === 'EN' ? en : ko;
 
