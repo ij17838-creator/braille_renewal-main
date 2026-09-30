@@ -46,7 +46,7 @@
       "연": { "syllable": "연", "dots": [[1, 6]], "unicode": "⠡", "type": "vowel_coda_series" },
       "열": { "syllable": "열", "dots": [[1, 2, 5, 6]], "unicode": "⠳", "type": "vowel_coda_series" },
       "영": { "syllable": "영", "dots": [[1, 2, 4, 5, 6]], "unicode": "⠻", "type": "vowel_coda_series" },
-      "옥": { "syllable": "옥", "dots": [[1, 3, 4, 5, 6]], "unicode": "⠽", "type": "vowel_coda_series" },
+      "옥": { "syllable": "옥", "dots": [[1, 3, 4, 6]], "unicode": "⠭", "type": "vowel_coda_series" },
       "온": { "syllable": "온", "dots": [[1, 2, 3, 5, 6]], "unicode": "⠷", "type": "vowel_coda_series" },
       "옹": { "syllable": "옹", "dots": [[1, 2, 3, 4, 5, 6]], "unicode": "⠿", "type": "vowel_coda_series" },
       "운": { "syllable": "운", "dots": [[1, 2, 4, 5]], "unicode": "⠛", "type": "vowel_coda_series" },
