@@ -335,7 +335,6 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
   let bestCombo = 0;
   let accepting = false;
   let showing = false;
-  let passedThisResult = false;
 
   const overlay = document.createElement('div');
   overlay.id = 'stage-result-overlay';
@@ -363,12 +362,6 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     overlay.classList.add('hidden');
     overlay.classList.remove('flex');
     showing = false;
-    if (passedThisResult) {
-      passedThisResult = false;
-      if (typeof onHome === 'function') onHome();
-      else goHub();
-      return;
-    }
     stage += 1;
     correct = 0;
     wrong = 0;
@@ -449,7 +442,6 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
         total: size
       })
       : false;
-    passedThisResult = unitPassed;
     recordSession({
       game,
       lang: meta.lang,
@@ -462,9 +454,10 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     overlay.querySelector('#stage-result-kicker').textContent = unitPassed ? '단원 통과' : `스테이지 ${stage} 완료`;
     overlay.querySelector('#stage-result-title').textContent = unitPassed ? '단원 통과' : '학습 결과';
     let summary = `${size}문제 중 ${correct}문제를 맞혔습니다.`;
-    if (unitPassed) summary += ' 허브로 돌아갑니다.';
-    else if (unitId && met) summary += ' 읽기와 쓰기를 모두 마치면 통과합니다. 계속하기는 같은 단원을 다시 엽니다.';
-    else if (unitId) summary += ' 기준에 못 미쳐 같은 단원을 다시 엽니다.';
+    if (unitPassed) summary += ' 이 단원을 통과했습니다.';
+    else if (unitId && met) summary += ' 이 연습은 완료했습니다. 읽기와 쓰기를 모두 마치면 단원을 통과합니다.';
+    else if (unitId) summary += ' 기준에 못 미쳤습니다.';
+    summary += ' 계속하기로 다음 스테이지를 풀거나, 홈으로 돌아갈 수 있습니다.';
     overlay.querySelector('#stage-result-summary').textContent = summary;
 
     const stats = [
@@ -485,10 +478,12 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     overlay.classList.remove('hidden');
     overlay.classList.add('flex');
     const cont = overlay.querySelector('#stage-btn-continue');
+    const home = overlay.querySelector('#stage-btn-home');
     if (cont) {
-      cont.textContent = unitPassed ? '허브로 돌아가기' : '계속하기';
+      cont.textContent = '계속하기';
       cont.focus();
     }
+    if (home) home.textContent = '홈으로 돌아가기';
     const spoken = unitPassed
       ? `이 단원을 통과했습니다. ${size}문제 중 ${correct}문제를 맞혔습니다.`
       : `스테이지 ${stage} 학습 결과. ${size}문제 중 ${correct}문제를 맞혔습니다. 정답률 ${accuracy}퍼센트.`;
