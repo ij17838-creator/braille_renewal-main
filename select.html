@@ -212,9 +212,11 @@
                 점자 탐색가
               </span>
             </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-0.5">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 font-bold mt-0.5">
               <span id="label-level-mode">형태소 결합 · KO · 4지선다</span>
-              <span>·</span>
+              <span aria-hidden="true">·</span>
+              <span id="stage-progress" class="text-indigo-700 font-black">스테이지 1 · 0/10</span>
+              <span aria-hidden="true">·</span>
               <span class="text-indigo-600 font-black" id="combo-counter">연속 0콤보</span>
             </div>
           </div>
@@ -364,7 +366,7 @@
 
   <script type="module">
     import { loadQuizEngine } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
 
     // 1. UEB / 한글 규칙 라벨 매퍼
     const RULE_LABELS = {
@@ -405,8 +407,26 @@
       badgeTitle: "점자 탐색가",
       currentQuiz: null,
       isAnsweringLocked: false,
-      weaknessStats: loadUnifiedRuleStats()
+      weaknessStats: loadUnifiedRuleStats(),
+      unitId: new URLSearchParams(window.location.search).get('unit') || ''
     };
+
+    const stage = createStageSession({
+      game: 'select',
+      trackCombo: true,
+      getMeta: () => ({
+        lang: state.lang,
+        level: state.level,
+        unitId: state.unitId,
+        itemId: state.currentQuiz ? state.currentQuiz.id : '',
+        skill: 'read'
+      }),
+      onContinue: () => { generateNextQuiz(); },
+      onHome: () => {
+        persistSettings({ lang: state.lang, level: state.level, theme: globalSettings.theme, scale: globalSettings.scale, tts: globalSettings.tts, pitch: globalSettings.pitch });
+        goHub();
+      }
+    });
 
     // 3. 오디오 합성기 (Tone.js & Web Speech API)
     let synthAudio, sfxCorrect, sfxWrong;
@@ -419,7 +439,7 @@
     }
 
     function playSound(type) {
-      if (!synthAudio) return;
+      if (!globalSettings.pitch || !synthAudio) return;
       if (type === 'hover') {
         synthAudio.triggerAttackRelease("E5", "64n");
       } else if (type === 'correct') {
@@ -565,7 +585,7 @@
 
     function pickLocalQuiz() {
       if (quizEngine) {
-        return quizEngine.next({ lang: state.lang, game: 'select', level: state.level });
+        return quizEngine.next({ lang: state.lang, game: 'select', level: state.level, unitId: state.unitId });
       }
       const pool = LOCAL_QUIZ_POOL[state.lang] || LOCAL_QUIZ_POOL.KO || [];
       if (!pool.length) return null;
@@ -583,6 +603,7 @@
     }
         function loadQuizData(quizObj) {
       if (!quizObj) return;
+      stage.allowNext();
       state.currentQuiz = quizObj;
       state.isAnsweringLocked = false;
 
@@ -663,7 +684,7 @@
 
     // 7. 정답 판정 및 허브 통신
         function handleOptionSelect(option, cardElement) {
-      if (state.isAnsweringLocked) return;
+      if (!stage.canAnswer() || state.isAnsweringLocked) return;
       state.isAnsweringLocked = true;
       initAudio();
 
@@ -673,6 +694,8 @@
         playSound('correct');
         state.combo++;
         updateTitleAndBadges();
+        const outcome = stage.onAnswer(true, state.combo);
+        if (!outcome.consumed) return;
         speak(state.lang === "KO" ? `정답입니다! 연속 ${state.combo}콤보 달성.` : `Correct! ${state.combo} in a row.`);
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
@@ -683,7 +706,10 @@
           rule: getReadableRule(state.currentQuiz ? state.currentQuiz.rule_type : '기본 점역'),
           correct: true
         });
-        setTimeout(generateNextQuiz, 1100);
+        setTimeout(() => {
+          if (outcome.stageDone) stage.showResult();
+          else generateNextQuiz();
+        }, 1100);
       } else {
         playSound('wrong');
 
@@ -694,20 +720,22 @@
 
         state.combo = 0;
         updateTitleAndBadges();
+        const outcome = stage.onAnswer(false, 0);
+        if (!outcome.consumed) return;
         speak(state.lang === "KO" ? "오답입니다. 올바른 점형을 확인하세요." : "Incorrect. Check the correct braille pattern.");
 
         cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90');
 
         allCards.forEach((c, i) => {
+          c.disabled = true;
           if (state.currentQuiz && state.currentQuiz.options && state.currentQuiz.options[i] && state.currentQuiz.options[i].isCorrect) {
             c.classList.add('border-emerald-500', 'bg-emerald-50/50');
           }
         });
 
         setTimeout(() => {
-          state.isAnsweringLocked = false;
-          cardElement.classList.remove('animate-card-shake');
-          allCards.forEach(c => c.disabled = false);
+          if (outcome.stageDone) stage.showResult();
+          else generateNextQuiz();
         }, 1200);
       }
     }
@@ -801,8 +829,8 @@
 
     // 10. 이벤트 바인딩
     window.addEventListener('keydown', (e) => {
-      initAudio(); // 첫 키 입력 시 AudioContext 초기화 보장
-      if (state.isAnsweringLocked) return;
+      initAudio();
+      if (!stage.canAnswer() || state.isAnsweringLocked) return;
 
       const num = parseInt(e.key);
       if (num >= 1 && num <= 4 && state.currentQuiz && state.currentQuiz.options) {
@@ -847,6 +875,7 @@
 
         document.getElementById('btn-retry-weakness').addEventListener('click', () => {
       document.getElementById('weakness-modal').classList.add('hidden');
+      if (!stage.canAnswer()) return;
       speak(state.lang === "KO" ? "오답률이 높은 취약 규칙 카드를 집중 출제합니다." : "Focusing on your most vulnerable rules.");
       generateNextQuiz();
     });

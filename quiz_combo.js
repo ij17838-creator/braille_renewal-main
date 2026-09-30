@@ -2,7 +2,10 @@
  * 사전 조합으로 퀴즈를 만든다.
  * morpheme, blank, builders는 형태소 하나만을 문제로 낸다.
  * select는 형태소를 자유롭게 결합한 심화 문제만 낸다.
+ * unitId가 있으면 그 단원 source의 카드만 낸다. 읽기는 morpheme·select·builders, 쓰기는 blank.
  */
+import { cardsFor, unitById } from './curriculum.js';
+import { STAGE_SIZE, wrongItemKeys } from './shell.js';
 
 const CHOSUNG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 const JUNGSUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
@@ -31,7 +34,7 @@ const SUFFIX_BRAILLE = {
   ful: '⠰⠇',
   ment: '⠰⠞',
   ity: '⠰⠽',
-  ally: '⠠⠽',
+  ally: '⠁⠇⠇⠽',
   tion: '⠰⠝',
   less: '⠨⠎',
   ence: '⠰⠑',
@@ -379,7 +382,11 @@ function buildEnglish(data) {
     Object.entries(group.items || {}).forEach(([key, item]) => {
       const text = (item.word || key || '').toLowerCase();
       if (!text || !item.unicode) return;
-      if (type === 'initial_contractions' || type === 'strong_wordsign') {
+      if (group.rule?.standingAloneOnly) {
+        wholeWords.push({ word: item.word || key, unicode: item.unicode, rule: '하점 단어약어' });
+        return;
+      }
+      if (type === 'initial_contractions' || type === 'strong_wordsign' || group.rule?.canStandAlone) {
         wholeWords.push({ word: item.word || key, unicode: item.unicode, rule: '단어약어' });
       }
       let where = 'anywhere';
@@ -387,7 +394,12 @@ function buildEnglish(data) {
       else if (type === 'prefix_groupsign') where = 'prefix';
       else if (type === 'final_contractions') where = 'final';
       else if (type === 'initial_contractions') return;
-      groups.push({ text, unicode: item.unicode, where });
+      groups.push({
+        text,
+        unicode: item.unicode,
+        where,
+        avoidStandingAlone: !!group.rule?.avoidWhenStandingAlone
+      });
     });
   });
   groups.sort((a, b) => b.text.length - a.text.length);
@@ -417,6 +429,7 @@ function buildEnglish(data) {
         const atStart = i === 0;
         const atEnd = i + group.text.length === lower.length;
         if (group.where === 'medial' && (atStart || atEnd)) continue;
+        if (group.avoidStandingAlone && atStart && atEnd) continue;
         if (group.where === 'prefix' && !(atStart && !atEnd)) continue;
         if (group.where === 'final' && !(atEnd && !atStart)) continue;
         matched = group;
@@ -600,13 +613,16 @@ function meaningOptions(target, lang) {
 function finishItem(raw, lang, seq) {
   const target = raw.text || raw.parts.map(part => part.text).join('');
   const hint = raw.parts.map(part => part.label).filter(Boolean).join(' · ');
+  const explanation = raw.dotText
+    ? `${target}은 ${raw.dotText}, 점형 ${raw.braille}`
+    : (hint || target);
   const seqText = raw.parts.map(part => part.text);
   const extras = [];
   for (let i = 0; i < 4; i++) extras.push(distractorText(seqText[i % seqText.length] || target, lang));
   const blocks = shuffle(seqText.concat(extras.filter(item => item && !seqText.includes(item)).slice(0, 3)));
   const meanings = meaningOptions(target, lang);
   return {
-    id: `combo_${seq}`,
+    id: raw.key || `combo_${seq}`,
     lang,
     category: raw.rule,
     type_label: raw.rule,
@@ -616,7 +632,7 @@ function finishItem(raw, lang, seq) {
     text: target,
     braille: raw.braille,
     hint: hint || target,
-    explanation: hint || target,
+    explanation,
     prompt_audio: hint || target,
     distractors_braille: distractorBraille(raw.braille),
     distractors_text: meanings.filter(item => item !== target),
@@ -638,12 +654,71 @@ function finishItem(raw, lang, seq) {
 export function createEngine(data) {
   const ko = buildKorean(data);
   const en = buildEnglish(data);
+  const bundles = {
+    'ko.json': data.ko,
+    'ko_marks.json': data.marks,
+    'numbers.json': data.numbers,
+    'en_spell.json': data.spell,
+    'en_shortform.json': data.shortforms,
+    'en_contractions.json': data.contractions
+  };
   const recent = new Set();
+  const rounds = new Map();
   let seq = 0;
+
+  function buildRound(unitId, lang, cards) {
+    const wrong = new Set(wrongItemKeys(lang, unitId));
+    const keyOf = (card) => `${unitId}:${card.letter}`;
+    const wrongCards = shuffle(cards.filter((card) => wrong.has(keyOf(card))));
+    const others = shuffle(cards.filter((card) => !wrong.has(keyOf(card))));
+    const round = [];
+    const seen = new Set();
+    for (const card of wrongCards.concat(others)) {
+      const key = keyOf(card);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      round.push(card);
+      if (round.length >= STAGE_SIZE) break;
+    }
+    if (round.length < STAGE_SIZE && cards.length) {
+      const fill = shuffle(cards);
+      let i = 0;
+      while (round.length < STAGE_SIZE) {
+        round.push(fill[i % fill.length]);
+        i += 1;
+      }
+    }
+    return round;
+  }
+
+  function fromUnit(unitId, lang) {
+    const unit = unitById(unitId);
+    if (!unit) return null;
+    const cards = cardsFor(unit, bundles).filter((card) => card.letter && card.pattern);
+    if (!cards.length) return null;
+    let queue = rounds.get(unitId);
+    if (!queue || !queue.length) {
+      queue = buildRound(unitId, lang, cards);
+      rounds.set(unitId, queue);
+    }
+    const card = queue.shift();
+    const key = `${unitId}:${card.letter}`;
+    seq += 1;
+    return finishItem({
+      key,
+      text: card.letter,
+      braille: card.pattern,
+      dotText: card.dotText,
+      parts: [{ text: card.letter, braille: card.pattern, label: card.letter }],
+      rule: unit.title
+    }, lang, seq);
+  }
 
   function next(opts = {}) {
     const lang = (opts.lang || 'KO').toUpperCase() === 'EN' ? 'EN' : 'KO';
     const game = opts.game || 'select';
+    const unitId = opts.unitId || '';
+    if (unitId) return fromUnit(unitId, lang);
     const recipes = recipesFor(lang, game);
     const bank = lang === 'EN' ? en : ko;
 

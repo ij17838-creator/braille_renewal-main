@@ -45,8 +45,23 @@
       }
     },
     {
+      "category": "lower_groupsign",
+      "type": "en_groupsign",
+      "priority": 20,
+      "rule": {
+        "canStandAlone": false,
+        "canFollowLetters": true,
+        "canPrecedeLetters": true,
+        "avoidWhenStandingAlone": true
+      },
+      "description": "단어 안에서는 en으로 읽고, 단독이면 enough와 겹쳐 단어 en 자체에는 쓰지 않는 하점 묶음자",
+            "items": {
+        "en": { "word": "en", "dots": [[2, 6]], "unicode": "⠢" }
+      }
+    },
+    {
       "category": "lower_wordsign_and_groupsign",
-      "type": "en_in_groupsign",
+      "type": "in_groupsign",
       "priority": 20,
       "rule": {
         "canStandAlone": true,
@@ -54,10 +69,28 @@
         "canPrecedeLetters": true,
         "allowPunctuation": true
       },
-      "description": "단독 단어로도 쓰이고 다른 글자와도 결합 가능한 하점 약어",
+      "description": "단독 단어 in으로도 쓰이고 다른 글자와도 결합하는 하점 약어",
             "items": {
-        "en": { "word": "en", "dots": [[2, 6]], "unicode": "⠢" },
         "in": { "word": "in", "dots": [[3, 5]], "unicode": "⠔" }
+      }
+    },
+    {
+      "category": "lower_wordsign",
+      "type": "lower_wordsign",
+      "priority": 15,
+      "rule": {
+        "canStandAlone": true,
+        "standingAloneOnly": true,
+        "canFollowLetters": false,
+        "canPrecedeLetters": false,
+        "allowPunctuation": true
+      },
+      "description": "독립 단어로만 쓰이는 하점 단어약어. 같은 칸은 문장부호나 다른 묶음자와 겹친다.",
+      "items": {
+        "enough": { "word": "enough", "dots": [[2, 6]], "unicode": "⠢" },
+        "were": { "word": "were", "dots": [[2, 3, 5, 6]], "unicode": "⠶" },
+        "his": { "word": "his", "dots": [[2, 3, 6]], "unicode": "⠦" },
+        "was": { "word": "was", "dots": [[3, 5, 6]], "unicode": "⠴" }
       }
     },
     {
@@ -75,9 +108,23 @@
         "ea": { "word": "ea", "dots": [[2]], "unicode": "⠂" },
         "bb": { "word": "bb", "dots": [[2, 3]], "unicode": "⠆" },
         "cc": { "word": "cc", "dots": [[2, 5]], "unicode": "⠒" },
-        "dd": { "word": "dd", "dots": [[2, 5, 6]], "unicode": "⠲" },
         "ff": { "word": "ff", "dots": [[2, 3, 5]], "unicode": "⠖" },
         "gg": { "word": "gg", "dots": [[2, 3, 5, 6]], "unicode": "⠶" }
+      }
+    },
+    {
+      "category": "lower_wordsign_and_groupsign",
+      "type": "prefix_groupsign",
+      "priority": 40,
+      "rule": {
+        "canStandAlone": true,
+        "canFollowLetters": false,
+        "requiresFollowingLetters": true,
+        "allowPunctuation": true
+      },
+      "description": "단독 단어 be로도 쓰이고, 단어 맨 앞에서 뒤에 글자가 이어질 때도 쓰이는 하점 약어",
+            "items": {
+        "be": { "word": "be", "dots": [[2, 3]], "unicode": "⠆" }
       }
     },
     {
@@ -89,9 +136,8 @@
         "canFollowLetters": false,
         "requiresFollowingLetters": true
       },
-      "description": "단어의 맨 앞(음절 단위 접두어)에서만 뒤이어 다른 글자가 올 때 적용되는 약어",
+      "description": "단어의 맨 앞에서만 뒤이어 다른 글자가 올 때 적용되는 약어",
             "items": {
-        "be": { "word": "be", "dots": [[2, 3]], "unicode": "⠆" },
         "con": { "word": "con", "dots": [[2, 5]], "unicode": "⠒" },
         "dis": { "word": "dis", "dots": [[2, 5, 6]], "unicode": "⠲" }
       }
@@ -155,7 +201,7 @@
         "allowPunctuation": true,
         "allowApostropheS": false
       },
-      "description": "점4-6, 점5-6, 점6 복합점을 사용하는 종성/어말 묶음자 약어",
+      "description": "점4-6, 점5-6 복합점을 사용하는 종성/어말 묶음자 약어",
       "items": {
                 "ound": { "word": "ound", "dots": [[4, 6], [1, 4, 5]], "unicode": "⠨⠙", "rootChar": "d" },
         "ance": { "word": "ance", "dots": [[4, 6], [1, 5]], "unicode": "⠨⠑", "rootChar": "e" },
@@ -168,9 +214,7 @@
         "tion": { "word": "tion", "dots": [[5, 6], [1, 3, 4, 5]], "unicode": "⠰⠝", "rootChar": "n" },
         "ness": { "word": "ness", "dots": [[5, 6], [2, 3, 4]], "unicode": "⠰⠎", "rootChar": "s" },
         "ment": { "word": "ment", "dots": [[5, 6], [2, 3, 4, 5]], "unicode": "⠰⠞", "rootChar": "t" },
-        "ity": { "word": "ity", "dots": [[5, 6], [1, 3, 4, 5, 6]], "unicode": "⠰⠽", "rootChar": "y" },
-        "ation": { "word": "ation", "dots": [[6], [1, 3, 4, 5]], "unicode": "⠠⠝", "rootChar": "n" },
-        "ally": { "word": "ally", "dots": [[6], [1, 3, 4, 5, 6]], "unicode": "⠠⠽", "rootChar": "y" }
+        "ity": { "word": "ity", "dots": [[5, 6], [1, 3, 4, 5, 6]], "unicode": "⠰⠽", "rootChar": "y" }
       }
     }
   ]

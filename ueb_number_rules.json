@@ -19,7 +19,7 @@
     ],
     "terminating_connectors": [
       { "name": "hyphen", "char": "-", "braille": "⠤" },
-      { "name": "en_dash", "char": "–", "braille": "⠐⠤" },
+      { "name": "en_dash", "char": "–", "braille": "⠠⠤" },
       { "name": "em_dash", "char": "—", "braille": "⠐⠠⠤" }
     ],
     "description": "자릿점(,), 소수점(.), 쌍점(:), 단순분수선(/), 숫자빈칸은 숫자 모드를 유지함. 반면 하이픈(-) 및 대시는 모드를 종료하므로 후속 숫자에 수표를 다시 표기해야 함."
@@ -60,10 +60,10 @@
           { "name": "semicolon", "char": ";", "braille": "⠆" },
           { "name": "single_quote_open", "char": "‘", "braille": "⠠⠦" },
           { "name": "single_quote_close", "char": "’", "braille": "⠠⠴" },
-          { "name": "double_quote_open", "char": "“", "braille": "⠐⠦" },
-          { "name": "double_quote_close", "char": "”", "braille": "⠐⠴" },
-          { "name": "neutral_single_quote_open", "char": "'", "braille": "⠦" },
-          { "name": "neutral_single_quote_close", "char": "'", "braille": "⠴" },
+          { "name": "double_quote_open", "char": "“", "braille": "⠘⠦" },
+          { "name": "double_quote_close", "char": "”", "braille": "⠘⠴" },
+          { "name": "neutral_single_quote_open", "char": "'", "braille": "⠄" },
+          { "name": "neutral_single_quote_close", "char": "'", "braille": "⠄" },
           { "name": "parenthesis_open", "char": "(", "braille": "⠐⠣" },
           { "name": "parenthesis_close", "char": ")", "braille": "⠐⠜" },
           { "name": "bracket_open", "char": "[", "braille": "⠨⠣" },
@@ -75,7 +75,7 @@
         "mode_effect": "terminates_numeric_mode",
         "symbols": [
           { "name": "hyphen", "char": "-", "braille": "⠤" },
-          { "name": "en_dash", "char": "–", "braille": "⠐⠤" },
+          { "name": "en_dash", "char": "–", "braille": "⠠⠤" },
           { "name": "em_dash", "char": "—", "braille": "⠐⠠⠤" }
         ]
       },

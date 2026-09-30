@@ -151,22 +151,32 @@ def test_canonical_roundtrip():
         assert all("rule" in sense for sense in en_engine.rev_groupsign_senses[cell])
     assert {sense["text"] for sense in en_engine.rev_groupsign_senses["⠆"]} >= {"bb", "be"}
     assert {sense["text"] for sense in en_engine.rev_groupsign_senses["⠒"]} >= {"cc", "con"}
-    assert {sense["text"] for sense in en_engine.rev_groupsign_senses["⠲"]} >= {"dd", "dis"}
+    assert {sense["text"] for sense in en_engine.rev_groupsign_senses["⠲"]} == {"dis"}
+    assert "dd" not in en_engine.contraction_items
+    assert "ation" not in en_engine.contraction_items
+    assert "ally" not in en_engine.contraction_items
+    assert "o'clock" not in en_engine.shortforms_standalone
     assert all(sense.get("context") for sense in en_engine.rev_symbol_senses["⠂"])
     a = en_engine.spelling["a"]
     b = en_engine.spelling["b"]
+    d = en_engine.spelling["d"]
     assert en_engine.braille_to_text(a + en_engine.contraction_items["bb"]["unicode"] + a) == "abba"
     assert en_engine.braille_to_text(en_engine.contraction_items["be"]["unicode"] + a) == "bea"
     assert en_engine.braille_to_text(a + en_engine.contraction_items["cc"]["unicode"] + a) == "acca"
     assert en_engine.braille_to_text(en_engine.contraction_items["con"]["unicode"] + a) == "cona"
-    assert en_engine.braille_to_text(a + en_engine.contraction_items["dd"]["unicode"] + a) == "adda"
+    assert en_engine.text_to_braille("adda") == a + d + d + a
     assert en_engine.braille_to_text(en_engine.contraction_items["dis"]["unicode"] + a) == "disa"
     assert en_engine.braille_to_text(a + "⠂" + a) == "aea"
     assert en_engine.braille_to_text(a + "⠲") == "a."
     assert en_engine.braille_to_text(a + "⠖") == "a!"
     assert en_engine.braille_to_text(en_engine.num_prefix + a + "⠂" + b) == "1,2"
 
-    for word in ["the", "be", "con", "dis"]:
+    assert en_engine.text_to_braille("en") == en_engine.spelling["e"] + en_engine.spelling["n"]
+    assert en_engine.shortforms_standalone["oneself"] == "\u2810\u2815\u280b"
+    assert en_engine.shortforms_compound["conceive"] == "\u2812\u2809\u2827"
+    assert en_engine.shortforms_compound["conceiving"] == "\u2812\u2809\u2827\u281b"
+    assert en_engine.terminating_connectors["–"] == "\u2820\u2824"
+    for word in ["the", "be", "con", "dis", "enough", "were", "his", "was", "in", "en", "oneself", "conceive", "conceiving", "end"]:
         braille = en_engine.text_to_braille(word)
         back = en_engine.braille_to_text(braille)
         print(f"EN {word} -> {braille} -> {back}")

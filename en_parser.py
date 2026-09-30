@@ -254,7 +254,9 @@ class BrailleEngine:
 
                     for text_val, item in group.get("items", {}).items():
                         self.contraction_items[text_val] = item
-                        self.groupsigns.append((text_val, item["unicode"], prio, rule))
+                        # 단독 전용 하점 단어약어는 단어 안에 끼워 넣지 않는다.
+                        if not rule.get("standingAloneOnly"):
+                            self.groupsigns.append((text_val, item["unicode"], prio, rule))
                         self.rev_groupsign_senses.setdefault(item["unicode"], []).append({
                             "text": text_val,
                             "rule": rule,
@@ -434,6 +436,11 @@ class BrailleEngine:
                 requires_following = rule.get("requiresFollowingLetters", False)
                 can_follow = rule.get("canFollowLetters", True)
 
+                # 단독 단어 en은 enough와 겹치므로 풀어 적는다.
+                if rule.get("avoidWhenStandingAlone") and text_chunk == pattern:
+                    new_segments.append([text_chunk, False])
+                    continue
+
                 # 1. 어중 전용 (ea, bb, cc, ff, gg 등)
                 if req_surrounding:
                     regex = re.compile(rf'(?<=[a-zA-Z])({re.escape(pattern)})(?=[a-zA-Z])')
@@ -512,11 +519,20 @@ class BrailleEngine:
         end = i + blen
         prev_letter = i > 0 and token[i - 1] in self.rev_spelling
         next_letter = end < len(token) and token[end] in self.rev_spelling
-        # 어중이고 앞뒤에 글자가 있으면 bb/cc/dd. 어두이면 be/con/dis.
+        whole_token = i == 0 and end == len(token)
+        # enough, were, his, was는 그 칸이 단어 전체일 때만 읽는다.
+        if rule.get("standingAloneOnly"):
+            return whole_token
+        # en은 단어 전체이면 enough로 읽히므로 풀어 적는다.
+        if rule.get("avoidWhenStandingAlone") and whole_token:
+            return False
+        # 어중이고 앞뒤에 글자가 있으면 bb/cc/ff/gg. 어두이면 be/con/dis.
         if rule.get("requiresSurroundingLetters"):
             return prev_letter and next_letter
         if rule.get("requiresFollowingLetters") and not rule.get("canFollowLetters", True):
-            return i == 0 and end < len(token)
+            if i == 0 and end < len(token):
+                return True
+            return bool(rule.get("canStandAlone") and whole_token)
         return True
 
     def _punctuation_mode(self, token: str, i: int) -> bool:

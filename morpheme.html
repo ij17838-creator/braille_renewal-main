@@ -205,9 +205,11 @@
                 점자 입문자
               </span>
             </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-0.5">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 font-bold mt-0.5">
               <span id="label-mode-info">형태소 단독 · KO</span>
-              <span>·</span>
+              <span aria-hidden="true">·</span>
+              <span id="stage-progress" class="text-indigo-700 font-black">스테이지 1 · 0/10</span>
+              <span aria-hidden="true">·</span>
               <span class="text-indigo-600 font-black" id="combo-counter">연속 0콤보</span>
             </div>
           </div>
@@ -350,7 +352,7 @@
 
   <script type="module">
     import { loadQuizEngine } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
 
     // 1. 상태 객체
     const urlParams = new URLSearchParams(window.location.search);
@@ -367,8 +369,33 @@
       theme: stored.theme,
       scale: stored.scale,
       tts: stored.tts,
-      pitch: stored.pitch
+      pitch: stored.pitch,
+      unitId: urlParams.get('unit') || ''
     };
+
+    const stage = createStageSession({
+      game: 'morpheme',
+      trackCombo: true,
+      getMeta: () => ({
+        lang: appState.lang,
+        level: appState.level,
+        unitId: appState.unitId,
+        itemId: appState.currentQuiz ? appState.currentQuiz.id : '',
+        skill: 'read'
+      }),
+      onContinue: () => { renderNextQuiz(); },
+      onHome: () => {
+        persistSettings({
+          lang: appState.lang,
+          level: appState.level,
+          theme: appState.theme,
+          scale: appState.scale,
+          tts: appState.tts,
+          pitch: appState.pitch
+        });
+        goHub();
+      }
+    });
 
     // 2. 오디오 엔진
     let synthAudio, sfxCorrect, sfxWrong;
@@ -381,7 +408,7 @@
     }
 
     function playSound(type) {
-      if (!synthAudio) return;
+      if (!appState.pitch || !synthAudio) return;
       if (type === 'hover') synthAudio.triggerAttackRelease("E5", "64n");
       else if (type === 'correct') {
         sfxCorrect.triggerAttackRelease("G5", "16n");
@@ -459,9 +486,10 @@
     // 5. 퀴즈 바인딩
     function renderNextQuiz() {
       const q = quizEngine
-        ? quizEngine.next({ lang: appState.lang, game: 'morpheme' })
+        ? quizEngine.next({ lang: appState.lang, game: 'morpheme', unitId: appState.unitId })
         : takeFallbackQuiz();
       if (!q) return;
+      stage.allowNext();
       appState.currentQuiz = q;
       appState.isAnsweringLocked = false;
 
@@ -518,7 +546,7 @@
 
     // 6. 판정 및 통계 기록
     function handleSelectOption(option, cardElement) {
-      if (appState.isAnsweringLocked) return;
+      if (!stage.canAnswer() || appState.isAnsweringLocked) return;
       appState.isAnsweringLocked = true;
       initAudio();
 
@@ -528,21 +556,29 @@
         playSound('correct');
         appState.combo++;
         updateTitleBadge();
+        const outcome = stage.onAnswer(true, appState.combo);
+        if (!outcome.consumed) return;
         speak(`정답입니다! 연속 ${appState.combo}콤보 달성.`);
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
         allCards.forEach(c => c.disabled = true);
 
         recordStat(true);
-        setTimeout(renderNextQuiz, 1100);
+        setTimeout(() => {
+          if (outcome.stageDone) stage.showResult();
+          else renderNextQuiz();
+        }, 1100);
       } else {
         playSound('wrong');
         appState.combo = 0;
         updateTitleBadge();
+        const outcome = stage.onAnswer(false, 0);
+        if (!outcome.consumed) return;
         speak("오답입니다. 올바른 점형을 확인하세요.");
 
         cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90');
         allCards.forEach((c, i) => {
+          c.disabled = true;
           if (appState.currentQuiz.options[i] && appState.currentQuiz.options[i].isCorrect) {
             c.classList.add('border-emerald-500', 'bg-emerald-50/50');
           }
@@ -550,9 +586,8 @@
 
         recordStat(false);
         setTimeout(() => {
-          appState.isAnsweringLocked = false;
-          cardElement.classList.remove('animate-card-shake');
-          allCards.forEach(c => c.disabled = false);
+          if (outcome.stageDone) stage.showResult();
+          else renderNextQuiz();
         }, 1200);
       }
     }
@@ -578,7 +613,7 @@
     // 7. 이벤트 바인딩
     window.addEventListener('keydown', (e) => {
       initAudio();
-      if (appState.isAnsweringLocked) return;
+      if (!stage.canAnswer() || appState.isAnsweringLocked) return;
       const num = parseInt(e.key);
       if (num >= 1 && num <= 4 && appState.currentQuiz && appState.currentQuiz.options) {
         const option = appState.currentQuiz.options[num - 1];
@@ -650,6 +685,7 @@
     document.getElementById('btn-close-weakness').onclick = () => weaknessModal.classList.add('hidden');
     document.getElementById('btn-retry-weakness').onclick = () => {
       weaknessModal.classList.add('hidden');
+      if (!stage.canAnswer()) return;
       renderNextQuiz();
     };
 

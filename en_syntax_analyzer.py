@@ -242,6 +242,20 @@ class BrailleRuleValidator:
             is_final = (idx + len(target) == len(w))
             is_medial = (not is_initial and not is_final)
 
+            if rule.get("standingAloneOnly") and w != target:
+                return {
+                    "valid": False,
+                    "rule": "Standing Alone Violation",
+                    "reason": f"Contraction '{target}' is only used when it stands alone."
+                }
+
+            if rule.get("avoidWhenStandingAlone") and w == target:
+                return {
+                    "valid": False,
+                    "rule": "Standing Alone Collision",
+                    "reason": f"Contraction '{target}' is not used when those letters stand alone."
+                }
+
             if rule.get("requiresSurroundingLetters") and not is_medial:
                 return {
                     "valid": False,

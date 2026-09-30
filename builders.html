@@ -226,9 +226,11 @@
                 연결 대기
               </span>
             </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-0.5">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 font-bold mt-0.5">
               <span id="label-level-mode">준비 중...</span>
-              <span>·</span>
+              <span aria-hidden="true">·</span>
+              <span id="stage-progress" class="text-amber-700 font-black">스테이지 1 · 0/10</span>
+              <span aria-hidden="true">·</span>
               <span class="text-emerald-600 font-black" id="combo-counter">연속 0콤보</span>
             </div>
           </div>
@@ -414,7 +416,7 @@
 
   <script type="module">
     import { loadQuizEngine } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
 
     // =========================================================================
     // 1. 상태 저장소 & 프론트엔드/파이썬 통신 인터페이스 (State & Bridge)
@@ -430,14 +432,32 @@
       currentQuiz: null,
       assembledBlocks: [],
       isVerifying: false,
-      weaknessStats: errorCounts()
+      weaknessStats: errorCounts(),
+      unitId: bootParams.get('unit') || ''
     };
 
     let quizEngine = null;
 
+    const stage = createStageSession({
+      game: 'builders',
+      trackCombo: true,
+      getMeta: () => ({
+        lang: state.lang,
+        level: state.level,
+        unitId: state.unitId,
+        itemId: state.currentQuiz ? state.currentQuiz.id : '',
+        skill: 'read'
+      }),
+      onContinue: () => { showNextQuiz(); },
+      onHome: () => {
+        persistSettings({ lang: state.lang, level: state.level, theme: globalSettings.theme, scale: globalSettings.scale, tts: globalSettings.tts, pitch: globalSettings.pitch });
+        goHub();
+      }
+    });
+
     function localComboQuiz() {
       if (!quizEngine) return null;
-      return quizEngine.next({ lang: state.lang, game: 'builders', level: state.level });
+      return quizEngine.next({ lang: state.lang, game: 'builders', level: state.level, unitId: state.unitId });
     }
 
     function formatRuleName(rule) {
@@ -472,7 +492,7 @@
     }
 
     function playSound(type) {
-      if (!synthAudio) return;
+      if (!globalSettings.pitch || !synthAudio) return;
       if (type === 'click') synthAudio.triggerAttackRelease("C5", "32n");
       if (type === 'correct') {
         sfxCorrect.triggerAttackRelease("E5", "16n");
@@ -515,6 +535,7 @@
      * py 프로그램(ko_generator.py, en_generator.py)의 퀴즈 객체를 100% 수용
      */
     function applyNewQuiz(quizData) {
+      stage.allowNext();
       state.currentQuiz = quizData;
       state.assembledBlocks = [];
       state.isVerifying = false;
@@ -643,7 +664,7 @@
     // 4. 블록 조립 검증 요청 및 결과 피드백 (Front-end/Python 엔진 위임)
     // =========================================================================
     function handleVerifyClick() {
-      if (state.isVerifying || !state.currentQuiz) return;
+      if (!stage.canAnswer() || state.isVerifying || !state.currentQuiz) return;
       initAudio();
 
       const chosen = state.assembledBlocks.map(block => block.text).join('');
@@ -689,14 +710,19 @@
             updateTitleAndBadges();
             const ruleName = state.currentQuiz.rule_type || state.currentQuiz.category || "점자 조립";
             recordResult({ game: 'builders', rule: ruleName, correct: true });
+            const outcome = stage.onAnswer(true, state.combo);
+            if (!outcome.consumed) return;
             speak(`정답입니다! 연속 ${state.combo}콤보 달성.`);
 
-            document.getElementById('workbench-status-desc').textContent = "규칙 검증 통과! 다음 문제를 준비합니다.";
+            document.getElementById('workbench-status-desc').textContent = outcome.stageDone
+              ? "스테이지를 모두 풀었습니다. 학습 결과를 확인하세요."
+              : "규칙 검증 통과! 다음 문제를 준비합니다.";
             workbench.classList.add('animate-pop', 'bg-emerald-50', 'border-emerald-400');
 
             setTimeout(() => {
               workbench.classList.remove('animate-pop', 'bg-emerald-50', 'border-emerald-400');
-              showNextQuiz();
+              if (outcome.stageDone) stage.showResult();
+              else showNextQuiz();
             }, 750);
           } else {
         playSound('wrong');
@@ -706,14 +732,21 @@
 
         state.combo = 0;
         updateTitleAndBadges();
-        speak(`오답입니다. ${resultData.message || ''}`);
+        const outcome = stage.onAnswer(false, 0);
+        if (!outcome.consumed) return;
+        const answerText = state.currentQuiz.target_text || '';
+        speak(`오답입니다. 정답은 ${answerText} 입니다.`);
 
-        document.getElementById('workbench-status-desc').textContent = `오답 판정: ${resultData.message || '다른 뜻 블록을 고르세요'}`;
+        document.getElementById('workbench-status-desc').textContent = outcome.stageDone
+          ? `오답입니다. 정답: ${answerText}. 학습 결과를 확인하세요.`
+          : `오답입니다. 정답: ${answerText}`;
         workbench.classList.add('animate-shake', 'bg-rose-50', 'border-rose-400');
 
         setTimeout(() => {
           workbench.classList.remove('animate-shake', 'bg-rose-50', 'border-rose-400');
-        }, 500);
+          if (outcome.stageDone) stage.showResult();
+          else showNextQuiz();
+        }, 1100);
       }
     }
 
@@ -772,6 +805,7 @@
 
     // 키보드 인터랙션 (1~9, Enter, Backspace)
     window.addEventListener('keydown', (e) => {
+      if (!stage.canAnswer()) return;
       const num = parseInt(e.key);
       const poolLength = state.currentQuiz?.available_blocks?.length || 0;
       if (num >= 1 && num <= poolLength) {
@@ -822,6 +856,7 @@
     // 취약 규칙 집중 훈련 퀴즈 요청 핸들러
     document.getElementById('btn-retry-weakness').addEventListener('click', () => {
       document.getElementById('weakness-modal').classList.add('hidden');
+      if (!stage.canAnswer()) return;
       
       // 가장 빈도가 높은 취약 규칙 추출
       const sorted = Object.entries(state.weaknessStats).sort((a, b) => b[1] - a[1]);
