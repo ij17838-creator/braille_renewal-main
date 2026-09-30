@@ -248,7 +248,7 @@
         </div>
         <button type="button" id="btn-manual" class="btn-scalable shrink-0 px-3 py-2 rounded-xl glass-button text-sm font-black text-slate-700 hover:text-indigo-600 shadow-sm" aria-haspopup="dialog" aria-controls="manual-modal">설명서</button>
       </div>
-      <p id="mode-hint" class="text-[11px] text-slate-500 text-center">앞 단원을 통과해야 다음 단원이 열립니다.</p>
+      <p id="mode-hint" class="text-[11px] text-slate-500 text-center">네 게임 모두 80% 이상이면 다음 단원이 열립니다.</p>
       <div id="unit-picker" class="relative">
         <button type="button" id="unit-toggle" class="w-full glass-button rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-sm" aria-expanded="false" aria-controls="unit-menu" aria-haspopup="listbox">
           <span id="unit-line" class="text-base sm:text-lg font-black text-slate-800 text-left">한글 1단원 · 점의 자리</span>
@@ -262,28 +262,32 @@
 
         <!-- 4종 학습 프로그램 진입 카드 -->
     <div class="grid grid-cols-2 gap-3 my-1">
-      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="morpheme.html">
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="morpheme.html" data-game="morpheme">
         <span class="text-2xl group-hover:scale-110 transition-transform">🧩</span>
         <span class="text-sm font-black text-slate-800">형태소 & 낱말 퀴즈</span>
         <span class="text-[11px] text-slate-500 text-center">형태소 하나를 독립 문제로, 알맞은 점자 카드 선택</span>
+        <span class="game-flag text-[10px] font-black text-emerald-600 min-h-[0.9rem]"></span>
       </button>
 
-      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="select.html">
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-emerald-500 text-left group" data-target="select.html" data-game="select">
         <span class="text-2xl group-hover:scale-110 transition-transform">🎴</span>
         <span class="text-sm font-black text-slate-800">점자 카드 셀렉트</span>
         <span class="text-[11px] text-slate-500 text-center">형태소를 자유롭게 결합한 심화 4지선다</span>
+        <span class="game-flag text-[10px] font-black text-emerald-600 min-h-[0.9rem]"></span>
       </button>
 
-      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-indigo-500 text-left group" data-target="builders.html">
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-indigo-500 text-left group" data-target="builders.html" data-game="builders">
         <span class="text-2xl group-hover:scale-110 transition-transform">🏗️</span>
         <span class="text-sm font-black text-slate-800">점자 빌더즈</span>
         <span class="text-[11px] text-slate-500 text-center">제시된 점형에 맞는 뜻 블록을 클릭</span>
+        <span class="game-flag text-[10px] font-black text-emerald-600 min-h-[0.9rem]"></span>
       </button>
 
-      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-blue-500 text-left group" data-target="blank.html">
+      <button class="nav-card glass-button p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:border-blue-500 text-left group" data-target="blank.html" data-game="blank">
         <span class="text-2xl group-hover:scale-110 transition-transform">🔍</span>
         <span class="text-sm font-black text-slate-800">빈칸 수사대</span>
         <span class="text-[11px] text-slate-500 text-center">제시된 뜻에 맞는 점형을 직접 입력</span>
+        <span class="game-flag text-[10px] font-black text-emerald-600 min-h-[0.9rem]"></span>
       </button>
     </div>
 
@@ -306,7 +310,7 @@
         <section class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-about-title">
           <h4 id="manual-about-title" class="text-sm font-black text-slate-800">이 프로그램</h4>
           <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">점자 마스터 허브는 한글 점자와 영어 점자(UEB)를 단원별로 익히는 학습 프로그램입니다. 허브에서 언어와 단원을 고른 뒤, 네 가지 게임으로 읽고 씁니다. 문제와 음성은 이 브라우저 안에서 만들어지며, 학습 기록도 이 기기에 남습니다.</p>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">한 스테이지는 10문제입니다. 10문제를 마치면 정답 수와 정답률이 나오고, 계속하기로 다음 스테이지를 횟수 제한 없이 이어 가거나 홈으로 돌아갈 수 있습니다. 10문제 중 8문제 이상(80%)을 맞히면 그 연습이 완료됩니다. 읽기 게임 하나와 쓰기 게임(빈칸 수사대)을 모두 완료하면 그 단원을 통과합니다. 통과한 뒤에도 결과의 두 선택지는 같습니다. 기준에 못 미치면 계속하기로 같은 단원을 이어서 풀 수 있습니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">한 스테이지는 10문제입니다. 10문제를 마치면 정답 수와 정답률이 나오고, 계속하기로 다음 스테이지를 횟수 제한 없이 이어 가거나 홈으로 돌아갈 수 있습니다. 10문제 중 8문제 이상(80%)을 맞히면 그 게임이 완료됩니다. 형태소 퀴즈, 카드 셀렉트, 점자 빌더즈, 빈칸 수사대 네 게임을 모두 80% 이상 맞혀야 단원 조건이 됩니다. 순차에서는 그 단원을 통과하고 다음 단원이 열립니다. Free에서는 그 단원을 통과로 치지 않고, 그 단원과 이전 단원을 모두 해금합니다. 순차로 돌아와도 해금된 단원에는 들어갈 수 있습니다. 조건을 채운 뒤에도 결과의 두 선택지는 같습니다. 기준에 못 미치면 계속하기로 같은 게임을 이어서 풀 수 있습니다.</p>
         </section>
 
         <section class="bg-white/80 border border-white rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-hub-title">
@@ -315,8 +319,8 @@
             <li><span class="font-bold text-slate-800">학습 통계</span> — 총 학습 횟수, 평균 정답률, 최고 연속 콤보, 오답이 많은 규정, 최근 세션을 봅니다. 기록 초기화는 통계와 단원 진행을 함께 지웁니다.</li>
             <li><span class="font-bold text-slate-800">톱니바퀴</span> — 고대비, 글자 크기, 음성 설정을 엽니다.</li>
             <li><span class="font-bold text-slate-800">한글 점자 / 영어 점자 (UEB)</span> — 연습할 언어를 바꿉니다. 단원 목록도 그 언어로 바뀝니다.</li>
-            <li><span class="font-bold text-slate-800">순차</span> — 앞 단원을 통과해야 다음 단원이 열립니다. 첫 단원만 처음부터 열려 있습니다.</li>
-            <li><span class="font-bold text-slate-800">Free</span> — 모든 단원을 고를 수 있습니다. 한 단원을 통과하면 그 앞 단원은 통과로 치지 않고 들어갈 수 있게만 열립니다. 순차로 돌아와도 그렇게 열린 단원은 들어갈 수 있습니다.</li>
+            <li><span class="font-bold text-slate-800">순차</span> — 네 게임 모두 80% 이상이면 그 단원을 통과하고 다음 단원이 열립니다. 첫 단원만 처음부터 열려 있습니다.</li>
+            <li><span class="font-bold text-slate-800">Free</span> — 모든 단원을 고를 수 있습니다. 한 단원에서 네 게임 모두 80% 이상이면 그 단원과 이전 단원이 해금됩니다. 해금은 통과가 아니므로 그 다음 단원까지 열리지는 않습니다. 순차로 돌아와도 해금된 단원은 들어갈 수 있습니다.</li>
             <li><span class="font-bold text-slate-800">설명서</span> — 이 창입니다. 바깥을 누르거나 Esc로 닫습니다.</li>
             <li><span class="font-bold text-slate-800">단원 이름</span> — 누르면 단원 목록이 열립니다. 통과, 해금, 잠김이 옆에 표시됩니다. 잠긴 단원은 고를 수 없습니다.</li>
             <li><span class="font-bold text-slate-800">네 개의 게임 카드</span> — 지금 고른 단원으로 들어갑니다. 잠긴 단원에서는 들어가지 않습니다.</li>
@@ -343,27 +347,27 @@
             <li><span class="font-bold text-slate-800">집 아이콘</span> — 허브로 돌아갑니다. 빈칸 수사대의 왼쪽 화살표도 같습니다.</li>
             <li><span class="font-bold text-slate-800">스테이지 표시</span> — 지금 스테이지와 10문제 중 몇 번째인지를 보여 줍니다. 연속으로 맞히면 콤보가 오르고, 틀리면 0이 됩니다.</li>
           </ul>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">맞히면 다음 문제로 넘어갑니다. 틀리면 정답이 표시되고, 단원 문제에는 점 번호를 이어 붙인 해설이 나옵니다. 10문제가 끝나면 계속하기로 같은 단원을 더 풀거나, 홈으로 돌아갈 수 있습니다. 단원을 통과한 뒤에도 두 선택지는 같습니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">맞히면 다음 문제로 넘어갑니다. 틀리면 정답이 표시되고, 단원 문제에는 점 번호를 이어 붙인 해설이 나옵니다. 10문제가 끝나면 계속하기로 같은 단원을 더 풀거나, 홈으로 돌아갈 수 있습니다. 단원을 통과하거나 해금한 뒤에도 두 선택지는 같습니다.</p>
         </section>
 
         <section class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-morpheme-title">
           <h4 id="manual-morpheme-title" class="text-sm font-black text-slate-800">형태소 &amp; 낱말 퀴즈 · 읽기</h4>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">형태소 하나를 글로 보여 주고, 그에 맞는 점자 카드 네 장 중 하나를 고릅니다. 카드를 누르거나 숫자 키 1~4로 고릅니다. 이 게임의 점수는 그 단원의 읽기 연습으로 기록됩니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">형태소 하나를 글로 보여 주고, 그에 맞는 점자 카드 네 장 중 하나를 고릅니다. 카드를 누르거나 숫자 키 1~4로 고릅니다. 이 게임에서 80% 이상이면 그 단원의 네 게임 중 하나가 완료됩니다.</p>
         </section>
 
         <section class="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-select-title">
           <h4 id="manual-select-title" class="text-sm font-black text-slate-800">점자 카드 셀렉트 · 읽기 심화</h4>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">형태소를 이어서 만든 낱말이나 구를 보여 주고, 알맞은 점자 카드 네 장 중 하나를 고릅니다. 조작은 형태소 퀴즈와 같습니다. 카드를 누르거나 1~4를 누르고, R로 문제를 다시 듣습니다. 앞 단원에서 익힌 재료를 묶어 내는 심화 읽기입니다. 점수 역시 읽기 연습으로 기록됩니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">형태소를 이어서 만든 낱말이나 구를 보여 주고, 알맞은 점자 카드 네 장 중 하나를 고릅니다. 조작은 형태소 퀴즈와 같습니다. 카드를 누르거나 1~4를 누르고, R로 문제를 다시 듣습니다. 앞 단원에서 익힌 재료를 묶어 내는 심화 읽기입니다. 이 게임에서 80% 이상이면 그 단원의 네 게임 중 하나가 완료됩니다.</p>
         </section>
 
         <section class="bg-amber-50/80 border border-amber-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-builders-title">
           <h4 id="manual-builders-title" class="text-sm font-black text-slate-800">점자 빌더즈 · 읽기</h4>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">점형을 보여 주고, 그 뜻에 맞는 글자 블록을 하나 고릅니다. 블록을 누르거나 숫자 키 1~9로 고른 뒤, 선택한 뜻 확인 또는 Enter로 제출합니다. 작업대에 올라간 블록을 누르거나, 작업대 비우기 또는 Backspace로 선택을 해제할 수 있습니다. 점수를 읽기 연습으로 기록합니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">점형을 보여 주고, 그 뜻에 맞는 글자 블록을 하나 고릅니다. 블록을 누르거나 숫자 키 1~9로 고른 뒤, 선택한 뜻 확인 또는 Enter로 제출합니다. 작업대에 올라간 블록을 누르거나, 작업대 비우기 또는 Backspace로 선택을 해제할 수 있습니다. 이 게임에서 80% 이상이면 그 단원의 네 게임 중 하나가 완료됩니다.</p>
         </section>
 
         <section class="bg-sky-50/80 border border-sky-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-blank-title">
           <h4 id="manual-blank-title" class="text-sm font-black text-slate-800">빈칸 수사대 · 쓰기</h4>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">뜻을 보여 주고, 그 점형을 직접 넣습니다. 점이 들어간 칸을 만든 뒤 점자 입력으로 한 칸을 확정하고, 칸이 모이면 판정 요청으로 제출합니다. 이 게임만 쓰기 연습으로 기록됩니다. 읽기와 쓰기를 모두 넘겨야 단원을 통과합니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">뜻을 보여 주고, 그 점형을 직접 넣습니다. 점이 들어간 칸을 만든 뒤 점자 입력으로 한 칸을 확정하고, 칸이 모이면 판정 요청으로 제출합니다. 이 게임에서 80% 이상이면 그 단원의 네 게임 중 하나가 완료됩니다. 네 게임을 모두 채워야 순차에서는 다음 단원이 열리고, Free에서는 이 단원과 이전 단원이 해금됩니다.</p>
           <ul class="text-xs sm:text-sm text-slate-600 leading-relaxed flex flex-col gap-1.5 list-disc pl-4">
             <li><span class="font-bold text-slate-800">1~6 버튼</span> — 그 번호의 점을 켜거나 끕니다. 키보드에서는 1=F(도), 2=D(레), 3=S(미), 4=J(파), 5=K(솔), 6=L(라)입니다.</li>
             <li><span class="font-bold text-slate-800">점자 입력 (Enter)</span> — 지금 켠 점들로 한 칸을 확정합니다.</li>
@@ -513,7 +517,8 @@
       isUnitOpen,
       focusUnit,
       loadStudyMode,
-      saveStudyMode
+      saveStudyMode,
+      UNIT_GAMES
     } from './shell.js';
     import { unitsFor, cardsFor } from './curriculum.js';
 
@@ -591,10 +596,19 @@
       if (!saved) return '';
       if (saved.passed || isUnitPassed(lang, unitId)) return '통과';
       if (saved.opened) return '해금';
-      const bits = [];
-      if (saved.readDone) bits.push('읽기 완료');
-      if (saved.writeDone) bits.push('쓰기 완료');
-      return bits.join(' · ');
+      const done = UNIT_GAMES.filter((game) => saved.games && saved.games[game] && saved.games[game].done).length;
+      return done > 0 ? `게임 ${done}/4` : '';
+    }
+
+    function paintGameFlags(lang, unitId) {
+      const saved = unitId ? unitRecord(lang, unitId) : null;
+      document.querySelectorAll('.nav-card[data-game]').forEach((card) => {
+        const flag = card.querySelector('.game-flag');
+        if (!flag) return;
+        const game = card.dataset.game;
+        const done = !!(saved && saved.games && saved.games[game] && saved.games[game].done);
+        flag.textContent = done ? '완료' : '';
+      });
     }
 
     function orderedIds(units) {
@@ -717,8 +731,8 @@
       const hint = document.getElementById('mode-hint');
       if (hint) {
         hint.textContent = free
-          ? '모든 단원을 고를 수 있습니다. 단원을 통과하면 그 앞 단원이 모두 해금됩니다.'
-          : '앞 단원을 통과해야 다음 단원이 열립니다.';
+          ? '모든 단원을 고를 수 있습니다. 네 게임 모두 80% 이상이면 그 단원과 이전 단원이 해금됩니다.'
+          : '네 게임 모두 80% 이상이면 다음 단원이 열립니다.';
       }
     }
 
@@ -776,6 +790,7 @@
       paintMode();
       paintUnitList(units, lang, id);
       paintTeach(unit, lang);
+      paintGameFlags(lang, id);
       if (opts.focusToggle) {
         const toggle = document.getElementById('unit-toggle');
         if (toggle) toggle.focus();

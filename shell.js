@@ -117,6 +117,7 @@ export function recordResult({ game, rule, correct }) {
 }
 
 const PASS_PERCENT = 80;
+export const UNIT_GAMES = ['morpheme', 'select', 'builders', 'blank'];
 
 export function readProgress() {
   const data = readJson(KEYS.progress, {});
@@ -144,13 +145,51 @@ function ensureLang(data, lang) {
 
 function ensureUnit(langState, unitId) {
   if (!langState.units[unitId] || typeof langState.units[unitId] !== 'object') {
-    langState.units[unitId] = { read: 0, write: 0, readDone: false, writeDone: false, passed: false, wrong: [] };
+    langState.units[unitId] = {
+      read: 0,
+      write: 0,
+      readDone: false,
+      writeDone: false,
+      passed: false,
+      wrong: [],
+      games: {}
+    };
   }
   const unit = langState.units[unitId];
   if (typeof unit.read !== 'number') unit.read = 0;
   if (typeof unit.write !== 'number') unit.write = 0;
   if (!Array.isArray(unit.wrong)) unit.wrong = [];
+  if (!unit.games || typeof unit.games !== 'object' || Array.isArray(unit.games)) unit.games = {};
+  UNIT_GAMES.forEach((game) => {
+    const slot = unit.games[game];
+    if (!slot || typeof slot !== 'object' || Array.isArray(slot)) {
+      unit.games[game] = { score: 0, done: false };
+    } else {
+      if (typeof slot.score !== 'number') slot.score = 0;
+      if (typeof slot.done !== 'boolean') slot.done = !!slot.done;
+    }
+  });
   return unit;
+}
+
+function allGamesDone(unit) {
+  return UNIT_GAMES.every((game) => unit.games && unit.games[game] && unit.games[game].done);
+}
+
+function gamesDoneCount(unit) {
+  return UNIT_GAMES.filter((game) => unit.games && unit.games[game] && unit.games[game].done).length;
+}
+
+function unitIndex(lang, unitId) {
+  const code = langKey(lang) === 'EN' ? 'en' : 'ko';
+  const ids = unitsFor(code).map((unit) => unit.id);
+  return ids.indexOf(String(unitId));
+}
+
+function hasNextUnit(lang, unitId) {
+  const index = unitIndex(lang, unitId);
+  const code = langKey(lang) === 'EN' ? 'en' : 'ko';
+  return index >= 0 && index < unitsFor(code).length - 1;
 }
 
 function normalizeSkill(skill, game) {
@@ -211,7 +250,8 @@ function savedUnits(lang) {
 
 // 순차에서는 첫 단원만 처음부터 열린다.
 // 그 뒤 단원은 앞 단원을 모두 통과해야 열린다. 지금 보는 단원이라는 이유로는 열리지 않는다.
-// Free에서 통과로 해금된 앞 단원(opened)은 순차로 돌아와도 들어갈 수 있다.
+// Free에서 해금된 단원(opened)은 순차로 돌아와도 들어갈 수 있다.
+// 해금은 통과가 아니므로, 그 다음 단원까지 열리지는 않는다.
 // Free 모드에서는 목록에 있는 단원을 모두 고를 수 있다.
 export function isUnitOpen(lang, unitId, orderedIds) {
   const id = unitId ? String(unitId) : '';
@@ -229,14 +269,14 @@ export function isUnitOpen(lang, unitId, orderedIds) {
   return true;
 }
 
-// Free에서 이 단원을 통과하면, 그 앞 단원은 통과로 치지 않고 해금만 한다.
-function grantEarlierUnits(langState, lang, unitId) {
+// Free에서 네 게임을 모두 넘기면, 이 단원과 그 앞 단원을 통과로 치지 않고 해금만 한다.
+function grantUnitAndEarlier(langState, lang, unitId) {
   if (loadStudyMode() !== 'free') return;
   const code = langKey(lang) === 'EN' ? 'en' : 'ko';
   const ids = unitsFor(code).map((unit) => unit.id);
   const index = ids.indexOf(String(unitId));
-  if (index <= 0) return;
-  for (let i = 0; i < index; i += 1) {
+  if (index < 0) return;
+  for (let i = 0; i <= index; i += 1) {
     const prev = ensureUnit(langState, ids[i]);
     if (!prev.passed) prev.opened = true;
   }
@@ -254,23 +294,43 @@ export function focusUnit(lang, unitId) {
 
 function saveSkillScore({ lang, unitId, skill, game, correct, total }) {
   const id = unitId ? String(unitId) : '';
+  const gameId = UNIT_GAMES.includes(game) ? game : '';
   const skillName = normalizeSkill(skill, game);
-  if (!id || !skillName) return false;
+  const empty = { status: '', done: 0, total: UNIT_GAMES.length, hasNext: false, earlier: false };
+  if (!id || !gameId) return empty;
   const data = readProgress();
   const langState = ensureLang(data, lang);
   langState.current = id;
   const unit = ensureUnit(langState, id);
   const met = sessionMet(correct, total);
-  if (met || !unit[`${skillName}Done`]) unit[skillName] = Number(correct) || 0;
-  if (met) unit[`${skillName}Done`] = true;
-  // 읽기·쓰기를 모두 넘긴 이 단원만 통과다. 다음 단원은 통과로 열지 않는다.
-  // Free에서는 이 통과가 앞 단원을 해금한다.
-  if (met && unit.readDone && unit.writeDone) {
-    unit.passed = true;
-    grantEarlierUnits(langState, lang, id);
+  const slot = unit.games[gameId];
+  if (met || !slot.done) slot.score = Number(correct) || 0;
+  if (met) slot.done = true;
+  if (skillName) {
+    if (met || !unit[`${skillName}Done`]) unit[skillName] = Number(correct) || 0;
+    if (met) unit[`${skillName}Done`] = true;
+  }
+  // 네 게임이 모두 80% 이상일 때만 단원 조건이 된다.
+  // 순차에서는 이 단원을 통과해 다음 단원을 연다.
+  // Free에서는 이 단원과 이전 단원을 통과로 치지 않고 해금만 한다.
+  let status = '';
+  if (met && allGamesDone(unit)) {
+    if (loadStudyMode() === 'free') {
+      grantUnitAndEarlier(langState, lang, id);
+      status = unit.passed ? 'passed' : 'opened';
+    } else {
+      unit.passed = true;
+      status = 'passed';
+    }
   }
   writeProgress(data);
-  return !!(met && unit.passed);
+  return {
+    status,
+    done: gamesDoneCount(unit),
+    total: UNIT_GAMES.length,
+    hasNext: hasNextUnit(lang, id),
+    earlier: unitIndex(lang, id) > 0
+  };
 }
 
 export function errorCounts() {
@@ -432,7 +492,7 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     const meta = currentMeta();
     const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
     const unitId = meta.unitId || '';
-    const unitPassed = unitId
+    const clearance = unitId
       ? saveSkillScore({
         lang: meta.lang,
         unitId,
@@ -441,7 +501,8 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
         correct,
         total: size
       })
-      : false;
+      : { status: '', done: 0, total: UNIT_GAMES.length, hasNext: false, earlier: false };
+    const status = clearance.status || '';
     recordSession({
       game,
       lang: meta.lang,
@@ -451,12 +512,28 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     });
 
     const met = sessionMet(correct, size);
-    overlay.querySelector('#stage-result-kicker').textContent = unitPassed ? '단원 통과' : `스테이지 ${stage} 완료`;
-    overlay.querySelector('#stage-result-title').textContent = unitPassed ? '단원 통과' : '학습 결과';
+    const kicker = status === 'passed' ? '단원 통과' : status === 'opened' ? '단원 해금' : `스테이지 ${stage} 완료`;
+    const title = status === 'passed' ? '단원 통과' : status === 'opened' ? '단원 해금' : '학습 결과';
+    overlay.querySelector('#stage-result-kicker').textContent = kicker;
+    overlay.querySelector('#stage-result-title').textContent = title;
     let summary = `${size}문제 중 ${correct}문제를 맞혔습니다.`;
-    if (unitPassed) summary += ' 이 단원을 통과했습니다.';
-    else if (unitId && met) summary += ' 이 연습은 완료했습니다. 읽기와 쓰기를 모두 마치면 단원을 통과합니다.';
-    else if (unitId) summary += ' 기준에 못 미쳤습니다.';
+    if (status === 'passed') {
+      summary += clearance.hasNext
+        ? ' 이 단원을 통과했습니다. 다음 단원이 열립니다.'
+        : ' 이 단원을 통과했습니다.';
+    } else if (status === 'opened') {
+      summary += clearance.earlier
+        ? ' 이 단원과 이전 단원이 해금되었습니다.'
+        : ' 이 단원이 해금되었습니다.';
+    } else if (unitId && met) {
+      const remain = Math.max(0, clearance.total - clearance.done);
+      const reward = loadStudyMode() === 'free'
+        ? (clearance.earlier ? '이 단원과 이전 단원이 해금됩니다.' : '이 단원이 해금됩니다.')
+        : '다음 단원이 열립니다.';
+      summary += ` 이 게임은 완료했습니다. 남은 ${remain}개 게임도 80% 이상이면 ${reward}`;
+    } else if (unitId) {
+      summary += ' 기준에 못 미쳤습니다.';
+    }
     summary += ' 계속하기로 다음 스테이지를 풀거나, 홈으로 돌아갈 수 있습니다.';
     overlay.querySelector('#stage-result-summary').textContent = summary;
 
@@ -466,7 +543,10 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
       ['정답률', `${accuracy}%`]
     ];
     if (trackCombo) stats.push(['최고 콤보', `${bestCombo}`]);
-    if (unitId) stats.push(['단원', unitPassed ? '통과' : '다시']);
+    if (unitId) {
+      const unitLabel = status === 'passed' ? '통과' : status === 'opened' ? '해금' : `${clearance.done}/${clearance.total}`;
+      stats.push(['단원', unitLabel]);
+    }
 
     overlay.querySelector('#stage-result-stats').innerHTML = stats.map(([label, value]) => `
       <div class="bg-white/80 rounded-2xl border border-slate-200 p-3 text-center">
@@ -484,9 +564,11 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
       cont.focus();
     }
     if (home) home.textContent = '홈으로 돌아가기';
-    const spoken = unitPassed
-      ? `이 단원을 통과했습니다. ${size}문제 중 ${correct}문제를 맞혔습니다.`
-      : `스테이지 ${stage} 학습 결과. ${size}문제 중 ${correct}문제를 맞혔습니다. 정답률 ${accuracy}퍼센트.`;
+    const spoken = status === 'passed'
+      ? `이 단원을 통과했습니다. ${clearance.hasNext ? '다음 단원이 열립니다. ' : ''}${size}문제 중 ${correct}문제를 맞혔습니다.`
+      : status === 'opened'
+        ? `${clearance.earlier ? '이 단원과 이전 단원이 해금되었습니다.' : '이 단원이 해금되었습니다.'} ${size}문제 중 ${correct}문제를 맞혔습니다.`
+        : `스테이지 ${stage} 학습 결과. ${size}문제 중 ${correct}문제를 맞혔습니다. 정답률 ${accuracy}퍼센트.`;
     speakStage(spoken);
   }
 
