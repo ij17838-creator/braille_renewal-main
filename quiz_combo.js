@@ -4,6 +4,7 @@
  * select는 형태소를 자유롭게 결합한 심화 문제만 낸다.
  * unitId가 있으면 그 단원 source의 카드만 낸다. 읽기는 morpheme·select·builders, 쓰기는 blank.
  * 단원 문제는 그 단원과 앞 단원의 재료만 쓰고, 앞 단원을 통과하지 못했으면 내지 않는다.
+ * 1단원 다음부터는 그 단원 주제를 문제의 앞, 중간, 뒤에 번갈아 넣는다.
  * 짧은 문장은 순차에서 통과한 앞 단원 재료만 잇는다. 자유 학습에서는 통과하지 않아도 앞 단원 재료를 전부 잇는다.
  * 통과한 단원에서 틀린 항목은 다음 단원 10문제 가운데 둘이나 셋으로 다시 낸다.
  * 해설은 조립 순서다. 예) ㄱ 4점 ⠈ + ㅏ 1·2·6점 ⠣
@@ -924,6 +925,8 @@ export function createEngine(data) {
   };
   const recent = new Set();
   const rounds = new Map();
+  const recentRounds = new Map();
+  const placeCursor = new Map();
   let seq = 0;
 
   function itemKey(owner, card) {
@@ -943,6 +946,43 @@ export function createEngine(data) {
     return found;
   }
 
+  // 규칙 종류가 여러 개면 한 스테이지에 같은 종류가 몰리지 않게 나누고,
+  // 바로 앞 스테이지에 나온 문제는 아직 안 나온 문제가 있을 때 뒤로 미룬다.
+  function spreadCards(unit, cards, need, wrong) {
+    const families = new Set(cards.map((card) => card.family).filter(Boolean));
+    if (families.size < 2) return null;
+    const recentKeys = recentRounds.get(unit.id) || new Set();
+    const cap = Math.max(2, Math.ceil(need / families.size));
+    const order = shuffle(cards);
+    const picked = [];
+    const seen = new Set();
+    const counts = {};
+
+    function take(opts) {
+      for (const card of order) {
+        if (picked.length >= need) return;
+        const key = itemKey(unit, card);
+        if (seen.has(key)) continue;
+        const family = card.family || '_';
+        if (!opts.ignoreCap && (counts[family] || 0) >= cap) continue;
+        if (!opts.ignoreRecent && recentKeys.has(key)) continue;
+        const isWrong = wrong.has(key);
+        if (opts.wrong === true && !isWrong) continue;
+        if (opts.wrong === false && isWrong) continue;
+        seen.add(key);
+        counts[family] = (counts[family] || 0) + 1;
+        picked.push(card);
+      }
+    }
+
+    take({ wrong: true, ignoreRecent: true });
+    take({ wrong: false });
+    take({ wrong: false, ignoreRecent: true });
+    take({ ignoreCap: true, ignoreRecent: true });
+    recentRounds.set(unit.id, new Set(picked.map((card) => itemKey(unit, card))));
+    return picked.map((card) => ({ card, owner: unit }));
+  }
+
   function buildRound(unit, lang) {
     const cards = scopeOf(unit).find((item) => item.unit.id === unit.id)?.cards || [];
     const pool = shuffle(reviewEntries(unit, lang));
@@ -951,17 +991,20 @@ export function createEngine(data) {
     for (let i = 0; i < reviewN; i += 1) review.push(pool[i % pool.length]);
 
     const wrong = new Set(wrongItemKeys(lang, unit.id));
-    const wrongCards = shuffle(cards.filter((card) => wrong.has(itemKey(unit, card))));
-    const others = shuffle(cards.filter((card) => !wrong.has(itemKey(unit, card))));
-    const fresh = [];
-    const seen = new Set();
     const need = STAGE_SIZE - review.length;
-    for (const card of wrongCards.concat(others)) {
-      const key = itemKey(unit, card);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      fresh.push({ card, owner: unit });
-      if (fresh.length >= need) break;
+    let fresh = spreadCards(unit, cards, need, wrong);
+    if (!fresh) {
+      const wrongCards = shuffle(cards.filter((card) => wrong.has(itemKey(unit, card))));
+      const others = shuffle(cards.filter((card) => !wrong.has(itemKey(unit, card))));
+      fresh = [];
+      const seen = new Set();
+      for (const card of wrongCards.concat(others)) {
+        const key = itemKey(unit, card);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        fresh.push({ card, owner: unit });
+        if (fresh.length >= need) break;
+      }
     }
     if (fresh.length < need && cards.length) {
       const fill = shuffle(cards);
@@ -988,9 +1031,165 @@ export function createEngine(data) {
     return scopes.get(unit.id);
   }
 
+  const HANGUL_KINDS = new Set(['syllable', 'ga', 'eok']);
+  const WORD_KINDS = new Set(['word', 'wordsign', 'shortform', 'contraction']);
+  const AFFECTED_ONSET = new Set(['ㄴ', 'ㄷ', 'ㅁ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']);
+  const OPEN_MARKS = new Set(['“', '‘', '《', '〈', '(', '[', '<tn>', '<i>']);
+  const END_MARKS = new Set(['”', '’', '》', '〉', ')', ']', '</tn>', '<b>', '.', '?', '!']);
+
+  function firstSyllable(card) {
+    for (const ch of card.letter) {
+      const parts = decompose(ch);
+      if (parts) return parts;
+    }
+    return null;
+  }
+
+  function needsGap(left, right) {
+    if (WORD_KINDS.has(left.kind) || WORD_KINDS.has(right.kind)) return true;
+    if (left.kind === 'digit' && right.kind === 'digit') return true;
+    if (left.kind === 'digit') {
+      const parts = firstSyllable(right);
+      return !!(parts && AFFECTED_ONSET.has(parts[0]));
+    }
+    return false;
+  }
+
+  function illegalJoin(seq) {
+    for (let i = 0; i < seq.length - 1; i += 1) {
+      const left = seq[i];
+      const right = seq[i + 1];
+      const last = [...left.letter].pop();
+      const first = [...right.letter][0];
+      if (last === '사') {
+        const parts = decompose(first);
+        if (parts && parts[0] === 'ㅇ') return true;
+      }
+      if (left.kind === 'digit' && first === '사') return true;
+    }
+    return false;
+  }
+
+  function renderSeq(seq) {
+    let text = '';
+    let braille = '';
+    const steps = [];
+    const parts = [];
+    seq.forEach((card, index) => {
+      if (index > 0 && needsGap(seq[index - 1], card)) {
+        text += ' ';
+        braille += BLANK_CELL;
+        steps.push(SPACE_STEP);
+      }
+      text += card.letter;
+      braille += card.pattern;
+      if (card.steps) steps.push(...card.steps);
+      parts.push({ text: card.letter, braille: card.pattern, label: card.letter });
+    });
+    return { text, braille, steps, parts };
+  }
+
+  function arrangeTopic(topic, fillers, slot) {
+    const [a, b] = fillers;
+    if (!b) return slot === 0 ? [topic, a] : [a, topic];
+    if (slot === 0) return [topic, a, b];
+    if (slot === 1) return [a, topic, b];
+    return [a, b, topic];
+  }
+
+  function fillerKindOk(topic, card) {
+    if (!card.letter || !card.pattern || card.letter === topic.letter) return false;
+    if (card.kind === 'contraction' && !card.standalone) return false;
+    if (HANGUL_KINDS.has(topic.kind) || topic.kind === 'word' || topic.kind === 'mark') {
+      return HANGUL_KINDS.has(card.kind);
+    }
+    if (topic.kind === 'digit') {
+      return topic.langHint === 'ko' ? HANGUL_KINDS.has(card.kind) : card.kind === 'digit';
+    }
+    if (WORD_KINDS.has(topic.kind)) return WORD_KINDS.has(card.kind) || card.kind === 'digit';
+    return false;
+  }
+
+  // 1단원은 글자 한 조각만 낸다. 그 뒤 단원은 주제를 앞·중간·뒤로 옮긴다.
+  function placeTopic(unit, card) {
+    if (!unit || unit.order <= 1 || card.family) return null;
+    if (card.kind === 'contraction' && !card.standalone) return null;
+    const placeable = HANGUL_KINDS.has(card.kind) || card.kind === 'word' || card.kind === 'digit'
+      || card.kind === 'mark' || WORD_KINDS.has(card.kind);
+    if (!placeable) return null;
+
+    const topic = { ...card, langHint: unit.lang };
+    const earlier = [];
+    const same = [];
+    const alts = [];
+    scopeOf(unit).forEach(({ unit: owner, cards }) => {
+      cards.forEach((item) => {
+        if (owner.id === unit.id && item.kind === card.kind && item.letter !== card.letter) alts.push(item);
+        if (!fillerKindOk(topic, item)) return;
+        (owner.id === unit.id ? same : earlier).push(item);
+      });
+    });
+    const pool = earlier.length >= 2 ? earlier : earlier.concat(same);
+    if (!pool.length) return null;
+
+    let slot = (placeCursor.get(unit.id) || 0) % 3;
+    if (card.kind === 'mark') {
+      if (OPEN_MARKS.has(card.letter)) slot = 0;
+      else if (END_MARKS.has(card.letter)) slot = 2;
+      else slot = 1;
+    }
+
+    let fillers = null;
+    const bag = shuffle(pool);
+    for (let attempt = 0; attempt < 12 && !fillers; attempt += 1) {
+      const picked = [];
+      for (let i = 0; i < bag.length && picked.length < 2; i += 1) {
+        const item = bag[(attempt + i) % bag.length];
+        if (picked.some((chosen) => chosen.letter === item.letter)) continue;
+        picked.push(item);
+      }
+      if (!picked.length) break;
+      const seq = arrangeTopic(card, picked, slot);
+      if (!illegalJoin(seq)) fillers = picked;
+    }
+    if (!fillers) return null;
+
+    const made = renderSeq(arrangeTopic(card, fillers, slot));
+    if (!made.text || made.text === card.letter) return null;
+
+    const distractBraille = [];
+    const distractTexts = [];
+    for (const alt of shuffle(alts)) {
+      if (distractBraille.length >= 3) break;
+      const seq = arrangeTopic(alt, fillers, slot);
+      if (illegalJoin(seq)) continue;
+      const other = renderSeq(seq);
+      if (!other.braille || other.braille === made.braille || other.text === made.text) continue;
+      distractBraille.push(other.braille);
+      distractTexts.push(other.text);
+    }
+
+    if (card.kind !== 'mark') placeCursor.set(unit.id, (placeCursor.get(unit.id) || 0) + 1);
+    return { ...made, distractBraille, distractTexts };
+  }
+
   function fromCard(unit, card, owner = unit) {
     const scope = scopeOf(unit);
     const review = owner.id !== unit.id;
+    const placed = review ? null : placeTopic(unit, card);
+    if (placed) {
+      return {
+        key: itemKey(owner, card),
+        text: placed.text,
+        braille: placed.braille,
+        parts: placed.parts,
+        rule: owner.title,
+        hint: `${unit.title} 단원`,
+        explanation: assemblyText(placed.steps) || card.explain || card.dotText,
+        distractBraille: placed.distractBraille,
+        distractTexts: placed.distractTexts
+      };
+    }
     return {
       key: itemKey(owner, card),
       text: card.letter,

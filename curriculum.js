@@ -367,7 +367,8 @@ function syllableCards(slice, data) {
 }
 
 // ---------------------------------------------------------------------------
-// 예외: 약자와 풀어 쓴 형태를 같이 보여 준다
+// 예외: 약자와 풀어 쓴 형태를 같이 보여 준다.
+// 같은 틀을 숫자·음절만 바꿔 쌓지 않고, 규칙이 걸리는 자리를 앞·가운데·뒤로 옮긴다.
 // ---------------------------------------------------------------------------
 
 function exceptionCards(slice, data) {
@@ -379,76 +380,169 @@ function exceptionCards(slice, data) {
   const prefix = numbers?.numeric_indicators?.num_prefix;
   const digitItem = (digit) => numbers?.digits?.[digit];
   const cards = [];
+  const seen = new Set();
 
   const numberSteps = (digit) => {
-    const item = digitItem(digit);
+    const item = digitItem(String(digit));
     if (!prefix || !item) return null;
-    return [makeStep(prefix.name || '수표', prefix.dots, prefix.unicode), makeStep(digit, item.dots, item.unicode)];
+    return [makeStep(prefix.name || '수표', prefix.dots, prefix.unicode), makeStep(String(digit), item.dots, item.unicode)];
   };
 
-  const push = (letter, steps, wrongSteps, note, line) => {
+  const push = (letter, steps, wrongSteps, note, line, family) => {
+    if (!letter || seen.has(letter) || !steps?.length || !wrongSteps?.length) return;
+    seen.add(letter);
     const card = makeCard({ letter, steps, kind: 'exception' });
     const wrong = wrongSteps.map(stepPattern).join('');
     card.contrast = wrong;
+    card.family = family;
     card.explain = `${card.explain}. ${note}`;
     card.line = line(card.pattern, wrong);
     cards.push(card);
   };
 
-  for (const [syllable, item] of Object.entries(items)) {
-    if (!item.exception_rules) continue;
+  const abbrSteps = (syllable) => {
+    const item = items[syllable];
+    if (!item) return null;
+    return [makeStep(`${syllable} 약자`, item.dots, item.unicode)];
+  };
+
+  const spelledSteps = (syllable) => {
     const parts = decomposeSyllable(syllable);
-    if (!parts) continue;
-    const abbrStep = makeStep(`${syllable} 약자`, item.dots, item.unicode);
-    const spelled = spellSteps(parts[0], parts[1], parts[2], maps);
-    if (!spelled) continue;
-
-    for (const follower of slice.followers || []) {
-      const fp = decomposeSyllable(follower);
-      if (!fp || fp[0] !== 'ㅇ') continue;
-      const fsteps = spellSteps(fp[0], fp[1], fp[2], maps);
-      if (!fsteps) continue;
-      push(
-        `${syllable}${follower}`,
-        [...spelled, ...fsteps],
-        [abbrStep, ...fsteps],
-        `${syllable} 뒤에 모음이 바로 이어지므로 약자를 쓰지 않고 풀어 적습니다.`,
-        (right, wrong) => `${syllable}${follower}: 약자 ${wrong}(×), 풀어 쓴 ${right}(○)`
-      );
-    }
-
-    for (const digit of slice.digits || []) {
-      const num = numberSteps(digit);
-      if (!num) continue;
-      push(
-        `${digit}${syllable}`,
-        [...num, ...spelled],
-        [...num, abbrStep],
-        `숫자 뒤의 ${syllable}는 약자를 쓰지 않고 풀어 적습니다.`,
-        (right, wrong) => `${digit}${syllable}: 약자 ${wrong}(×), 풀어 쓴 ${right}(○)`
-      );
-    }
-  }
+    if (!parts) return null;
+    return spellSteps(parts[0], parts[1], parts[2], maps);
+  };
 
   const rule = ko?.special_rules?.number_prefix_rule;
-  const ruleDigit = slice.ruleDigit;
-  const num = ruleDigit ? numberSteps(ruleDigit) : null;
-  if (rule && num) {
-    const space = makeStep('띄어쓰기', [[]], ' ');
-    const affected = new Set(rule.affected_initials || []);
-    for (const [syllable, item] of Object.entries(items)) {
-      if (item.exception_rules || item.type !== 'ga_series') continue;
-      const parts = decomposeSyllable(syllable);
-      if (!parts || !affected.has(parts[0])) continue;
-      const abbr = makeStep(`${syllable} 약자`, item.dots, item.unicode);
-      push(
-        `${ruleDigit} ${syllable}`,
-        [...num, space, abbr],
-        [...num, abbr],
-        `숫자 뒤에 ${parts[0]}이 오면 숫자로 읽히지 않도록 띄어쓰기로 숫자 입력을 끝냅니다.`,
-        (right, wrong) => `${ruleDigit} ${syllable}: 붙여 적으면 ${wrong}(×), 띄어 쓴 ${right}(○)`
-      );
+  const affected = new Set(rule?.affected_initials || []);
+  const pads = [];
+  const affectedSyllables = [];
+  for (const [syllable, item] of Object.entries(items)) {
+    if (item.exception_rules || item.type !== 'ga_series') continue;
+    const parts = decomposeSyllable(syllable);
+    if (!parts) continue;
+    if (affected.has(parts[0])) affectedSyllables.push(syllable);
+    else pads.push(syllable);
+  }
+
+  const padRun = (count, start) => {
+    if (count <= 0) return [];
+    if (!pads.length) return null;
+    const out = [];
+    for (let i = 0; i < count; i += 1) {
+      const syllable = pads[(start + i) % pads.length];
+      const steps = abbrSteps(syllable);
+      if (!steps) return null;
+      out.push({ syllable, steps });
     }
+    return out;
+  };
+
+  const space = makeStep('띄어쓰기', [[]], ' ');
+  const followers = (slice.followers || []).filter((follower) => {
+    const parts = decomposeSyllable(follower);
+    return parts && parts[0] === 'ㅇ' && spelledSteps(follower);
+  });
+  const digits = (slice.digits || []).map(String).filter((digit) => numberSteps(digit));
+  const digitBank = [];
+  for (const digit of digits.concat(slice.ruleDigit ? [String(slice.ruleDigit)] : [], Object.keys(numbers?.digits || {}))) {
+    if (digit === '0' || digitBank.includes(digit) || !numberSteps(digit)) continue;
+    digitBank.push(digit);
+  }
+
+  // 모음 앞 '사': 첫 문제만 맨 앞에서 시작하고, 나머지는 앞뒤에 아는 음절을 붙인다.
+  const vowelFrames = [
+    { before: 0, after: 0 },
+    { before: 1, after: 0 },
+    { before: 1, after: 1 },
+    { before: 2, after: 1 }
+  ];
+  // 숫자 뒤 '사': 숫자 점형이 맨 앞에 오는 것은 하나뿐이고, 마지막은 모음 규칙도 같이 본다.
+  const numberFrames = [
+    { before: 0, after: 0, withFollower: false },
+    { before: 1, after: 0, withFollower: false },
+    { before: 1, after: 1, withFollower: false },
+    { before: 1, after: 0, withFollower: true }
+  ];
+  // 숫자 뒤 혼동 초성: 띄어쓰기 자리를 번갈아 옮긴다.
+  const spaceFrames = [
+    { before: 0, after: 0 },
+    { before: 1, after: 1 },
+    { before: 2, after: 0 },
+    { before: 1, after: 0 },
+    { before: 2, after: 1 },
+    { before: 1, after: 1 },
+    { before: 2, after: 0 }
+  ];
+
+  const texts = (run) => (run || []).map((item) => item.syllable).join('');
+  const stepsOf = (run) => (run || []).map((item) => item.steps);
+
+  for (const [syllable] of Object.entries(items)) {
+    if (!items[syllable].exception_rules) continue;
+    const spelled = spelledSteps(syllable);
+    const abbr = abbrSteps(syllable);
+    if (!spelled || !abbr) continue;
+
+    followers.forEach((follower, index) => {
+      const frame = vowelFrames[index % vowelFrames.length];
+      const fsteps = spelledSteps(follower);
+      const before = padRun(frame.before, index);
+      const after = padRun(frame.after, index + frame.before);
+      if (!fsteps || !before || !after) return;
+      const letter = `${texts(before)}${syllable}${follower}${texts(after)}`;
+      push(
+        letter,
+        [...stepsOf(before).flat(), ...spelled, ...fsteps, ...stepsOf(after).flat()],
+        [...stepsOf(before).flat(), ...abbr, ...fsteps, ...stepsOf(after).flat()],
+        `${syllable} 뒤에 모음이 바로 이어지므로 약자를 쓰지 않고 풀어 적습니다.`,
+        (right, wrong) => `${letter}: 약자 ${wrong}(×), 풀어 쓴 ${right}(○)`,
+        'vowel'
+      );
+    });
+
+    digits.forEach((digit, index) => {
+      const frame = numberFrames[index % numberFrames.length];
+      const num = numberSteps(digit);
+      const follower = frame.withFollower ? followers[index % followers.length] : '';
+      const fsteps = follower ? spelledSteps(follower) : null;
+      const before = padRun(frame.before, index + 1);
+      const after = padRun(frame.after, index + 1 + frame.before);
+      if (!num || !before || !after || (follower && !fsteps)) return;
+      const letter = `${texts(before)}${digit}${syllable}${follower}${texts(after)}`;
+      const note = follower
+        ? `숫자 뒤의 ${syllable}와, ${syllable} 뒤에 바로 이어지는 모음은 약자를 쓰지 않고 풀어 적습니다.`
+        : `숫자 뒤의 ${syllable}는 약자를 쓰지 않고 풀어 적습니다.`;
+      push(
+        letter,
+        [...stepsOf(before).flat(), ...num, ...spelled, ...(fsteps || []), ...stepsOf(after).flat()],
+        [...stepsOf(before).flat(), ...num, ...abbr, ...(fsteps || []), ...stepsOf(after).flat()],
+        note,
+        (right, wrong) => `${letter}: 약자 ${wrong}(×), 풀어 쓴 ${right}(○)`,
+        'after-number'
+      );
+    });
+  }
+
+  if (rule) {
+    affectedSyllables.forEach((syllable, index) => {
+      const frame = spaceFrames[index % spaceFrames.length];
+      const digit = digitBank[index % digitBank.length];
+      const num = digit ? numberSteps(digit) : null;
+      const abbr = abbrSteps(syllable);
+      const parts = decomposeSyllable(syllable);
+      const before = padRun(frame.before, index);
+      const after = padRun(frame.after, index + frame.before);
+      if (!num || !abbr || !parts || !before || !after) return;
+      const letter = `${texts(before)}${digit} ${syllable}${texts(after)}`;
+      push(
+        letter,
+        [...stepsOf(before).flat(), ...num, space, ...abbr, ...stepsOf(after).flat()],
+        [...stepsOf(before).flat(), ...num, ...abbr, ...stepsOf(after).flat()],
+        `숫자 뒤에 ${parts[0]}이 오면 숫자로 읽히지 않도록 띄어쓰기로 숫자 입력을 끝냅니다.`,
+        (right, wrong) => `${letter}: 붙여 적으면 ${wrong}(×), 띄어 쓴 ${right}(○)`,
+        'space'
+      );
+    });
   }
   return cards;
 }
