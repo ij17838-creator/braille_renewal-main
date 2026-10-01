@@ -35,35 +35,27 @@
       "dots": [[3, 4]],
       "unicode": "⠌",
       "persists_numeric_mode": true
-    },
-    "numeric_space": {
-      "char": " ",
-      "name": "숫자 빈칸",
-      "dots": [[5]],
-      "unicode": "⠐",
-      "persists_numeric_mode": true
     }
   },
   "scope_maintenance": {
-    "persists_across_connectors": ["comma", "period", "hyphen", "fraction_slash", "numeric_space"],
-    "description": "한국어 규정상 쉼표·소수점·하이픈·분수선으로 연결된 숫자는 수표를 다시 붙이지 않고 연속 유지됨. 점형은 symbols가 기준이다."
+    "persists_across_connectors": ["comma", "period", "hyphen", "fraction_slash"],
+    "description": "쉼표·소수점·하이픈·분수선으로 연결된 숫자는 수표를 다시 붙이지 않고 연속 유지됨. 점형은 symbols가 기준이다. 띄어쓰기는 연결자가 아니며 숫자 입력을 끝낸다."
   },
   "termination_triggers": {
     "terminators": [
       "space",
       "korean_letter",
-      "alphabet_indicator",
       "punctuation_standalone",
       "line_break"
     ],
-    "description": "빈칸, 한글 초성/중성 점자, 영문 기호표 등을 만났을 때 수표 효력 종료"
+    "description": "띄어쓰기가 숫자 입력을 종료한다. 줄바꿈과 문장부호도 수표 효력을 끝낸다."
   },
   "collision_resolutions": {
     "korean_syllables": {
       "rule": "수표 모드 내에서는 한글 초성 점형(예: 'ㄴ', 'ㄷ' 등)과 겹치더라도 숫자가 우선 파싱됨"
     },
     "trailing_letters": {
-      "rule": "숫자 바로 뒤에 영문 또는 한글이 이어질 경우, 각각 언어 기호표나 띄어쓰기를 통해 구문 분리",
+      "rule": "숫자와 점형이 겹치는 초성 ㄴ·ㄷ·ㅁ·ㅋ·ㅌ·ㅍ·ㅎ이 바로 이어지면 띄어쓰기로 수표 효력을 끝낸다. 그 사이에는 1급 점자표를 넣지 않는다.",
       "exempt_units": [
         "년",
         "월",
@@ -86,7 +78,7 @@
         "리터",
         "밀리리터"
       ],
-      "exempt_rule_description": "한국 점자 규정 제17항: 수표 뒤에 단위어가 이어 나올 때는 1급 기호표(⠰)를 적지 아니한다. 파서와 검사기는 이 목록만 읽는다.",
+      "exempt_rule_description": "한국 점자 규정: 수표 뒤에 단위어가 이어 나올 때는 띄어쓰지 않고 붙여 적는다. 파서와 검사기는 이 목록만 읽는다.",
       "roman_unit_symbols": {
         "m": "⠍",
         "km": "⠅⠍",

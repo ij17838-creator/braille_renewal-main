@@ -136,7 +136,7 @@ class MorphemeSegmenter:
 class BrailleEngine:
     """
     UEB 규정에 따른 양방향 변환 엔진.
-    수표 모드(⠼), 1급 기호표(⠰), 형태소 경계 검사, 약어 우선순위를 처리합니다.
+    수표 모드(⠼), 1급 점자표(⠆, 2·3점), 형태소 경계 검사, 약어 우선순위를 처리합니다.
     """
     def __init__(self, base_data_dir: Optional[str] = None):
         self.base_data_dir = base_data_dir
@@ -173,7 +173,7 @@ class BrailleEngine:
         self.digits = {str(i): self.spelling[digit_keys[i]] for i in range(10)}
         self.rev_digits = {v: str(i) for i, v in enumerate(self.digits.values())}
 
-        # 수표 및 1급 기호표 로드
+        # 수표 및 1급 점자표(2·3점) 로드
         self.num_prefix = num_data["initiator_condition"]["braille"]
         self.grade1_prefix = num_data["collision_resolutions"]["alphanumeric_transition"]["grade1_indicator"]
 
@@ -351,7 +351,7 @@ class BrailleEngine:
                 lower_token = token.lower()
                 prefix_indicator = ""
 
-                # 숫자 직후 a~j 글자가 올 경우 1급 기호표 삽입
+                # 숫자 직후 a~j 글자가 올 경우 1급 점자표(2·3점) 삽입
                 if in_numeric_mode:
                     clean_start = lower_token.lstrip("'")
                     if clean_start and clean_start[0] in "abcdefghij":
@@ -593,7 +593,7 @@ class BrailleEngine:
         g1_len = len(self.grade1_prefix)
 
         while i < n:
-            # 1급 기호표 확인 (가변 길이 대응)
+            # 1급 점자표 확인 (가변 길이 대응)
             if self.grade1_prefix and token[i:i + g1_len] == self.grade1_prefix:
                 in_num = False
                 i += g1_len

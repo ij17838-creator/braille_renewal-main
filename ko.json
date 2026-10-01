@@ -164,8 +164,8 @@
     "number_prefix_rule": {
       "trigger_after": "number",
       "affected_initials": ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"],
-      "action": "insert_letter_indicator_or_rule",
-      "note": "수표(⠼) 뒤에 초성 'ㄴ, ㄷ, ㅁ, ㅋ, ㅌ, ㅍ, ㅎ'이 오면 숫자와 혼동될 수 있으므로 분리 표기 필요"
+      "action": "terminate_number_with_space",
+      "note": "수표(⠼) 뒤에 초성 'ㄴ, ㄷ, ㅁ, ㅋ, ㅌ, ㅍ, ㅎ'이 오면 숫자와 혼동되므로 띄어쓰기로 숫자 입력을 종료한다"
     }
   }
 }

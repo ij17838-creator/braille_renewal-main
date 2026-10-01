@@ -92,8 +92,8 @@ class BrailleRuleValidator:
     # -------------------------------------------------------------
     def check_number_letter_collision(self, text: str) -> List[Dict[str, Any]]:
         """
-        숫자 바로 뒤에 공백 없이 충돌 주의 한글 초성이 올 때 1급 기호표(⠰) 필요 여부를 탐지.
-        점자 규정 제17항 단위어(년, 월, 일, 미터 등)는 예외 처리하여 불필요한 오류 제외.
+        숫자 바로 뒤에 띄어쓰기 없이 충돌 주의 한글 초성이 오면 수표가 끝나지 않은 것으로 본다.
+        단위어(년, 월, 일, 미터 등)는 붙여 적으므로 예외로 둔다.
         """
         issues = []
         for i in range(len(text) - 1):
@@ -114,8 +114,8 @@ class BrailleRuleValidator:
                         "index": i + 1,
                         "trigger": f"{curr_ch}{next_ch}",
                         "initial": decomp[0],
-                        "rule": "1급 기호표(⠰) 삽입 필요",
-                        "message": f"숫자 '{curr_ch}' 뒤에 초성 '{decomp[0]}'이(가) 오는 음절 '{next_ch}'이 결합되어 1급 기호표(⠰)가 필요합니다."
+                        "rule": "띄어쓰기로 숫자 입력 종료",
+                        "message": f"숫자 '{curr_ch}' 뒤에 초성 '{decomp[0]}'이(가) 오는 음절 '{next_ch}'이 붙어 있어 띄어쓰기가 필요합니다."
                     })
         return issues
 

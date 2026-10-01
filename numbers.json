@@ -2,7 +2,7 @@
   "schema_version": "1.1",
   "data_type": "glyph_definitions",
   "scope": "shared_ko_en",
-  "description": "한·영 공통 수표, 1급 기호표, 숫자 0–9. 쉼표·하이픈·슬래시 등 언어별 기호는 ko_number_rules.json과 ueb_number_rules.json에 둔다.",
+  "description": "한·영 공통 수표와 숫자 0–9. 1급 점자표는 영어 숫자 규칙에서만 쓴다. 한글 숫자는 띄어쓰기로 끝낸다. 쉼표·하이픈·슬래시 등 언어별 기호는 ko_number_rules.json과 ueb_number_rules.json에 둔다.",
   "numeric_indicators": {
     "num_prefix": {
       "name": "수표",
@@ -12,9 +12,9 @@
   },
   "grade1_indicators": {
     "grade1_symbol": {
-      "name": "1급 기호표",
-      "dots": [[5, 6]],
-      "unicode": "⠰"
+      "name": "1급 점자표",
+      "dots": [[2, 3]],
+      "unicode": "⠆"
     }
   },
   "digits": {

@@ -446,7 +446,7 @@ class BrailleRuleValidator:
                     if token[0].islower() and lower_token[0] in self.grade1_targets:
                         item_report["validations"].append({
                             "warning": "Alphanumeric Glyph Collision",
-                            "resolution": f"Requires Grade 1 Indicator (⠰) before '{token[0]}'"
+                            "resolution": f"Requires Grade 1 Indicator ({self.grade1_prefix}, dots 2-3) before '{token[0]}'"
                         })
                     in_numeric_mode = False
 

@@ -38,8 +38,9 @@
     "alphanumeric_transition": {
       "grade1_required_targets": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
       "grade1_exempt_targets": ["k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"],
-      "grade1_indicator": "⠰",
-      "resolution": "숫자 모드 직후 a~j (대소문자 포함) 문자가 결합될 경우 글리프 중복 해석 방지를 위해 1급 기호표(⠰) 삽입 필수. k~z는 기호표 없이 숫자 모드만 종료."
+      "grade1_indicator": "⠆",
+      "grade1_dots": [2, 3],
+      "resolution": "숫자 모드 직후 a~j (대소문자 포함) 문자가 결합될 경우 글리프 중복 해석 방지를 위해 1급 점자표(⠆, 2·3점) 삽입 필수. k~z는 점자표 없이 숫자 모드만 종료."
     },
     "wordsign_suppression": {
       "rule": "수표 모드 내에서는 'b' (but), 'c' (can) 등의 알파벳 약어(Alphabetic Wordsign) 파싱을 전면 차단하고 아라비아 숫자로 처리"

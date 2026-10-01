@@ -3,9 +3,9 @@ ko_parser.py
 한글 점자 양방향 변환 엔진 (Text <-> Braille)
 
 주요 기능:
-1. Text -> Braille (정방향 점역): 약어, 초성 ㅇ 생략, 수표 및 1급 기호표 규칙 적용, 된소리표(⠠) 처리, 영문 단위 기호 결합
+1. Text -> Braille (정방향 점역): 약어, 초성 ㅇ 생략, 수표 뒤 띄어쓰기로 숫자 종료, 된소리표(⠠) 처리, 영문 단위 기호 결합
 2. Braille -> Text (역방향 복원): 점자 토큰 분해 및 음절/숫자 모드 복원, 된소리 역변환, 영문 단위 기호 역변환
-3. 규정 준수: 한국 점자 규정 제17항(단위어 앞 1급 기호표 생략) 및 숫자 뒤 단위 기호 로마자표 생략 반영
+3. 규정 준수: 혼동 초성 앞 띄어쓰기, 단위어는 붙여 적기, 숫자 뒤 단위 기호 로마자표 생략
 """
 
 import re
@@ -77,20 +77,15 @@ class KoreanBrailleEngine:
 
         # 4. 숫자 및 지시표
         self.num_prefix = self.numbers.get("numeric_indicators", {}).get("num_prefix", {}).get("unicode", "⠼")
-        self.grade1_prefix = self.numbers.get("grade1_indicators", {}).get("grade1_symbol", {}).get("unicode", "⠰")
         self.digits = {k: v["unicode"] for k, v in self.numbers.get("digits", {}).items()}
         self.rev_digits = {v: k for k, v in self.digits.items()}
 
         self.num_connectors = {}
         self.connector_persists = {}
-        self.numeric_space = "⠐"
-        for key, item in self.num_rules.get("symbols", {}).items():
+        for item in self.num_rules.get("symbols", {}).values():
             char = item.get("char")
             uni = item.get("unicode")
-            if not char or not uni:
-                continue
-            if key == "numeric_space":
-                self.numeric_space = uni
+            if not char or not uni or char == " ":
                 continue
             self.num_connectors[char] = uni
             self.connector_persists[char] = bool(item.get("persists_numeric_mode", True))
@@ -168,7 +163,6 @@ class KoreanBrailleEngine:
             else:
                 context = "syllable_final"
             self._add_use(uni, char, context)
-        self._add_use(self.grade1_prefix, "1급 기호표", "after_number")
 
     def _add_punct_sense(self, char: str, item: dict, category: str):
         uni = item["unicode"]
@@ -363,7 +357,7 @@ class KoreanBrailleEngine:
             if '가' <= ch <= '힣':
                 decomp = self.decompose(ch)
                 cho, jung, jong = decomp
-                prefix_indicator = ""
+                number_break = ""
                 rules_applied = []
 
                 # 한국 점자 규정 제18항: 음절 약어 '사' 예외(풀어쓰기) 판별
@@ -383,14 +377,14 @@ class KoreanBrailleEngine:
                             is_sa_exception = True
                             rules_applied.append(f"제18항 제1호 적용: 모음 연접 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
 
-                # 수표 뒤 초성 충돌 해결 시 한글 단위어 예외 적용 (슬라이싱 접두어 검사)
+                # 혼동 초성은 띄어쓰기로 수표를 끝낸다. 단위어는 붙여 적는다.
                 if in_number_mode:
                     tail_text = text[i:]
                     is_exempt = tail_text.startswith(self.exempt_units_sorted)
 
                     if cho in self.affected_initials and not is_exempt:
-                        prefix_indicator = self.grade1_prefix
-                        rules_applied.append(f"수표 해제 및 초성 '{cho}' 충돌 방지 1급 기호표(⠰) 삽입")
+                        number_break = " "
+                        rules_applied.append(f"초성 '{cho}'이 숫자와 겹치므로 띄어쓰기로 숫자 입력 종료")
                     in_number_mode = False
 
                 if is_sa_exception:
@@ -401,7 +395,7 @@ class KoreanBrailleEngine:
                     braille_syllable, syl_rules = self._translate_hangul_syllable_with_trace(cho, jung, jong, ch)
                     rules_applied.extend(syl_rules)
 
-                final_b = prefix_indicator + braille_syllable
+                final_b = number_break + braille_syllable
                 out.append(final_b)
                 traces.append({
                     "token": ch,
@@ -575,12 +569,6 @@ class KoreanBrailleEngine:
                 options = [ch for ch in self.rev_num_connectors[c] if self.connector_persists.get(ch)]
                 res.append((options or self.rev_num_connectors[c])[0])
                 idx += 1
-            elif c == self.grade1_prefix:
-                nxt = b_token[idx + 1] if idx + 1 < n else None
-                if nxt in self.rev_jungsung:
-                    break
-                idx += 1
-                break
             else:
                 break
 

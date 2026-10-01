@@ -377,7 +377,6 @@ function exceptionCards(slice, data) {
   const maps = jamoMaps(ko);
   const numbers = resolveBundle(data, 'numbers.json');
   const prefix = numbers?.numeric_indicators?.num_prefix;
-  const grade1 = numbers?.grade1_indicators?.grade1_symbol;
   const digitItem = (digit) => numbers?.digits?.[digit];
   const cards = [];
 
@@ -434,20 +433,20 @@ function exceptionCards(slice, data) {
   const rule = ko?.special_rules?.number_prefix_rule;
   const ruleDigit = slice.ruleDigit;
   const num = ruleDigit ? numberSteps(ruleDigit) : null;
-  if (rule && num && grade1) {
+  if (rule && num) {
+    const space = makeStep('띄어쓰기', [[]], ' ');
     const affected = new Set(rule.affected_initials || []);
     for (const [syllable, item] of Object.entries(items)) {
       if (item.exception_rules || item.type !== 'ga_series') continue;
       const parts = decomposeSyllable(syllable);
       if (!parts || !affected.has(parts[0])) continue;
-      const mark = makeStep(grade1.name || '1급 기호표', grade1.dots, grade1.unicode);
       const abbr = makeStep(`${syllable} 약자`, item.dots, item.unicode);
       push(
-        `${ruleDigit}${syllable}`,
-        [...num, mark, abbr],
+        `${ruleDigit} ${syllable}`,
+        [...num, space, abbr],
         [...num, abbr],
-        `숫자 뒤에 ${parts[0]}이 오면 숫자로 읽히지 않도록 사이에 ${mark.label}를 넣습니다.`,
-        (right, wrong) => `${ruleDigit}${syllable}: 그대로 이으면 ${wrong}(×), ${mark.label} 넣은 ${right}(○)`
+        `숫자 뒤에 ${parts[0]}이 오면 숫자로 읽히지 않도록 띄어쓰기로 숫자 입력을 끝냅니다.`,
+        (right, wrong) => `${ruleDigit} ${syllable}: 붙여 적으면 ${wrong}(×), 띄어 쓴 ${right}(○)`
       );
     }
   }

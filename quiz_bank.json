@@ -223,9 +223,9 @@
       "rule_type": "단위어",
       "target_text": "3개",
       "target_braille": "⠼⠉⠻",
-      "distractors_braille": ["⠼⠉⠰⠻", "⠉⠻", "⠼⠙⠻"],
-      "hint": "숫자 3 뒤 단위어 '개'는 1급 기호표 없이 이어 적습니다.",
-      "explanation": "단위어 앞에서는 1급 기호표를 생략합니다.",
+      "distractors_braille": ["⠼⠉ ⠻", "⠉⠻", "⠼⠙⠻"],
+      "hint": "숫자 3 뒤 단위어 '개'는 띄어쓰지 않고 이어 적습니다.",
+      "explanation": "단위어는 숫자 뒤에 붙여 적습니다.",
       "sentence_pre": "우리 가족은 사과",
       "sentence_post": "를 먹었다.",
       "clue": "숫자 3 뒤 단위어 '개'를 바로 붙입니다.",
@@ -234,7 +234,7 @@
       "available_blocks": ["3", "개", "삼", "게"],
       "rule_analysis": {
         "rule_name": "단위어",
-        "detail": "숫자 뒤 단위어 '개'는 1급 기호표 없이 결합합니다."
+        "detail": "숫자 뒤 단위어 '개'는 띄어쓰기 없이 붙여 적습니다."
       }
     }
   ],

@@ -4,6 +4,7 @@
  * select는 형태소를 자유롭게 결합한 심화 문제만 낸다.
  * unitId가 있으면 그 단원 source의 카드만 낸다. 읽기는 morpheme·select·builders, 쓰기는 blank.
  * 단원 문제는 그 단원과 앞 단원의 재료만 쓰고, 앞 단원을 통과하지 못했으면 내지 않는다.
+ * 짧은 문장은 순차에서 통과한 앞 단원 재료만 잇는다. 자유 학습에서는 통과하지 않아도 앞 단원 재료를 전부 잇는다.
  * 통과한 단원에서 틀린 항목은 다음 단원 10문제 가운데 둘이나 셋으로 다시 낸다.
  * 해설은 조립 순서다. 예) ㄱ 4점 ⠈ + ㅏ 1·2·6점 ⠣
  */
@@ -18,7 +19,7 @@ import {
   makeStep,
   stepsPattern
 } from './curriculum.js';
-import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed } from './shell.js';
+import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed, loadStudyMode } from './shell.js';
 
 const BLANK_CELL = '\u2800';
 const SPACE_STEP = makeStep('띄어쓰기', [[]], BLANK_CELL);
@@ -182,7 +183,6 @@ function buildKorean(data) {
   Object.entries(ko.jongsung?.items || {}).forEach(([k, v]) => { jongMap[k] = v.unicode || ''; });
 
   const numPrefix = numbers.numeric_indicators?.num_prefix?.unicode || '⠼';
-  const grade1 = numbers.grade1_indicators?.grade1_symbol?.unicode || '⠰';
   const digits = {};
   Object.entries(numbers.digits || {}).forEach(([k, v]) => { digits[k] = v.unicode; });
   const affected = ko.special_rules?.number_prefix_rule?.affected_initials || ['ㄴ', 'ㄷ', 'ㅁ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
@@ -204,7 +204,7 @@ function buildKorean(data) {
 
     if (ch === '사' && (afterNumber || (nextCh && decompose(nextCh)?.[0] === 'ㅇ'))) {
       let braille = saExpanded + (jong ? (jongMap[jong] || '') : '');
-      if (afterNumber && affected.includes(cho) && !exemptHit) braille = grade1 + braille;
+      if (afterNumber && affected.includes(cho) && !exemptHit) braille = ` ${braille}`;
       return {
         braille,
         label: afterNumber ? "숫자 뒤 '사' 풀어쓰기" : "모음 앞 '사' 풀어쓰기"
@@ -213,8 +213,8 @@ function buildKorean(data) {
 
     let head = '';
     if (afterNumber && affected.includes(cho) && !exemptHit) {
-      head = grade1;
-      labels.push(`수표 뒤 '${cho}' 앞에 한글표`);
+      head = ' ';
+      labels.push(`수표 뒤 '${cho}' 앞 띄어쓰기로 숫자 종료`);
     }
 
     if (complete[ch]) {
@@ -1004,20 +1004,23 @@ export function createEngine(data) {
     };
   }
 
-  // 짧은 문장: 통과한 단원의 재료만 이어 붙인다.
+  // 짧은 문장: 순차에서는 통과한 단원만, 자유 학습에서는 앞 단원 재료를 전부 이어 붙인다.
   const recentSentences = new Map();
 
-  function passedCards(unit) {
+  function sentenceCards(unit) {
     const code = LANG_CODE[unit.lang];
+    const free = loadStudyMode() === 'free';
     const cards = [];
     scopeOf(unit).forEach(({ unit: owner, cards: list }) => {
-      if (owner.id !== unit.id && isUnitPassed(code, owner.id)) cards.push(...list);
+      if (owner.id === unit.id) return;
+      if (free || isUnitPassed(code, owner.id)) cards.push(...list);
     });
     return cards;
   }
 
   function fromSentence(unit) {
-    const maker = unit.lang === 'en' ? englishTokens(passedCards(unit)) : koreanTokens(passedCards(unit), data.ko);
+    const cards = sentenceCards(unit);
+    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, data.ko);
     if (!maker) return null;
     const recentList = recentSentences.get(unit.id) || [];
     let sentence = null;
