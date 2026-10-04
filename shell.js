@@ -9,6 +9,7 @@ const KEYS = {
   scale: 'braille_text_scale',
   tts: 'braille_tts',
   pitch: 'braille_pitch',
+  doubleClickAnswer: 'braille_double_click_answer',
   sfx: 'braille_sfx',
   emboss: 'braille_emboss_mode',
   ruleStats: 'braille_rule_stats',
@@ -46,6 +47,7 @@ export function loadSettings() {
     scale: localStorage.getItem(KEYS.scale) || 'normal',
     tts: localStorage.getItem(KEYS.tts) !== 'false',
     pitch: localStorage.getItem(KEYS.pitch) !== 'false',
+    doubleClickAnswer: localStorage.getItem(KEYS.doubleClickAnswer) === 'true',
     sfx: localStorage.getItem(KEYS.sfx) !== 'false',
     emboss: localStorage.getItem(KEYS.emboss) || 'embossed'
   };
@@ -62,6 +64,7 @@ export function saveSettings(partial = {}) {
   if (scale != null) next.scale = scale;
   if (typeof partial.tts === 'boolean') next.tts = partial.tts;
   if (typeof partial.pitch === 'boolean') next.pitch = partial.pitch;
+  if (typeof partial.doubleClickAnswer === 'boolean') next.doubleClickAnswer = partial.doubleClickAnswer;
   if (typeof partial.sfx === 'boolean') next.sfx = partial.sfx;
   if (partial.emboss) next.emboss = partial.emboss;
 
@@ -72,6 +75,7 @@ export function saveSettings(partial = {}) {
   localStorage.setItem(KEYS.scale, next.scale);
   localStorage.setItem(KEYS.tts, String(next.tts));
   localStorage.setItem(KEYS.pitch, String(next.pitch));
+  localStorage.setItem(KEYS.doubleClickAnswer, String(next.doubleClickAnswer));
   localStorage.setItem(KEYS.sfx, String(next.sfx));
   localStorage.setItem(KEYS.emboss, next.emboss);
   applyVisualSettings(next);
@@ -82,6 +86,41 @@ export function normalizeTheme(theme) {
   if (theme === 'yellow') return 'hc-yellow';
   if (theme === 'bw') return 'hc-white-black';
   return theme;
+}
+
+const DOUBLE_CLICK_MS = 500;
+
+// 켜져 있으면 선택지를 더블 클릭할 때 누른 항목 대신 정답을 고른다.
+// 한 번 클릭은 그대로 그 선택지를 고르되, 더블 클릭과 겹치지 않게 잠시 기다린다.
+export function bindChoiceClick(element, onSingle, onDoubleCorrect) {
+  let timer = null;
+  const clearTimer = () => {
+    if (!timer) return;
+    clearTimeout(timer);
+    timer = null;
+  };
+  element.addEventListener('click', (event) => {
+    if (!loadSettings().doubleClickAnswer) {
+      onSingle();
+      return;
+    }
+    if (event.detail > 1) {
+      clearTimer();
+      return;
+    }
+    clearTimer();
+    const wait = event.detail ? DOUBLE_CLICK_MS : 50;
+    timer = setTimeout(() => {
+      timer = null;
+      onSingle();
+    }, wait);
+  });
+  element.addEventListener('dblclick', (event) => {
+    if (!loadSettings().doubleClickAnswer) return;
+    event.preventDefault();
+    clearTimer();
+    onDoubleCorrect();
+  });
 }
 
 export function applyVisualSettings(settings = loadSettings()) {

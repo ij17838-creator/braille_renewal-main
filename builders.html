@@ -22,13 +22,97 @@
       --braille-word-gap: 0.35em;
       --ui-text-scale: 1;
       --target-word-size: 2.25rem;
+      --prompt-braille-size: 4rem;
+      --choice-text-size: 1.125rem;
     }
 
-    body.text-scale-normal { --ui-text-scale: 1; --target-word-size: 2.25rem; }
-    body.text-scale-large { --ui-text-scale: 1.25; --target-word-size: 2.85rem; }
-    body.text-scale-xlarge { --ui-text-scale: 1.5; --target-word-size: 3.5rem; }
+    body.text-scale-normal { --ui-text-scale: 1; --target-word-size: 2.25rem; --prompt-braille-size: 4rem; --choice-text-size: 1.125rem; }
+    body.text-scale-large { --ui-text-scale: 1.25; --target-word-size: 2.85rem; --prompt-braille-size: 4.5rem; --choice-text-size: 1.3rem; }
+    body.text-scale-xlarge { --ui-text-scale: 1.5; --target-word-size: 3.5rem; --prompt-braille-size: 5rem; --choice-text-size: 1.45rem; }
 
-    #target-prompt-text { font-size: var(--target-word-size) !important; line-height: 1.25; }
+    #target-prompt-text { font-size: 0.95rem !important; font-weight: 600; line-height: 1.4; }
+    #target-braille-preview .braille-word { font-size: var(--prompt-braille-size); line-height: 1; }
+
+    /* 문제와 작업대는 내용 높이만 쓰고, 뜻 블록이 패널 높이의 일정 몫을 받는다 */
+    body:has(#workbench-container) main.max-w-4xl > section {
+      flex: 1 1 auto;
+      min-height: 0;
+      gap: 0.6rem;
+      padding-top: 0.75rem;
+      padding-bottom: 0.7rem;
+    }
+
+    body:has(#workbench-container) main.max-w-4xl > section > div:first-child {
+      padding-top: 0.7rem;
+      padding-bottom: 0.55rem;
+    }
+
+    body:has(#workbench-container) #target-braille-preview {
+      min-height: 4.85rem;
+      margin-top: 0.35rem;
+    }
+
+    body:has(#workbench-container) main.max-w-4xl > footer {
+      flex: 0 0 auto;
+      height: clamp(14rem, 36%, 19rem);
+    }
+
+    #workbench-container {
+      flex: none;
+      padding: 0.65rem 0.85rem;
+    }
+
+    #workbench-slots {
+      min-height: 2.75rem;
+    }
+
+    #workbench-container .border-t {
+      margin-top: 0.45rem;
+      padding-top: 0.4rem;
+    }
+
+    /* 선택지 크기는 뜻 블록 칸의 높이를 따르고, 한눈에 편한 선에서 멈춘다 */
+    #block-pool-container {
+      container-type: size;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: center;
+      align-content: center;
+      justify-items: stretch;
+      gap: 0.6rem;
+      padding: 0.7rem;
+    }
+
+    #block-pool-container .choice-chip {
+      width: 100%;
+      min-height: clamp(2.9rem, 42cqh, 4.35rem);
+      padding: 0.6rem 0.95rem;
+      justify-content: center;
+      text-align: center;
+    }
+
+    @media (min-width: 960px) {
+      #block-pool-container {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      #block-pool-container .choice-chip {
+        min-height: clamp(3.35rem, 62cqh, 5.25rem);
+      }
+    }
+
+    #block-pool-container .choice-index {
+      font-size: clamp(0.75rem, 8cqh, 0.95rem);
+      line-height: 1;
+    }
+
+    #block-pool-container .choice-label {
+      font-size: var(--choice-text-size);
+      font-size: clamp(var(--choice-text-size), 18cqh, calc(var(--choice-text-size) * 1.16));
+      line-height: 1.25;
+    }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -298,16 +382,16 @@
             </span>
           </div>
           
-          <h2 id="target-prompt-text" class="font-black text-slate-800 drop-shadow-xs break-all">
+          <h2 id="target-prompt-text" class="font-semibold text-slate-500 mt-1">
             문제를 불러오는 중입니다...
           </h2>
 
-          <!-- 파이썬 파서가 생성한 target_braille 미리보기 시각화 -->
-          <div id="target-braille-preview" class="mt-2 min-h-[44px] flex items-center justify-center"></div>
+          <!-- 문제로 제시되는 점형. 안내 문구보다 크게 보여 준다 -->
+          <div id="target-braille-preview" class="mt-2 min-h-[5.5rem] flex items-center justify-center text-slate-900 py-1"></div>
         </div>
 
         <!-- 조립 작업대 (Workbench) -->
-        <div id="workbench-container" class="flex-1 bg-indigo-50/50 rounded-2xl border-2 border-dashed border-indigo-300 p-4 flex flex-col justify-between shadow-inner transition-colors">
+        <div id="workbench-container" class="bg-indigo-50/50 rounded-2xl border-2 border-dashed border-indigo-300 p-3 flex flex-col justify-between shadow-inner transition-colors">
           <div class="flex justify-between items-center mb-2">
             <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
               <span>🛠️ 조립 작업대</span>
@@ -317,7 +401,7 @@
           </div>
 
           <!-- 배치된 블록 시퀀스 슬롯 -->
-          <div id="workbench-slots" class="flex flex-wrap items-center justify-center gap-2 min-h-[64px] p-2 bg-white/80 rounded-xl border border-indigo-100 shadow-xs">
+          <div id="workbench-slots" class="flex flex-wrap items-center justify-center gap-2 min-h-12 p-2 bg-white/80 rounded-xl border border-indigo-100 shadow-xs">
             <span class="text-slate-400 text-xs font-semibold">제시된 점형에 알맞은 뜻 블록을 하나 선택하세요.</span>
           </div>
 
@@ -335,14 +419,14 @@
       </section>
 
       <!-- 3. 하단 블록 풀 (Pool) & 정답 검증 제출 버튼 -->
-      <footer class="p-4 border-t border-white/60 bg-slate-50/90 rounded-b-3xl shrink-0 flex flex-col gap-3">
+      <footer class="p-4 border-t border-white/60 bg-slate-50/90 rounded-b-3xl shrink-0 flex flex-col gap-3 min-h-0">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-slate-600">뜻 블록</span>
           <span class="text-[11px] font-semibold text-slate-400">키보드 [1~9], Enter 지원</span>
         </div>
 
         <!-- 블록 선택 풀 컨테이너 -->
-        <div id="block-pool-container" class="flex flex-wrap items-center justify-center gap-2 min-h-[64px] p-2 bg-white/70 rounded-2xl border border-slate-200 shadow-sm">
+        <div id="block-pool-container" class="bg-white/70 rounded-2xl border border-slate-200 shadow-sm">
           <!-- 동적 주입 -->
         </div>
 
@@ -432,6 +516,13 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
+          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
+            <span class="flex flex-col items-start gap-0.5">
+              <span>더블 클릭 시 정답 선택</span>
+              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
+            </span>
+            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
+          </label>
         </div>
       </div>
 
@@ -443,7 +534,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick } from './shell.js';
 
     // =========================================================================
     // 1. 상태 저장소 & 프론트엔드/파이썬 통신 인터페이스 (State & Bridge)
@@ -531,7 +622,7 @@
     // 점자 유니코드(U+2800~U+28FF) 6점 도트 렌더러
     function renderBrailleHTML(text) {
       if (!text) return '';
-      let html = `<div class="braille-word text-2xl">`;
+      let html = `<div class="braille-word">`;
       for (let i = 0; i < text.length; i++) {
         const charCode = text.charCodeAt(i);
         if (charCode >= 0x2800 && charCode <= 0x28FF) {
@@ -625,16 +716,31 @@
 
       state.currentQuiz.available_blocks.forEach((text, idx) => {
         const btn = document.createElement('button');
-        btn.className = 'glass-button px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-sm transition-all active:scale-95';
+        btn.className = 'choice-chip glass-button rounded-2xl flex items-center gap-2 font-bold shadow-sm transition-all active:scale-95';
         btn.innerHTML = `
-          <span class="text-xs text-slate-400 font-mono">[${idx + 1}]</span>
-          <span class="text-base text-slate-800">${text}</span>
+          <span class="choice-index text-slate-400 font-mono">[${idx + 1}]</span>
+          <span class="choice-label text-slate-800">${text}</span>
         `;
         btn.setAttribute('aria-label', `선택지 ${idx + 1}번, 블록 내용 ${text}`);
         
-        btn.addEventListener('click', () => pickBlock(text, idx, btn));
+        bindChoiceClick(
+          btn,
+          () => pickBlock(text, idx, btn),
+          () => chooseCorrectBlock()
+        );
         container.appendChild(btn);
       });
+    }
+
+    function chooseCorrectBlock() {
+      const quiz = state.currentQuiz;
+      if (!quiz || !Array.isArray(quiz.available_blocks)) return;
+      const correct = quiz.target_text || '';
+      const correctIdx = quiz.available_blocks.indexOf(correct);
+      const poolBtns = document.querySelectorAll('#block-pool-container button');
+      if (correctIdx < 0 || !poolBtns[correctIdx]) return;
+      pickBlock(correct, correctIdx, poolBtns[correctIdx]);
+      handleVerifyClick();
     }
 
     function pickBlock(blockText, poolIdx, btnElem) {
@@ -923,7 +1029,8 @@
       theme: storedModal.theme,
       scale: storedModal.scale,
       tts: storedModal.tts,
-      pitch: storedModal.pitch
+      pitch: storedModal.pitch,
+      doubleClickAnswer: storedModal.doubleClickAnswer
     };
 
         function normalizeTheme(theme) {
@@ -947,8 +1054,10 @@
 
       const ttsChk = document.getElementById('chk-modal-tts');
       const pitchChk = document.getElementById('chk-modal-pitch');
+      const dblChk = document.getElementById('chk-dbl-answer');
       if (ttsChk) ttsChk.checked = globalSettings.tts;
       if (pitchChk) pitchChk.checked = globalSettings.pitch;
+      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
     }
 
     if (openSettingsBtn) {
@@ -966,14 +1075,17 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
+        const dblChk = document.getElementById('chk-dbl-answer');
         if (ttsChk) globalSettings.tts = ttsChk.checked;
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
+        if (dblChk) globalSettings.doubleClickAnswer = dblChk.checked;
 
         persistSettings({
           theme: globalSettings.theme,
           scale: globalSettings.scale,
           tts: globalSettings.tts,
-          pitch: globalSettings.pitch
+          pitch: globalSettings.pitch,
+          doubleClickAnswer: globalSettings.doubleClickAnswer
         });
 
         applyVisualSettings();

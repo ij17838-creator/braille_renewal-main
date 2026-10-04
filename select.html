@@ -382,6 +382,13 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
+          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
+            <span class="flex flex-col items-start gap-0.5">
+              <span>더블 클릭 시 정답 선택</span>
+              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
+            </span>
+            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
+          </label>
         </div>
       </div>
 
@@ -393,7 +400,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick } from './shell.js';
 
     // 1. UEB / 한글 규칙 라벨 매퍼
     const RULE_LABELS = {
@@ -703,13 +710,27 @@
         `;
 
         cardBtn.addEventListener('mouseenter', () => playSound('hover'));
-        cardBtn.addEventListener('click', () => handleOptionSelect(opt, cardBtn));
+        bindChoiceClick(
+          cardBtn,
+          () => handleOptionSelect(opt, cardBtn),
+          () => chooseCorrectCard()
+        );
 
         grid.appendChild(cardBtn);
       });
     }
 
     // 7. 정답 판정 및 허브 통신
+    function chooseCorrectCard() {
+      const options = state.currentQuiz && state.currentQuiz.options;
+      if (!options) return;
+      const correctIndex = options.findIndex((item) => item.isCorrect);
+      const cards = document.querySelectorAll('#card-selection-grid button');
+      if (correctIndex >= 0 && cards[correctIndex]) {
+        handleOptionSelect(options[correctIndex], cards[correctIndex]);
+      }
+    }
+
     function handleOptionSelect(option, cardElement) {
       if (!stage.canAnswer() || state.isAnsweringLocked) return;
       state.isAnsweringLocked = true;
@@ -920,7 +941,8 @@
       theme: storedModal.theme,
       scale: storedModal.scale,
       tts: storedModal.tts,
-      pitch: storedModal.pitch
+      pitch: storedModal.pitch,
+      doubleClickAnswer: storedModal.doubleClickAnswer
     };
 
         function applyVisualSettings() {
@@ -938,8 +960,10 @@
 
       const ttsChk = document.getElementById('chk-modal-tts');
       const pitchChk = document.getElementById('chk-modal-pitch');
+      const dblChk = document.getElementById('chk-dbl-answer');
       if (ttsChk) ttsChk.checked = globalSettings.tts;
       if (pitchChk) pitchChk.checked = globalSettings.pitch;
+      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
     }
 
     if (openSettingsBtn) {
@@ -957,14 +981,17 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
+        const dblChk = document.getElementById('chk-dbl-answer');
         if (ttsChk) globalSettings.tts = ttsChk.checked;
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
+        if (dblChk) globalSettings.doubleClickAnswer = dblChk.checked;
 
         persistSettings({
           theme: globalSettings.theme,
           scale: globalSettings.scale,
           tts: globalSettings.tts,
-          pitch: globalSettings.pitch
+          pitch: globalSettings.pitch,
+          doubleClickAnswer: globalSettings.doubleClickAnswer
         });
 
         applyVisualSettings();

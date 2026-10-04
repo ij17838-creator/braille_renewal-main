@@ -435,6 +435,13 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
+          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
+            <span class="flex flex-col items-start gap-0.5">
+              <span>더블 클릭 시 정답 선택</span>
+              <span class="text-[10px] font-medium text-slate-500">이 게임에는 적용되지 않습니다.</span>
+            </span>
+            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
+          </label>
         </div>
       </div>
 
@@ -861,7 +868,8 @@
       theme: storedModal.theme,
       scale: storedModal.scale,
       tts: storedModal.tts,
-      pitch: storedModal.pitch
+      pitch: storedModal.pitch,
+      doubleClickAnswer: storedModal.doubleClickAnswer
     };
 
         function normalizeTheme(theme) {
@@ -885,8 +893,10 @@
 
       const ttsChk = document.getElementById('chk-modal-tts');
       const pitchChk = document.getElementById('chk-modal-pitch');
+      const dblChk = document.getElementById('chk-dbl-answer');
       if (ttsChk) ttsChk.checked = globalSettings.tts;
       if (pitchChk) pitchChk.checked = globalSettings.pitch;
+      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
     }
 
     if (openSettingsBtn) {
@@ -904,6 +914,7 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
+        const dblChk = document.getElementById('chk-dbl-answer');
         if (ttsChk) {
           globalSettings.tts = ttsChk.checked;
           appState.tts = ttsChk.checked;
@@ -912,13 +923,15 @@
           globalSettings.pitch = pitchChk.checked;
           appState.pitch = pitchChk.checked;
         }
+        if (dblChk) globalSettings.doubleClickAnswer = dblChk.checked;
         if (!appState.tts && window.speechSynthesis) window.speechSynthesis.cancel();
 
         persistSettings({
           theme: globalSettings.theme,
           scale: globalSettings.scale,
           tts: globalSettings.tts,
-          pitch: globalSettings.pitch
+          pitch: globalSettings.pitch,
+          doubleClickAnswer: globalSettings.doubleClickAnswer
         });
 
         applyVisualSettings();

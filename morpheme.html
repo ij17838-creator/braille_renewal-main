@@ -368,6 +368,13 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
+          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
+            <span class="flex flex-col items-start gap-0.5">
+              <span>더블 클릭 시 정답 선택</span>
+              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
+            </span>
+            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
+          </label>
         </div>
       </div>
 
@@ -379,7 +386,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick } from './shell.js';
 
     // 1. 상태 객체
     const urlParams = new URLSearchParams(window.location.search);
@@ -397,6 +404,7 @@
       scale: stored.scale,
       tts: stored.tts,
       pitch: stored.pitch,
+      doubleClickAnswer: stored.doubleClickAnswer,
       unitId: urlParams.get('unit') || ''
     };
 
@@ -569,13 +577,27 @@
         `;
 
         cardBtn.addEventListener('mouseenter', () => playSound('hover'));
-        cardBtn.addEventListener('click', () => handleSelectOption(opt, cardBtn));
+        bindChoiceClick(
+          cardBtn,
+          () => handleSelectOption(opt, cardBtn),
+          () => chooseCorrectCard()
+        );
 
         grid.appendChild(cardBtn);
       });
     }
 
     // 6. 판정 및 통계 기록
+    function chooseCorrectCard() {
+      const options = appState.currentQuiz && appState.currentQuiz.options;
+      if (!options) return;
+      const correctIndex = options.findIndex((item) => item.isCorrect);
+      const cards = document.querySelectorAll('#card-grid button');
+      if (correctIndex >= 0 && cards[correctIndex]) {
+        handleSelectOption(options[correctIndex], cards[correctIndex]);
+      }
+    }
+
     function handleSelectOption(option, cardElement) {
       if (!stage.canAnswer() || appState.isAnsweringLocked) return;
       appState.isAnsweringLocked = true;
@@ -679,13 +701,15 @@
     document.getElementById('btn-settings').onclick = () => {
       document.getElementById('chk-tts').checked = appState.tts;
       document.getElementById('chk-pitch').checked = appState.pitch;
+      document.getElementById('chk-dbl-answer').checked = appState.doubleClickAnswer;
       settingsModal.classList.remove('hidden');
     };
     document.getElementById('btn-settings-close').onclick = () => settingsModal.classList.add('hidden');
     document.getElementById('btn-save-settings').onclick = () => {
       appState.tts = document.getElementById('chk-tts').checked;
       appState.pitch = document.getElementById('chk-pitch').checked;
-      persistSettings({ tts: appState.tts, pitch: appState.pitch, theme: appState.theme, scale: appState.scale });
+      appState.doubleClickAnswer = document.getElementById('chk-dbl-answer').checked;
+      persistSettings({ tts: appState.tts, pitch: appState.pitch, doubleClickAnswer: appState.doubleClickAnswer, theme: appState.theme, scale: appState.scale });
       if (!appState.tts && window.speechSynthesis) window.speechSynthesis.cancel();
       settingsModal.classList.add('hidden');
       applyVisualSettings();

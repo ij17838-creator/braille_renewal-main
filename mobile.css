@@ -122,8 +122,17 @@
   }
 
   body:has(#workbench-container) #target-prompt-text {
-    font-size: 1.2rem !important;
+    font-size: 0.85rem !important;
     line-height: 1.35 !important;
+  }
+
+  body:has(#workbench-container).text-scale-normal { --prompt-braille-size: 2.85rem; --choice-text-size: 1.05rem; }
+  body:has(#workbench-container).text-scale-large { --prompt-braille-size: 3.25rem; --choice-text-size: 1.15rem; }
+  body:has(#workbench-container).text-scale-xlarge { --prompt-braille-size: 3.6rem; --choice-text-size: 1.25rem; }
+
+  body:has(#workbench-container) #target-braille-preview {
+    min-height: 5.5rem !important;
+    margin-top: 0.35rem !important;
   }
 
   #workbench-container {
@@ -143,7 +152,20 @@
     display: none;
   }
 
-  #block-pool-container button,
+  body:has(#workbench-container) main.max-w-4xl > footer {
+    height: clamp(10.5rem, 34%, 14.5rem);
+  }
+
+  #block-pool-container {
+    gap: 0.45rem !important;
+    padding: 0.5rem !important;
+  }
+
+  #block-pool-container .choice-chip {
+    min-height: clamp(2.7rem, 32cqh, 3.7rem);
+    padding: 0.45rem 0.65rem;
+  }
+
   #btn-submit-build {
     min-height: 2.75rem;
   }
