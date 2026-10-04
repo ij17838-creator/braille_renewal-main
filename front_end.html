@@ -126,18 +126,44 @@
       color: var(--hc-text) !important;
       border: 2px solid var(--hc-border) !important;
     }
-    :root[data-theme] button {
+    :root[data-theme] button:not(.theme-btn):not(.modal-theme-btn) {
       background-color: var(--hc-bg) !important;
       color: var(--hc-text) !important;
       border: 2px solid var(--hc-border) !important;
     }
-    :root[data-theme] button:hover:not(:disabled) {
+    :root[data-theme] button:not(.theme-btn):not(.modal-theme-btn):hover:not(:disabled) {
       background-color: var(--hc-text) !important;
       color: var(--hc-bg) !important;
       border-color: var(--hc-accent) !important;
     }
-    :root[data-theme] button:hover:not(:disabled) * {
+    :root[data-theme] button:not(.theme-btn):not(.modal-theme-btn):hover:not(:disabled) * {
       color: var(--hc-bg) !important;
+    }
+
+    /* 고대비 프리셋 버튼은 적용될 배경·글자색을 그대로 보여 준다 */
+    button.theme-btn[data-theme="hc-yellow"],
+    button.modal-theme-btn[data-theme="hc-yellow"] {
+      background-color: #000000 !important;
+      color: #ffff00 !important;
+      border: 2px solid #ffff00 !important;
+    }
+    button.theme-btn[data-theme="hc-white-black"],
+    button.modal-theme-btn[data-theme="hc-white-black"] {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border: 2px solid #ffffff !important;
+    }
+    button.theme-btn[data-theme="hc-black-white"],
+    button.modal-theme-btn[data-theme="hc-black-white"] {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      border: 2px solid #000000 !important;
+    }
+    button.theme-btn[data-theme="hc-amber"],
+    button.modal-theme-btn[data-theme="hc-amber"] {
+      background-color: #090a0f !important;
+      color: #fde047 !important;
+      border: 2px solid #facc15 !important;
     }
     :root[data-theme] div,
     :root[data-theme] p,
@@ -467,10 +493,10 @@
         <div>
           <span class="text-xs font-bold text-slate-600 block mb-1">고대비 테마 프리셋</span>
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-yellow">옐로우 온 블랙</button>
-            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-white-black">화이트 온 블랙</button>
-            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-black-white">블랙 온 화이트</button>
-            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold bg-white text-slate-800" data-theme="hc-amber">앰버 네온</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold" data-theme="hc-yellow">옐로우 온 블랙</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold" data-theme="hc-white-black">화이트 온 블랙</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold" data-theme="hc-black-white">블랙 온 화이트</button>
+            <button type="button" class="theme-btn py-2 rounded-xl border text-xs font-bold" data-theme="hc-amber">앰버 네온</button>
           </div>
         </div>
 
