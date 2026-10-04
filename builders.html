@@ -728,12 +728,6 @@
       }
     }
 
-        // 단원 문제의 해설은 조립 순서다. 단원 밖 문제에는 붙이지 않는다.
-        function unitExplanation(quiz) {
-          if (!state.unitId || !quiz || !quiz.explanation) return '';
-          return `해설: ${quiz.explanation.replace(/\.$/, '')}. `;
-        }
-
         function applyVerificationResult(resultData) {
           state.isVerifying = false;
           const workbench = document.getElementById('workbench-container');
@@ -748,17 +742,16 @@
             if (!outcome.consumed) return;
             speak(`정답입니다! 연속 ${state.combo}콤보 달성.`);
 
-            const steps = unitExplanation(state.currentQuiz);
             document.getElementById('workbench-status-desc').textContent = outcome.stageDone
-              ? `스테이지를 모두 풀었습니다. ${steps}학습 결과를 확인하세요.`
-              : `규칙 검증 통과! ${steps}다음 문제를 준비합니다.`;
+              ? '스테이지를 모두 풀었습니다. 학습 결과를 확인하세요.'
+              : '규칙 검증 통과! 다음 문제를 준비합니다.';
             workbench.classList.add('animate-pop', 'bg-emerald-50', 'border-emerald-400');
 
             setTimeout(() => {
               workbench.classList.remove('animate-pop', 'bg-emerald-50', 'border-emerald-400');
               if (outcome.stageDone) stage.showResult();
               else showNextQuiz();
-            }, state.unitId ? 2200 : 750);
+            }, 750);
           } else {
         playSound('wrong');
         const failRule = resultData.ruleViolated || state.currentQuiz.meta?.type || "점자 규칙 오인";
@@ -770,19 +763,18 @@
         const outcome = stage.onAnswer(false, 0);
         if (!outcome.consumed) return;
         const answerText = state.currentQuiz.target_text || '';
-        const steps = unitExplanation(state.currentQuiz);
-        speak(`오답입니다. 정답은 ${answerText} 입니다. ${steps.replace(/[\u2800-\u28FF]/g, '')}`);
+        speak(`오답입니다. 정답은 ${answerText} 입니다.`);
 
         document.getElementById('workbench-status-desc').textContent = outcome.stageDone
-          ? `오답입니다. 정답: ${answerText}. ${steps}학습 결과를 확인하세요.`
-          : `오답입니다. 정답: ${answerText}. ${steps}`;
+          ? `오답입니다. 정답: ${answerText}. 학습 결과를 확인하세요.`
+          : `오답입니다. 정답: ${answerText}.`;
         workbench.classList.add('animate-shake', 'bg-rose-50', 'border-rose-400');
 
         setTimeout(() => {
           workbench.classList.remove('animate-shake', 'bg-rose-50', 'border-rose-400');
           if (outcome.stageDone) stage.showResult();
           else showNextQuiz();
-        }, state.unitId ? 4500 : 1100);
+        }, 1100);
       }
     }
 

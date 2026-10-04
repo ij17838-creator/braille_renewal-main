@@ -112,6 +112,10 @@
       background: rgba(99, 102, 241, 0.18);
       box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
     }
+    #sentence-card.answer-correct {
+      background-color: #d1fae5 !important;
+      border-color: #10b981 !important;
+    }
 
         /* 고대비 색상 팔레트 모듈 */
     :root[data-theme="hc-yellow"] {
@@ -297,7 +301,7 @@
           <span id="clue-text">데이터를 불러오는 중입니다...</span>
         </div>
 
-        <div class="w-full max-w-xl bg-white/70 p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center justify-center min-h-[140px]">
+        <div id="sentence-card" class="w-full max-w-xl bg-white/70 p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center justify-center min-h-[140px]">
           <div id="sentence-container" class="text-xl sm:text-2xl font-black text-slate-800 leading-relaxed flex flex-wrap items-center justify-center gap-1"></div>
         </div>
 
@@ -371,20 +375,11 @@
           <div class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           </div>
-          <h3 class="text-base font-black text-rose-900">구문 규칙 진단 리포트</h3>
+          <h3 class="text-base font-black text-rose-900">정답 점형</h3>
         </div>
-        <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">위반 탐지</span>
       </div>
 
       <div class="py-4 flex flex-col gap-3 text-left">
-        <div>
-          <span class="text-[11px] font-bold text-slate-400 uppercase">위반/적용 규칙</span>
-          <p id="report-rule-name" class="text-sm font-black text-rose-700">-</p>
-        </div>
-        <div class="bg-rose-50/70 p-3 rounded-xl border border-rose-100">
-          <span class="text-[11px] font-bold text-rose-950 block mb-1">상세 진단 내용</span>
-          <p id="report-rule-detail" class="text-xs text-rose-800 leading-relaxed font-medium">-</p>
-        </div>
         <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
           <span class="font-bold text-slate-600">올바른 표준 점형:</span>
           <div id="report-correct-braille" class="flex items-center"></div>
@@ -630,6 +625,7 @@
       assembledBlocks = [];
       activeDots.clear();
       updateDotKeyUI();
+      document.getElementById('sentence-card').classList.remove('answer-correct');
 
       document.getElementById('case-type-badge').textContent = q.category || '점형 입력';
       document.getElementById('clue-text').textContent = '이 뜻에 맞는 점형을 입력하세요';
@@ -637,17 +633,7 @@
 
       document.getElementById('sentence-container').innerHTML = `
         <span class="text-3xl sm:text-4xl">${q.target_text || ''}</span>
-        <div class="blank-slot active cursor-pointer" id="investigation-blank" title="클릭 시 입력 초기화">
-          <span class="text-sm text-indigo-500 font-bold" id="blank-inner-text">[ 점형 입력 ]</span>
-        </div>
       `;
-
-      document.getElementById('investigation-blank').onclick = () => {
-        activeDots.clear();
-        currentInputBraille = "";
-        updateDotKeyUI();
-        renderLiveDotPreview();
-      };
 
       document.getElementById('user-input-dots').innerHTML = "";
       document.getElementById('keyboard-dock').classList.remove('hidden');
@@ -677,6 +663,7 @@
 
     function updateBlockSlotDisplay() {
       const inner = document.getElementById('blank-inner-text');
+      if (!inner) return;
       inner.textContent = assembledBlocks.length > 0 ? assembledBlocks.join("") : "[ 단서 블록 선택 ]";
     }
 
@@ -723,7 +710,6 @@
     }
 
     function renderLiveDotPreview() {
-      const inner = document.getElementById('blank-inner-text');
       let previewDots = "";
       if (activeDots.size > 0) {
         let pat = 0;
@@ -732,13 +718,8 @@
       }
 
       const totalBraille = currentInputBraille + previewDots;
-      if (totalBraille.length > 0) {
-        inner.innerHTML = renderBrailleHTML(totalBraille);
-        document.getElementById('user-input-dots').innerHTML = renderBrailleHTML(totalBraille);
-      } else {
-        inner.textContent = "[ 점형 입력 ]";
-        document.getElementById('user-input-dots').innerHTML = "";
-      }
+      const preview = document.getElementById('user-input-dots');
+      preview.innerHTML = totalBraille.length > 0 ? renderBrailleHTML(totalBraille) : "";
     }
 
     // 키보드 이벤트
@@ -811,7 +792,7 @@
       if (isCorrect) {
         if (appState.pitch && sfxCorrect) sfxCorrect.triggerAttackRelease("C5", "8n");
         speak(outcome.stageDone ? "정답입니다. 스테이지 학습 결과를 확인하세요." : "정답입니다! 올바른 규칙을 준수한 단서입니다.");
-        document.getElementById('investigation-blank').classList.add('bg-emerald-100', 'border-emerald-500');
+        document.getElementById('sentence-card').classList.add('answer-correct');
 
         setTimeout(() => {
           if (outcome.stageDone) stage.showResult();
@@ -826,16 +807,11 @@
     }
 
     function showRuleReport(q, stageDone) {
-      const ra = q.rule_analysis || {};
-      const ruleDetail = ra.detail || "해당 어휘의 점자 결합 규칙을 다시 확인하세요.";
-
       blankStageDone = !!stageDone;
-      document.getElementById('report-rule-name').textContent = ra.rule_name || "표준 점역 규칙 위반";
-      document.getElementById('report-rule-detail').textContent = ruleDetail;
       document.getElementById('report-correct-braille').innerHTML = renderBrailleHTML(q.target_braille || "");
       document.getElementById('btn-close-report').textContent = stageDone ? '학습 결과 보기' : '다음 단서';
       document.getElementById('validator-report-modal').classList.remove('hidden');
-      speak(`규칙 위반 탐지. ${ruleDetail.replace(/[\u2800-\u28FF]/g, '')}`);
+      speak("오답입니다.");
     }
 
     function navigateBack() {

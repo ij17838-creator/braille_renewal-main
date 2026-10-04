@@ -575,13 +575,6 @@
     }
 
     // 6. 판정 및 통계 기록
-    // 단원 문제의 해설은 조립 순서다. 점자 기호는 음성에서 뺀다.
-    function showExplanation(q) {
-      if (!appState.unitId || !q || !q.explanation) return '';
-      document.getElementById('target-prompt-hint').textContent = `해설: ${q.explanation}`;
-      return q.explanation.replace(/[\u2800-\u28FF]/g, '');
-    }
-
     function handleSelectOption(option, cardElement) {
       if (!stage.canAnswer() || appState.isAnsweringLocked) return;
       appState.isAnsweringLocked = true;
@@ -596,7 +589,6 @@
         const outcome = stage.onAnswer(true, appState.combo);
         if (!outcome.consumed) return;
         speak(`정답입니다! 연속 ${appState.combo}콤보 달성.`);
-        showExplanation(appState.currentQuiz);
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
         allCards.forEach(c => c.disabled = true);
@@ -605,15 +597,14 @@
         setTimeout(() => {
           if (outcome.stageDone) stage.showResult();
           else renderNextQuiz();
-        }, appState.unitId ? 2200 : 1100);
+        }, 1100);
       } else {
         playSound('wrong');
         appState.combo = 0;
         updateTitleBadge();
         const outcome = stage.onAnswer(false, 0);
         if (!outcome.consumed) return;
-        const spoken = showExplanation(appState.currentQuiz);
-        speak(spoken ? `오답입니다. ${spoken}` : "오답입니다. 올바른 점형을 확인하세요.");
+        speak("오답입니다. 올바른 점형을 확인하세요.");
 
         cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90');
         allCards.forEach((c, i) => {
@@ -627,7 +618,7 @@
         setTimeout(() => {
           if (outcome.stageDone) stage.showResult();
           else renderNextQuiz();
-        }, appState.unitId ? 4500 : 1200);
+        }, 1200);
       }
     }
 
