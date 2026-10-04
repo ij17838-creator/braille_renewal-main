@@ -34,10 +34,14 @@ class KoreanBrailleEngine:
         self.numbers = numbers_data
         self.num_rules = number_rules or {}
         self.lexicon = lexicon_data or {}
+        # 된소리표는 ko.json 초성 ㄲ·ㄸ·ㅃ·ㅆ·ㅉ의 점형에서 읽는다.
+        self._load_tensers()
 
-        # 1. 단어 약어 (그리고, 그러나 등)
+        # 1. 단어 약어 (그리고, 그러나 등). 위치는 standalone.
         self.word_abbr = {k: v["unicode"] for k, v in self.ko.get("abbreviation_word", {}).get("items", {}).items()}
         self.rev_word_abbr = {v: k for k, v in self.word_abbr.items()}
+        self.word_abbr_sorted = sorted(self.word_abbr.items(), key=lambda item: len(item[0]), reverse=True)
+        self.rev_word_abbr_sorted = sorted(self.rev_word_abbr.items(), key=lambda item: len(item[0]), reverse=True)
         # 같은 점형에 뜻이 둘 이상이면 문맥 태그와 함께 쌓는다. 나중 항목이 앞 항목을 덮지 않는다.
         self.rev_uses = {}
 
@@ -72,9 +76,14 @@ class KoreanBrailleEngine:
         self.yeong_unicode = yeong.get("unicode", "")
         self.yeong_override_initials = set(yeong_override.get("initials", []))
         self.yeong_surface_vowel = yeong_override.get("surface_vowel", "ㅓ")
+        self.yeong_surface_jong = yeong_override.get("surface_jong", "ㅇ")
+        yeong_parts = self.decompose("영")
+        # 약자 '영'을 풀어 쓸 때의 모음. 셩·졍·쳥은 이 모음으로 적고 약자를 쓰지 않는다.
+        self.yeong_spell_jung = yeong_parts[1] if yeong_parts else "ㅕ"
         geot = syllable_items.get("것", {})
         self.geot_unicode = geot.get("unicode", "")
         self.geot_tensed = set(geot.get("tensed_same_abbreviation", []))
+        self.geot_spell_out = self._geot_spell_out_syllables(geot)
 
         # 3. 기본 자모음 매핑
         self.chosung_map = {k: v["unicode"] for k, v in self.ko.get("chosung", {}).get("items", {}).items()}
@@ -138,9 +147,46 @@ class KoreanBrailleEngine:
         self.sorted_rev_roman_units = sorted(self.rev_roman_units.keys(), key=len, reverse=True)
 
         self._index_letter_uses()
+        self._index_abbreviation_uses()
 
         # 5. 문장부호
         self._init_punctuation()
+        # 단위어 점형은 음절 규칙이 준비된 뒤에 만든다.
+        self._build_exempt_unit_braille()
+
+    def _load_tensers(self):
+        """초성 항목의 점형이 ⠠ + 기본 자음이면 된소리로 읽는다."""
+        items = self.ko.get("chosung", {}).get("items", {})
+        plain = {}
+        tensed = {}
+        for char, item in items.items():
+            uni = item.get("unicode") or ""
+            if item.get("isOmitted") or not uni:
+                continue
+            if uni.startswith(self.TENSER_SIGN) and uni != self.TENSER_SIGN:
+                tensed[char] = uni
+            else:
+                plain[uni] = char
+        mapping = {}
+        for char, uni in tensed.items():
+            base = plain.get(uni[len(self.TENSER_SIGN):])
+            if base:
+                mapping[char] = base
+        if mapping:
+            self.TENSER_MAP = mapping
+            self.REV_TENSER_MAP = {base: char for char, base in mapping.items()}
+
+    def _geot_spell_out_syllables(self, geot: dict) -> set:
+        """'껐'은 것 약자에 된소리표를 붙이지 않고 꺼+받침 ㅆ으로 적는다."""
+        if not geot.get("ssang_jong_exception"):
+            return set()
+        parts = self.decompose("것")
+        if not parts:
+            return set()
+        tense_cho = self.REV_TENSER_MAP.get(parts[0])
+        if not tense_cho:
+            return set()
+        return {self.compose(tense_cho, parts[1], "ㅆ")}
 
     def _add_use(self, braille: str, text: str, context: str):
         if not braille or text is None:
@@ -172,6 +218,40 @@ class KoreanBrailleEngine:
             else:
                 context = "syllable_final"
             self._add_use(uni, char, context)
+
+    def _index_abbreviation_uses(self):
+        for word, uni in self.word_abbr.items():
+            self._add_use(uni, word, "standalone")
+        for syllable, uni in self.ga_series.items():
+            self._add_use(uni, syllable, "abbreviation")
+        for (jung, jong), uni in self.vowel_coda_series.items():
+            self._add_use(uni, self.compose("ㅇ", jung, jong), "abbreviation")
+        for syllable, uni in self.complete_syllables.items():
+            self._add_use(uni, syllable, "abbreviation")
+        for digit, uni in self.digits.items():
+            self._add_use(uni, digit, "numeric")
+        for unit, uni in self.roman_unit_symbols.items():
+            self._add_use(uni, unit, "after_number")
+
+    def _hangul_word_braille(self, text: str) -> str:
+        parts = []
+        for char in text:
+            parts_of = self.decompose(char)
+            if not parts_of:
+                return ""
+            cho, jung, jong = parts_of
+            braille, _ = self._translate_hangul_syllable_with_trace(cho, jung, jong, char)
+            parts.append(braille)
+        return "".join(parts)
+
+    def _build_exempt_unit_braille(self):
+        pairs = []
+        for unit in self.exempt_units_sorted:
+            braille = self._hangul_word_braille(unit)
+            if braille:
+                pairs.append((unit, braille))
+        pairs.sort(key=lambda item: (len(item[1]), len(item[0])), reverse=True)
+        self.exempt_unit_braille = pairs
 
     def _add_punct_sense(self, char: str, item: dict, category: str):
         uni = item["unicode"]
@@ -211,6 +291,18 @@ class KoreanBrailleEngine:
         for k, v in self.marks.get("closing_delimiters", {}).get("items", {}).items():
             self._add_punct_sense(k, v, "closing_delimiters")
 
+        # 같은 점형을 여는 태그와 닫는 태그가 나눠 쓰는 경우. <tn>과 </tn>은 둘 다 ⠠⠄다.
+        grouped = {}
+        for tag, item in self.marks.get("transcriber_and_formatting_tags", {}).get("items", {}).items():
+            grouped.setdefault(item["unicode"], []).append((tag, item.get("pairRole")))
+        self.toggle_tags = {}
+        for uni, entries in grouped.items():
+            opens = [tag for tag, role in entries if role == "open"]
+            closes = [tag for tag, role in entries if role == "close"]
+            if uni and len(opens) == 1 and len(closes) == 1:
+                self.toggle_tags[uni] = (opens[0], closes[0])
+        self.toggle_tag_sorted = sorted(self.toggle_tags.items(), key=lambda item: len(item[0]), reverse=True)
+
     @classmethod
     def decompose(cls, char: str) -> Optional[Tuple[str, str, str]]:
         code = ord(char) - 0xAC00
@@ -239,7 +331,6 @@ class KoreanBrailleEngine:
 
         in_number_mode = False
         quote_open = False
-        single_quote_open = False
 
         while i < n:
             ch = text[i]
@@ -267,24 +358,27 @@ class KoreanBrailleEngine:
             if matched_punct:
                 continue
 
-            # 3. 단어 약어 (독립 단어 여부 확인)
+            # 3. 단어 약어. ko.json position은 standalone이라 앞뒤가 한글 음절이면 풀어 적는다.
             matched_word = False
-            for w, b_code in self.word_abbr.items():
+            for w, b_code in self.word_abbr_sorted:
                 w_len = len(w)
-                if text[i:i+w_len] == w:
-                    next_c = text[i+w_len:i+w_len+1]
-                    if not (next_c and '가' <= next_c <= '힣'):
-                        out.append(b_code)
-                        in_number_mode = False
-                        traces.append({
-                            "token": w,
-                            "braille": b_code,
-                            "rule": "Word Abbreviation",
-                            "explanation": f"단어 약어 '{w}' 적용"
-                        })
-                        i += w_len
-                        matched_word = True
-                        break
+                if text[i:i+w_len] != w:
+                    continue
+                prev_c = text[i - 1] if i else ""
+                next_c = text[i + w_len:i + w_len + 1]
+                if (prev_c and "가" <= prev_c <= "힣") or (next_c and "가" <= next_c <= "힣"):
+                    break
+                out.append(b_code)
+                in_number_mode = False
+                traces.append({
+                    "token": w,
+                    "braille": b_code,
+                    "rule": "Word Abbreviation",
+                    "explanation": f"단어 약어 '{w}' 적용"
+                })
+                i += w_len
+                matched_word = True
+                break
             if matched_word:
                 continue
 
@@ -344,16 +438,8 @@ class KoreanBrailleEngine:
                 traces.append({"token": ch, "braille": b_q, "rule": "Quote Delimiter", "explanation": "여는/닫는 큰따옴표"})
                 i += 1
                 continue
-            elif ch == "'":
-                b_sq = self.open_delims.get("‘", "⠠⠦") if not single_quote_open else self.close_delims.get("’", "⠴⠄")
-                single_quote_open = not single_quote_open
-                out.append(b_sq)
-                in_number_mode = False
-                traces.append({"token": ch, "braille": b_sq, "rule": "Single Quote Delimiter", "explanation": "여는/닫는 작은따옴표"})
-                i += 1
-                continue
 
-            # 7. 일반 단일 문장부호
+            # 7. 일반 단일 문장부호. 아포스트로피(')는 ko_marks.json대로 ⠐이다.
             if ch in self.punct_map:
                 b = self.punct_map[ch]
                 out.append(b)
@@ -362,7 +448,7 @@ class KoreanBrailleEngine:
                 i += 1
                 continue
 
-                        # 8. 한글 음절 변환
+            # 8. 한글 음절 변환
             if '가' <= ch <= '힣':
                 decomp = self.decompose(ch)
                 cho, jung, jong = decomp
@@ -428,9 +514,10 @@ class KoreanBrailleEngine:
 
     def _translate_hangul_syllable_with_trace(self, cho: str, jung: str, jong: str, raw_char: str) -> Tuple[str, List[str]]:
         rules = []
+        spell_out_geot = raw_char in self.geot_spell_out
 
-        # A. 완전 일치 음절 ('것' 등)
-        if raw_char in self.complete_syllables:
+        # A. 완전 일치 음절 ('것' 등). '껐'은 이 약자를 쓰지 않는다.
+        if raw_char in self.complete_syllables and not spell_out_geot:
             rules.append(f"완전 일치 음절 약자 '{raw_char}' 적용")
             return self.complete_syllables[raw_char], rules
 
@@ -442,18 +529,18 @@ class KoreanBrailleEngine:
             base_cho = self.TENSER_MAP[cho]
             rules.append(f"된소리 초성 '{cho}' 된소리표(⠠) 적용")
 
-        if raw_char in self.geot_tensed and self.geot_unicode:
+        if raw_char in self.geot_tensed and self.geot_unicode and not spell_out_geot:
             rules.append(f"된소리표와 '것' 약자 결합 ('{raw_char}')")
             return tenser_prefix + self.geot_unicode, rules
 
         # ㅅ·ㅆ·ㅈ·ㅉ·ㅊ 뒤의 '영' 약자는 성·썽·정·쩡·청. 셩·졍·쳥 등은 풀어 적는다.
         skip_yeong_abbr = False
-        if self.yeong_unicode and cho in self.yeong_override_initials and jong == 'ㅇ':
+        if self.yeong_unicode and cho in self.yeong_override_initials and jong == self.yeong_surface_jong:
             if jung == self.yeong_surface_vowel:
                 cho_b = "" if base_cho == 'ㅇ' else self.chosung_map.get(base_cho, "")
                 rules.append(f"'{cho}' 뒤 '영' 약자는 '{raw_char}'")
                 return tenser_prefix + cho_b + self.yeong_unicode, rules
-            if jung == 'ㅕ':
+            if jung == self.yeong_spell_jung and jung != self.yeong_surface_vowel:
                 skip_yeong_abbr = True
                 rules.append(f"'{raw_char}'은 '영' 약자를 쓰지 않고 풀어 적음")
 
@@ -498,7 +585,7 @@ class KoreanBrailleEngine:
     def braille_to_text(self, braille_str: str) -> str:
         tokens = re.findall(r'[\u2800-\u28FF]+|[^\u2800-\u28FF]+', braille_str)
         result = []
-        self._tn_open = False
+        self._tag_open = {uni: False for uni in self.toggle_tags}
 
         for token in tokens:
             if not token.strip() or not any('\u2800' <= c <= '\u28FF' for c in token):
@@ -539,14 +626,21 @@ class KoreanBrailleEngine:
 
                 continue
 
-            # 2. <tn>과 </tn>은 둘 다 ⠠⠄다. 점형은 두고, 나타난 순서로 짝짓는다.
-            if b_token.startswith("⠠⠄", i):
-                syllable, consumed = self._decode_single_syllable(b_token, i)
-                if consumed < 2:
-                    decoded.append("</tn>" if self._tn_open else "<tn>")
-                    self._tn_open = not self._tn_open
-                    i += 2
+            # 2. 여는 태그와 닫는 태그가 같은 점형이면 나타난 순서로 짝짓는다.
+            matched_tag = False
+            for uni, (open_tag, close_tag) in self.toggle_tag_sorted:
+                if not b_token.startswith(uni, i):
                     continue
+                syllable, consumed = self._decode_single_syllable(b_token, i)
+                if consumed >= len(uni):
+                    break
+                decoded.append(close_tag if self._tag_open.get(uni) else open_tag)
+                self._tag_open[uni] = not self._tag_open.get(uni)
+                i += len(uni)
+                matched_tag = True
+                break
+            if matched_tag:
+                continue
 
             # 3. 완전 음절 약자. 부호 칸보다 음절 문맥이 먼저다.
             matched_complete = False
@@ -560,15 +654,26 @@ class KoreanBrailleEngine:
             if matched_complete:
                 continue
 
-            # 4. 음절 자리. ⠐는 단어 첫 칸의 ㄹ, ⠰는 음절 첫 칸의 ㅊ, ⠌는 모음 ㅖ 또는 받침 ㅆ.
+            # 4. 음절 자리. 두 칸 부호(괄호, 밑줄 등)가 한 칸 자음보다 길면 부호를 먼저 읽는다.
+            punct, punct_len = self._match_punct(b_token, i)
             syllable, consumed = self._decode_single_syllable(b_token, i)
+            if punct_len > 1 and punct_len > consumed:
+                decoded.append(punct)
+                i += punct_len
+                continue
             if consumed > 0:
                 decoded.append(syllable)
                 i += consumed
                 continue
 
+            # 4b. 음절로 읽히지 않는 ⠁⠎ 등은 단독 단어 약어다.
+            word, word_len = self._match_word_abbr(b_token, i)
+            if word_len:
+                decoded.append(word)
+                i += word_len
+                continue
+
             # 5. 음절이 아니면 부호 자리. 같은 점형의 후보는 함께 남긴다.
-            punct, punct_len = self._match_punct(b_token, i)
             if punct_len:
                 decoded.append(punct)
                 i += punct_len
@@ -578,24 +683,89 @@ class KoreanBrailleEngine:
 
         return "".join(decoded)
 
-    def _consume_numeric_sequence(self, b_token: str, start_idx: int) -> Tuple[str, int]:
+    def _decode_number_body(self, cells: str) -> str:
         res = []
-        idx = start_idx + 1
-        n = len(b_token)
-
+        idx = 0
+        n = len(cells)
         while idx < n:
-            c = b_token[idx]
+            c = cells[idx]
             if c in self.rev_digits:
                 res.append(self.rev_digits[c])
                 idx += 1
-            elif c in self.rev_num_connectors and idx + 1 < n and b_token[idx + 1] in self.rev_digits:
+            elif c in self.rev_num_connectors and idx + 1 < n and cells[idx + 1] in self.rev_digits:
                 options = [ch for ch in self.rev_num_connectors[c] if self.connector_persists.get(ch)]
                 res.append((options or self.rev_num_connectors[c])[0])
                 idx += 1
             else:
                 break
+        return "".join(res)
 
-        return "".join(res), idx - start_idx
+    def _is_number_body(self, cells: str) -> bool:
+        if not cells or cells[0] not in self.rev_digits:
+            return False
+        idx = 0
+        n = len(cells)
+        while idx < n:
+            c = cells[idx]
+            if c in self.rev_digits:
+                idx += 1
+                continue
+            if c in self.rev_num_connectors and idx + 1 < n and cells[idx + 1] in self.rev_digits:
+                idx += 1
+                continue
+            return False
+        return True
+
+    def _match_trailing_exempt_unit(self, b_token: str, region_start: int, region_end: int):
+        """숫자 칸에 먹힌 단위어를 긴 점형부터 되살린다. 앞에 숫자가 한 칸 이상 남아야 한다."""
+        for unit, ub in self.exempt_unit_braille:
+            found = None
+            pos = region_start
+            while pos < region_end:
+                found_at = b_token.find(ub, pos)
+                if found_at < 0 or found_at >= region_end:
+                    break
+                if found_at > region_start and self._is_number_body(b_token[region_start:found_at]):
+                    found = found_at
+                pos = found_at + 1
+            if found is not None:
+                return unit, found, len(ub)
+        return "", 0, 0
+
+    def _consume_numeric_sequence(self, b_token: str, start_idx: int) -> Tuple[str, int]:
+        idx = start_idx + 1
+        n = len(b_token)
+        end = idx
+
+        while end < n:
+            c = b_token[end]
+            if c in self.rev_digits:
+                end += 1
+                continue
+            if c in self.rev_num_connectors and end + 1 < n and b_token[end + 1] in self.rev_digits:
+                end += 1
+                continue
+            break
+
+        unit, unit_at, unit_len = self._match_trailing_exempt_unit(b_token, idx, end)
+        if unit:
+            number = self._decode_number_body(b_token[idx:unit_at])
+            return number + unit, unit_at + unit_len - start_idx
+
+        return self._decode_number_body(b_token[idx:end]), end - start_idx
+
+    def _match_word_abbr(self, b_token: str, i: int) -> Tuple[str, int]:
+        for braille, word in self.rev_word_abbr_sorted:
+            if b_token.startswith(braille, i):
+                return word, len(braille)
+        return "", 0
+
+    def _read_symbol(self, table: dict, token: str, idx: int) -> Tuple[Optional[str], int]:
+        """두 칸 자모(ㅒ, ㅄ 등)를 한 칸 자모보다 먼저 읽는다."""
+        for length in (2, 1):
+            if idx + length <= len(token) and token[idx:idx + length] in table:
+                return table[token[idx:idx + length]], length
+        return None, 0
 
     @staticmethod
     def _join_candidates(chars: List[str]) -> str:
@@ -652,21 +822,24 @@ class KoreanBrailleEngine:
                 next_c = b_token[start_idx + 1]
                 
                 # Case A: 된소리표 뒤에 '가' 계열 약자가 오는 경우 (예: ⠠⠇ -> 싸, ⠠⠫ -> 까)
-                if next_c in self.rev_ga_series:
-                    base_syl = self.rev_ga_series[next_c] # '사', '가' 등
+                # 뒤에 모음이 오면 약자가 아니라 된소리 초성이다 (떠, 뻐, 쩌).
+                follows = b_token[start_idx + 2] if start_idx + 2 < len(b_token) else ""
+                follows_vowel = bool(follows) and (follows in self.rev_jungsung or follows in self.rev_vowel_coda)
+                follows_jong = bool(follows) and follows in self.rev_jongsung
+                if next_c in self.rev_ga_series and not (follows_vowel and not follows_jong):
+                    base_syl = self.rev_ga_series[next_c]  # '사', '가' 등
                     base_cho = base_syl[0]
                     tense_cho = self.REV_TENSER_MAP.get(base_cho, base_cho)
-                    # 3셀(된소리+약자+받침) 검사
-                    if start_idx + 2 < len(b_token) and b_token[start_idx + 2] in self.rev_jongsung:
-                        jong = self.rev_jongsung[b_token[start_idx + 2]]
-                        return self.compose(tense_cho, 'ㅏ', jong), 3
-                    return self.compose(tense_cho, 'ㅏ', ""), 2
+                    jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2)
+                    if jong:
+                        return self.compose(tense_cho, "ㅏ", jong), 2 + jong_len
+                    return self.compose(tense_cho, "ㅏ", ""), 2
 
-                # Case B: 된소리표 뒤에 기본 초성이 오는 경우 (예: ⠠ + ⠈ -> ㄲ)
-                elif next_c in self.rev_chosung:
+                # Case B: 된소리표 뒤에 기본 초성이 오는 경우 (예: ⠠ + ⠈ -> ㄲ, ⠠ + ⠊ + 모음 -> 떠)
+                elif next_c in self.rev_ga_series or next_c in self.rev_chosung:
                     is_tense = True
                     offset = 1
-                
+
                 # Case C: 6점 뒤에 바로 중성이 오는 경우 (예: ⠠ + ⠣ -> '사'의 풀어쓰기 형태)
                 # 된소리표가 아니라 초성 'ㅅ'으로 단독 해석
                 elif next_c in self.rev_jungsung:
@@ -679,56 +852,54 @@ class KoreanBrailleEngine:
         idx = start_idx + offset
         c1 = b_token[idx]
         c2 = b_token[idx + 1] if idx + 1 < len(b_token) else None
-        c3 = b_token[idx + 2] if idx + 2 < len(b_token) else None
 
         def apply_tense(cho_char: str) -> str:
             return self.REV_TENSER_MAP.get(cho_char, cho_char) if is_tense else cho_char
 
-        # --- 아래는 기존 초/중/종성 매칭 로직 유지 ---
-        # 1. 초성 + 중성 + 종성 (3셀)
-        if c1 in self.rev_chosung and c2 and c2 in self.rev_jungsung and c3 and c3 in self.rev_jongsung:
-            cho = apply_tense(self.rev_chosung[c1])
-            return self.compose(cho, self.rev_jungsung[c2], self.rev_jongsung[c3]), offset + 3
-
-        # 2. 초성 + 모음받침약자 (2셀)
+        # 1. 초성 + 모음받침 약자. '영' 점형은 ㅅ·ㅆ·ㅈ·ㅉ·ㅊ 뒤에서 ㅓ+ㅇ으로 읽는다.
         if c1 in self.rev_chosung and c2 and c2 in self.rev_vowel_coda:
             jung, jong = self.rev_vowel_coda[c2]
             cho = apply_tense(self.rev_chosung[c1])
             if c2 == self.yeong_unicode and cho in self.yeong_override_initials:
                 jung = self.yeong_surface_vowel
+                jong = self.yeong_surface_jong
             return self.compose(cho, jung, jong), offset + 2
 
-        # 3. '가' 계열 약자 + 종성 (2셀)
-        if c1 in self.rev_ga_series and c2 and c2 in self.rev_jongsung:
-            cho = apply_tense(self.rev_ga_series[c1][0])
-            return self.compose(cho, 'ㅏ', self.rev_jongsung[c2]), offset + 2
-
-        # 4. 초성 + 중성 (2셀)
-        if c1 in self.rev_chosung and c2 and c2 in self.rev_jungsung:
-            cho = apply_tense(self.rev_chosung[c1])
-            return self.compose(cho, self.rev_jungsung[c2], ""), offset + 2
+        # 2. 초성 + 중성 + 선택적 종성. ㅒ·ㅙ·ㅄ처럼 두 칸인 자모를 먼저 읽는다.
+        if c1 in self.rev_chosung:
+            jung, jung_len = self._read_symbol(self.rev_jungsung, b_token, idx + 1)
+            if jung:
+                cho = apply_tense(self.rev_chosung[c1])
+                jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, idx + 1 + jung_len)
+                if jong:
+                    return self.compose(cho, jung, jong), offset + 1 + jung_len + jong_len
+                return self.compose(cho, jung, ""), offset + 1 + jung_len
 
         if is_tense:
             return "", 0
 
-        # 5. 'ㅇ' 생략 모음 + 종성 (2셀)
-        if c1 in self.rev_jungsung and c2 and c2 in self.rev_jongsung:
-            return self.compose('ㅇ', self.rev_jungsung[c1], self.rev_jongsung[c2]), 2
-
-        # 6. '가' 계열 약자 단독 (1셀)
+        # 3. '가' 계열 약자 + 종성, 또는 약자 단독
         if c1 in self.rev_ga_series:
+            jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, idx + 1)
+            if jong:
+                cho = self.rev_ga_series[c1][0]
+                return self.compose(cho, "ㅏ", jong), 1 + jong_len
             return self.rev_ga_series[c1], 1
 
-        # 7. 모음받침약자 단독 (1셀)
+        # 4. 모음받침 약자 단독
         if c1 in self.rev_vowel_coda:
             jung, jong = self.rev_vowel_coda[c1]
-            return self.compose('ㅇ', jung, jong), 1
+            return self.compose("ㅇ", jung, jong), 1
 
-        # 8. 'ㅇ' 생략 모음 단독 (1셀)
-        if c1 in self.rev_jungsung:
-            return self.compose('ㅇ', self.rev_jungsung[c1], ""), 1
+        # 5. 초성 ㅇ 생략. 두 칸 모음·받침을 한 음절로 읽는다.
+        jung, jung_len = self._read_symbol(self.rev_jungsung, b_token, idx)
+        if jung:
+            jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, idx + jung_len)
+            if jong:
+                return self.compose("ㅇ", jung, jong), jung_len + jong_len
+            return self.compose("ㅇ", jung, ""), jung_len
 
-        # 9. 초성 단독 잔여물. ⠐와 ⠰는 모음이 붙을 때만 ㄹ·ㅊ이고, 아니면 부호 자리다.
+        # 6. 초성 단독 잔여물. ⠐와 ⠰는 모음이 붙을 때만 ㄹ·ㅊ이고, 아니면 부호 자리다.
         if c1 in self.rev_chosung and c1 not in (self.chosung_map.get("ㄹ"), self.chosung_map.get("ㅊ")):
             return self.rev_chosung[c1], 1
 

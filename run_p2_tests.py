@@ -138,7 +138,31 @@ def test_canonical_roundtrip():
     dashes = ko_engine.braille_to_text("⠤⠤")
     assert all(ch in dashes for ch in ("~", "—", "□"))
 
-    for word in ["라", "간", "차", "좋", "사람", "1,000", "4사분기"]:
+    apostrophe = marks_data["connectors_and_symbols"]["items"]["'"]["unicode"]
+    assert ko_engine.text_to_braille("'")["braille"] == apostrophe
+    assert ko_engine.geot_spell_out == {"껐"}
+    assert ko_engine.text_to_braille("껏")["braille"] == ko_engine.TENSER_SIGN + ko_engine.geot_unicode
+    assert ko_engine.TENSER_SIGN + ko_engine.geot_unicode not in ko_engine.text_to_braille("껐")["braille"]
+    so_abbr = ko_data["abbreviation_word"]["items"]["그래서"]["unicode"]
+    assert ko_engine.text_to_braille("그래서")["braille"] == so_abbr
+    assert so_abbr not in ko_engine.text_to_braille("그래서는")["braille"]
+    assert so_abbr not in ko_engine.text_to_braille("아그래서")["braille"]
+    assert " " in ko_engine.text_to_braille("7운")["braille"]
+    assert {"7", "운", "g"} <= {sense["text"] for sense in ko_engine.rev_uses["⠛"]}
+    assert "cm" in {sense["text"] for sense in ko_engine.rev_uses["⠉⠍"]}
+
+    roundtrip_words = [
+        "라", "간", "차", "좋", "사람", "1,000", "4사분기", "사이",
+        "그래서", "그래서.", "(그래서)", "그러나", "그래서는", "아그래서",
+        "값", "앉", "않", "닭", "흙", "밖", "여덟",
+        "왜", "외", "웨", "위", "얘", "귀", "돼",
+        "껏", "껐", "성", "썽", "정", "청", "셩", "쳥",
+        "떠", "뻐", "쩌", "써", "꺼", "빠", "싸",
+        "1년", "2월", "3미터", "5명", "8호", "1945년", "1,000명", "2킬로미터",
+        "5개", "7 운", "12km", "1/2", "3.14",
+        "것.", "<tn>주</tn>",
+    ]
+    for word in roundtrip_words:
         braille = ko_engine.text_to_braille(word)["braille"]
         back = ko_engine.braille_to_text(braille)
         print(f"KO {word} -> {braille} -> {back}")
