@@ -119,12 +119,34 @@ class KoreanBrailleEngine:
             raise ValueError(
                 f"ko.json 사 풀어쓰기 {stored_sa!r}가 초성 ㅅ+중성 ㅏ({self.sa_expanded!r})와 다릅니다."
             )
+        # '사' 예외는 exception_rules에 있는 항목만 적용한다.
+        sa_rules = sa_item.get("exception_rules") or {}
+        self.sa_after_number = "after_number" in sa_rules
+        self.sa_before_vowel = "vowel_connection" in sa_rules
+
+        word_pos = self.ko.get("abbreviation_word", {}).get("rule", {}).get("position", "standalone")
+        self.word_abbr_standalone = word_pos == "standalone"
+        self.omit_zero_consonant = bool(
+            self.ko.get("chosung", {}).get("rule", {}).get("omitZeroConsonant", True)
+        )
+        # 같은 칸을 약자+받침과 초성+모음이 나눠 쓰면 우선순위가 높은 쪽을 읽는다.
+        abbr_priority = self.ko.get("abbreviation_syllable", {}).get("rule", {}).get("priority", 80)
+        jung_priority = self.ko.get("jungsung", {}).get("rule", {}).get("priority", 40)
+        self.prefer_abbr_over_jungsung = abbr_priority >= jung_priority
 
         number_prefix_rule = self.ko.get("special_rules", {}).get("number_prefix_rule", {})
         self.affected_initials = set(
             number_prefix_rule.get("affected_initials", ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"])
         )
         self.affected_abbreviations = set(number_prefix_rule.get("affected_abbreviations", []))
+        action = number_prefix_rule.get("action", "terminate_number_with_space")
+        self.number_gap = " " if action == "terminate_number_with_space" else ""
+        self.number_terminators = set(
+            self.num_rules.get("termination_triggers", {}).get(
+                "terminators",
+                ["space", "korean_letter", "punctuation_standalone", "line_break"],
+            )
+        )
 
         # 한글 단위어 예외 목록 (한글 음절 충돌 방지용)
         self.exempt_units = set(
@@ -188,6 +210,53 @@ class KoreanBrailleEngine:
         if not tense_cho:
             return set()
         return {self.compose(tense_cho, parts[1], "ㅆ")}
+
+    def _onset_braille(self, base_cho: str) -> str:
+        """초성 ㅇ은 omitZeroConsonant일 때 점형을 내지 않는다."""
+        if base_cho == "ㅇ" and self.omit_zero_consonant:
+            return ""
+        return self.chosung_map.get(base_cho, "")
+
+    def _terminate_number(self, kind: str) -> bool:
+        return kind in self.number_terminators
+
+    def _ga_choseong(self, cell: str) -> Optional[str]:
+        syllable = self.rev_ga_series.get(cell)
+        parts = self.decompose(syllable) if syllable else None
+        return parts[0] if parts else None
+
+    def _compose_ga(self, cho: str, jong: str = "", tense: bool = False) -> str:
+        if tense:
+            cho = self.REV_TENSER_MAP.get(cho, cho)
+        return self.compose(cho, "ㅏ", jong)
+
+    def _try_ga_syllable(self, token: str, idx: int) -> Tuple[str, int]:
+        """가 계열 약자. 초성과 칸을 나누는 약자는 뒤가 모음이면 초성으로 읽는다.
+
+        뒤 칸이 받침이면서 모음이기도 하면(ㅆ/ㅖ) abbreviation_syllable 우선순위를 따른다.
+        """
+        if idx >= len(token):
+            return "", 0
+        cell = token[idx]
+        cho = self._ga_choseong(cell)
+        if not cho:
+            return "", 0
+        jong, jong_len = self._read_symbol(self.rev_jongsung, token, idx + 1)
+        if jong:
+            jong_cells = token[idx + 1:idx + 1 + jong_len]
+            if jong_cells in self.rev_jungsung and not self.prefer_abbr_over_jungsung:
+                return "", 0
+            # ㅆ과 ㅖ가 같은 칸이다. 그 뒤에 받침이 더 있으면 ㅖ+받침으로 읽는다.
+            if jong_cells in self.rev_jungsung:
+                more, _ = self._read_symbol(self.rev_jongsung, token, idx + 1 + jong_len)
+                if more:
+                    return "", 0
+            return self._compose_ga(cho, jong), 1 + jong_len
+        nxt = token[idx + 1] if idx + 1 < len(token) else ""
+        nxt_continues = bool(nxt) and (nxt in self.rev_jungsung or nxt in self.rev_vowel_coda)
+        if nxt_continues and cell in self.rev_chosung:
+            return "", 0
+        return self.rev_ga_series[cell], 1
 
     def _add_use(self, braille: str, text: str, context: str):
         if not braille or text is None:
@@ -339,7 +408,9 @@ class KoreanBrailleEngine:
             # 1. 공백 및 개행
             if ch in (' ', '\n', '\r'):
                 out.append(ch)
-                in_number_mode = False
+                kind = "space" if ch == " " else "line_break"
+                if self._terminate_number(kind):
+                    in_number_mode = False
                 traces.append({"token": ch, "braille": ch, "rule": "Whitespace/Newline", "scope": "Reset numeric mode"})
                 i += 1
                 continue
@@ -351,7 +422,8 @@ class KoreanBrailleEngine:
                 if sub in self.punct_map:
                     b = self.punct_map[sub]
                     out.append(b)
-                    in_number_mode = False
+                    if self._terminate_number("punctuation_standalone"):
+                        in_number_mode = False
                     traces.append({"token": sub, "braille": b, "rule": "Multi-char Mark/Tag", "scope": "Reset numeric mode"})
                     i += length
                     matched_punct = True
@@ -367,7 +439,9 @@ class KoreanBrailleEngine:
                     continue
                 prev_c = text[i - 1] if i else ""
                 next_c = text[i + w_len:i + w_len + 1]
-                if (prev_c and "가" <= prev_c <= "힣") or (next_c and "가" <= next_c <= "힣"):
+                if self.word_abbr_standalone and (
+                    (prev_c and "가" <= prev_c <= "힣") or (next_c and "가" <= next_c <= "힣")
+                ):
                     break
                 out.append(b_code)
                 in_number_mode = False
@@ -435,7 +509,8 @@ class KoreanBrailleEngine:
                 b_q = self.open_delims.get("“", "⠦") if not quote_open else self.close_delims.get("”", "⠴")
                 quote_open = not quote_open
                 out.append(b_q)
-                in_number_mode = False
+                if self._terminate_number("punctuation_standalone"):
+                    in_number_mode = False
                 traces.append({"token": ch, "braille": b_q, "rule": "Quote Delimiter", "explanation": "여는/닫는 큰따옴표"})
                 i += 1
                 continue
@@ -444,7 +519,8 @@ class KoreanBrailleEngine:
             if ch in self.punct_map:
                 b = self.punct_map[ch]
                 out.append(b)
-                in_number_mode = False
+                if self._terminate_number("punctuation_standalone"):
+                    in_number_mode = False
                 traces.append({"token": ch, "braille": b, "rule": "Punctuation", "explanation": "문장부호"})
                 i += 1
                 continue
@@ -461,10 +537,10 @@ class KoreanBrailleEngine:
                 # 제1호: '사' 뒤에 모음으로 시작하는 음절이 이어지면 풀어 적음 (예: "사이")
                 is_sa_exception = False
                 if ch == '사':
-                    if in_number_mode or (i > 0 and text[i-1].isdigit()):
+                    if self.sa_after_number and (in_number_mode or (i > 0 and text[i-1].isdigit())):
                         is_sa_exception = True
                         rules_applied.append(f"제17항 제2호 적용: 숫자 뒤 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
-                    elif i + 1 < n and '가' <= text[i+1] <= '힣':
+                    elif self.sa_before_vowel and i + 1 < n and '가' <= text[i+1] <= '힣':
                         next_decomp = self.decompose(text[i+1])
                         if next_decomp and next_decomp[0] == 'ㅇ':
                             is_sa_exception = True
@@ -474,12 +550,13 @@ class KoreanBrailleEngine:
                 if in_number_mode:
                     is_exempt = bool(self._match_exempt_unit(text[i:]))
                     if not is_exempt and (cho in self.affected_initials or ch in self.affected_abbreviations):
-                        number_break = " "
+                        number_break = self.number_gap
                         if ch in self.affected_abbreviations:
                             rules_applied.append(f"약자 '{ch}'이 숫자와 겹치므로 띄어쓰기로 숫자 입력 종료")
                         else:
                             rules_applied.append(f"초성 '{cho}'이 숫자와 겹치므로 띄어쓰기로 숫자 입력 종료")
-                    in_number_mode = False
+                    if self._terminate_number("korean_letter"):
+                        in_number_mode = False
 
                 if is_sa_exception:
                     braille_syllable = self.sa_expanded
@@ -537,15 +614,15 @@ class KoreanBrailleEngine:
         skip_yeong_abbr = False
         if self.yeong_unicode and cho in self.yeong_override_initials and jong == self.yeong_surface_jong:
             if jung == self.yeong_surface_vowel:
-                cho_b = "" if base_cho == 'ㅇ' else self.chosung_map.get(base_cho, "")
+                cho_b = self._onset_braille(base_cho)
                 rules.append(f"'{cho}' 뒤 '영' 약자는 '{raw_char}'")
                 return tenser_prefix + cho_b + self.yeong_unicode, rules
             if jung == self.yeong_spell_jung and jung != self.yeong_surface_vowel:
                 skip_yeong_abbr = True
                 rules.append(f"'{raw_char}'은 '영' 약자를 쓰지 않고 풀어 적음")
 
-        # C. '가' 계열 약자 (초성 + 'ㅏ')
-        base_ga = base_cho + 'ㅏ'
+        # C. '가' 계열 약자 (초성 + 'ㅏ'). 키는 완성형 음절이다.
+        base_ga = self.compose(base_cho, "ㅏ") if jung == "ㅏ" else ""
         if jung == 'ㅏ' and base_ga in self.ga_series:
             ga_b = self.ga_series[base_ga]
             jong_b = self.jongsung_map[jong] if jong else ""
@@ -555,17 +632,17 @@ class KoreanBrailleEngine:
         # D. '모음+받침' 약자
         if not skip_yeong_abbr and (jung, jong) in self.vowel_coda_series:
             vc_b = self.vowel_coda_series[(jung, jong)]
-            if base_cho == 'ㅇ':
+            if base_cho == 'ㅇ' and self.omit_zero_consonant:
                 rules.append(f"초성 'ㅇ' 생략 및 모음+받침 약자 적용 (중성:{jung}, 종성:{jong})")
                 return tenser_prefix + vc_b, rules
             else:
-                cho_b = self.chosung_map.get(base_cho, "")
+                cho_b = self._onset_braille(base_cho)
                 rules.append(f"초성 '{cho}' + 모음+받침 약자 적용 (중성:{jung}, 종성:{jong})")
                 return tenser_prefix + cho_b + vc_b, rules
 
         # E. 일반 자모음 분해
-        cho_b = "" if base_cho == 'ㅇ' else self.chosung_map.get(base_cho, "")
-        if base_cho == 'ㅇ':
+        cho_b = self._onset_braille(base_cho)
+        if base_cho == 'ㅇ' and self.omit_zero_consonant:
             rules.append("초성 'ㅇ' 점형 생략")
         else:
             rules.append(f"초성 '{cho}' 결합")
@@ -612,18 +689,6 @@ class KoreanBrailleEngine:
                 num_str, consumed = self._consume_numeric_sequence(b_token, i)
                 decoded.append(num_str)
                 i += consumed
-
-                # 숫자 시퀀스 직후 영문 단위 기호 매칭 검사 (최장 일치)
-                matched_unit = False
-                for b_unit in self.sorted_rev_roman_units:
-                    if b_token[i:].startswith(b_unit):
-                        decoded.append(self.rev_roman_units[b_unit])
-                        i += len(b_unit)
-                        matched_unit = True
-                        break
-                if matched_unit:
-                    continue
-
                 continue
 
             # 2. 여는 태그와 닫는 태그가 같은 점형이면 나타난 순서로 짝짓는다.
@@ -783,6 +848,42 @@ class KoreanBrailleEngine:
                 return unit, found, len(ub)
         return "", 0, 0
 
+    def _match_exempt_unit_after(self, b_token: str, index: int) -> Tuple[str, int]:
+        """숫자 칸 바로 뒤에 붙은 단위어. 리터·센티미터처럼 첫 칸이 숫자가 아닌 경우."""
+        for unit, ub in self.exempt_unit_braille:
+            if not ub or not b_token.startswith(ub, index):
+                continue
+            after = self._following_hangul(b_token, index + len(ub)) if self.unit_boundary_enabled else ""
+            if self._unit_boundary_ok(after):
+                return unit, len(ub)
+        return "", 0
+
+    def _read_number_and_roman(self, b_token: str, idx: int, end: int, start_idx: int) -> Tuple[str, int]:
+        """숫자 뒤에 로마자 단위를 붙인다. 단위 칸이 숫자와 겹치면 두 읽기를 함께 남긴다."""
+        plain = self._decode_number_body(b_token[idx:end])
+        primary = plain
+        primary_end = end
+        for ub in self.sorted_rev_roman_units:
+            if b_token.startswith(ub, end):
+                primary += self.rev_roman_units[ub]
+                primary_end = end + len(ub)
+                break
+        readings = [primary]
+        for ub in self.sorted_rev_roman_units:
+            pos = idx + 1
+            while pos < end:
+                if (
+                    b_token.startswith(ub, pos)
+                    and pos + len(ub) == primary_end
+                    and self._is_number_body(b_token[idx:pos])
+                ):
+                    alt = self._decode_number_body(b_token[idx:pos]) + self.rev_roman_units[ub]
+                    readings.append(alt)
+                    break
+                pos += 1
+        text = readings[0] if len(set(readings)) == 1 else self._join_candidates(readings)
+        return text, primary_end - start_idx
+
     def _consume_numeric_sequence(self, b_token: str, start_idx: int) -> Tuple[str, int]:
         idx = start_idx + 1
         n = len(b_token)
@@ -803,7 +904,13 @@ class KoreanBrailleEngine:
             number = self._decode_number_body(b_token[idx:unit_at])
             return number + unit, unit_at + unit_len - start_idx
 
-        return self._decode_number_body(b_token[idx:end]), end - start_idx
+        if end > idx:
+            unit, unit_len = self._match_exempt_unit_after(b_token, end)
+            if unit:
+                number = self._decode_number_body(b_token[idx:end])
+                return number + unit, end + unit_len - start_idx
+
+        return self._read_number_and_roman(b_token, idx, end, start_idx)
 
     def _match_word_abbr(self, b_token: str, i: int) -> Tuple[str, int]:
         for braille, word in self.rev_word_abbr_sorted:
@@ -877,14 +984,22 @@ class KoreanBrailleEngine:
                 follows = b_token[start_idx + 2] if start_idx + 2 < len(b_token) else ""
                 follows_vowel = bool(follows) and (follows in self.rev_jungsung or follows in self.rev_vowel_coda)
                 follows_jong = bool(follows) and follows in self.rev_jongsung
-                if next_c in self.rev_ga_series and not (follows_vowel and not follows_jong):
-                    base_syl = self.rev_ga_series[next_c]  # '사', '가' 등
-                    base_cho = base_syl[0]
-                    tense_cho = self.REV_TENSER_MAP.get(base_cho, base_cho)
+                ga_cho = self._ga_choseong(next_c)
+                use_ga = bool(ga_cho) and not (follows_vowel and not follows_jong)
+                if follows_vowel and follows_jong and not self.prefer_abbr_over_jungsung:
+                    use_ga = False
+                if use_ga and follows_jong:
+                    jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2)
+                    jong_cells = b_token[start_idx + 2:start_idx + 2 + jong_len]
+                    if jong_cells in self.rev_jungsung:
+                        more, _ = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2 + jong_len)
+                        if more:
+                            use_ga = False
+                if use_ga:
                     jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2)
                     if jong:
-                        return self.compose(tense_cho, "ㅏ", jong), 2 + jong_len
-                    return self.compose(tense_cho, "ㅏ", ""), 2
+                        return self._compose_ga(ga_cho, jong, True), 2 + jong_len
+                    return self._compose_ga(ga_cho, "", True), 2
 
                 # Case B: 된소리표 뒤에 기본 초성이 오는 경우 (예: ⠠ + ⠈ -> ㄲ, ⠠ + ⠊ + 모음 -> 떠)
                 elif next_c in self.rev_ga_series or next_c in self.rev_chosung:
@@ -907,6 +1022,11 @@ class KoreanBrailleEngine:
         def apply_tense(cho_char: str) -> str:
             return self.REV_TENSER_MAP.get(cho_char, cho_char) if is_tense else cho_char
 
+        if not is_tense:
+            ga_text, ga_len = self._try_ga_syllable(b_token, idx)
+            if ga_len:
+                return ga_text, ga_len
+
         # 1. 초성 + 모음받침 약자. '영' 점형은 ㅅ·ㅆ·ㅈ·ㅉ·ㅊ 뒤에서 ㅓ+ㅇ으로 읽는다.
         if c1 in self.rev_chosung and c2 and c2 in self.rev_vowel_coda:
             jung, jong = self.rev_vowel_coda[c2]
@@ -928,14 +1048,6 @@ class KoreanBrailleEngine:
 
         if is_tense:
             return "", 0
-
-        # 3. '가' 계열 약자 + 종성, 또는 약자 단독
-        if c1 in self.rev_ga_series:
-            jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, idx + 1)
-            if jong:
-                cho = self.rev_ga_series[c1][0]
-                return self.compose(cho, "ㅏ", jong), 1 + jong_len
-            return self.rev_ga_series[c1], 1
 
         # 4. 모음받침 약자 단독
         if c1 in self.rev_vowel_coda:
