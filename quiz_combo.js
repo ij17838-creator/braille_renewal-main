@@ -194,7 +194,25 @@ function buildKorean(data) {
   const yeongVowel = yeong.initial_vowel_override?.surface_vowel || 'ㅓ';
   const yeongCell = yeong.unicode || '';
   const geotTensed = new Set(ko.abbreviation_syllable?.items?.['것']?.tensed_same_abbreviation || []);
-  const exempt = rules.collision_resolutions?.trailing_letters?.exempt_units || ['년', '월', '일', '시', '분', '초', '개', '명', '원'];
+  const exempt = (rules.collision_resolutions?.trailing_letters?.exempt_units || ['년', '월', '일', '시', '분', '초', '개', '명', '원'])
+    .slice()
+    .sort((a, b) => b.length - a.length);
+  const unitBoundary = rules.collision_resolutions?.trailing_letters?.unit_boundary || {};
+  const unitBoundaryOn = !!unitBoundary.enabled;
+  const josa = (unitBoundary.josa || []).slice().sort((a, b) => b.length - a.length);
+
+  function unitBoundaryOk(after) {
+    if (!unitBoundaryOn) return true;
+    if (!after) return true;
+    const head = after[0];
+    if (head < '가' || head > '힣') return true;
+    return josa.some(item => after.startsWith(item));
+  }
+
+  function isExemptUnit(rest) {
+    if (!rest) return false;
+    return exempt.some(unit => rest.startsWith(unit) && unitBoundaryOk(rest.slice(unit.length)));
+  }
 
   const punct = [];
   Object.values(marks).forEach(block => {
@@ -208,7 +226,7 @@ function buildKorean(data) {
     if (!parts) return null;
     const [cho, jung, jong] = parts;
     const labels = [];
-    const exemptHit = !!(rest && exempt.some(unit => rest.startsWith(unit)));
+    const exemptHit = isExemptUnit(rest);
 
     if (ch === '사' && (afterNumber || (nextCh && decompose(nextCh)?.[0] === 'ㅇ'))) {
       let braille = saExpanded + (jong ? (jongMap[jong] || '') : '');

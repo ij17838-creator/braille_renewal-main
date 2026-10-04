@@ -8,6 +8,60 @@ from ko_syntax_analyzer import BrailleRuleValidator as KoValidator
 from en_syntax_analyzer import BrailleRuleValidator as EnValidator
 
 
+def test_homograph_conjugation():
+    print("\n=== Homograph conjugation ===")
+    validator = KoValidator()
+    schema = validator.lexicon["entry_schema"]
+    for section in ("example_stems", "contrasting_examples"):
+        optional = schema[section]["optional"]
+        assert "meaning" in optional and "sense_id" in optional, section
+
+    arrive = validator.analyze_conjugation_form("이르", "어", meaning="arrive")
+    assert arrive["surface_form"] == "이르러" and arrive["rule_applied"] == "러 불규칙"
+    assert arrive["meaning"] == "arrive" and arrive["sense_id"] == "ireu-arrive"
+    tell = validator.analyze_conjugation_form("이르", "어", meaning="tell")
+    assert tell["surface_form"] == "일러" and tell["rule_applied"] == "르 불규칙"
+    assert validator.analyze_conjugation_form("이르", "어", context="도착하다")["surface_form"] == "이르러"
+    assert validator.analyze_conjugation_form("이르", "어서", tag="말하다")["surface_form"] == "일러서"
+    assert validator.analyze_conjugation_form("이르", "었다", meaning="tell")["surface_form"] == "일렀다"
+    assert validator.analyze_conjugation_form("이르", "었다", meaning="arrive")["surface_form"] == "이르렀다"
+    assert validator.analyze_conjugation_form("이르", "아", sense_id="ireu-tell")["surface_form"] == "일러"
+
+    both = validator.analyze_conjugation_form("이르", "어")
+    assert both["ambiguous"] is True and both["surface_form"] is None
+    assert {item["surface_form"] for item in both["candidates"]} == {"이르러", "일러"}
+    unmatched = validator.analyze_conjugation_form("이르", "어", meaning="dance")
+    assert unmatched["ambiguous"] is True and unmatched["sense_unmatched"] is True
+
+    pureu = validator.analyze_conjugation_form("푸르", "어")
+    assert pureu["surface_form"] == "푸르러" and not pureu.get("ambiguous")
+    assert validator.analyze_conjugation_form("부르", "어")["surface_form"] == "불러"
+    assert validator.analyze_conjugation_form("빠르", "아")["surface_form"] == "빨라"
+    assert validator.analyze_conjugation_form("이르", "면")["surface_form"] == "이르면"
+
+    assert validator.analyze_conjugation_form("걷", "어", meaning="walk")["surface_form"] == "걸어"
+    assert validator.analyze_conjugation_form("걷", "어", sense_id="geot-roll")["surface_form"] == "걷어"
+    assert validator.analyze_conjugation_form("걷", "으면", context="길을 가다")["surface_form"] == "걸으면"
+    assert validator.analyze_conjugation_form("묻", "어", tag="질문하다")["surface_form"] == "물어"
+    assert validator.analyze_conjugation_form("묻", "어요", meaning="bury")["surface_form"] == "묻어요"
+    geot = validator.analyze_conjugation_form("걷", "어")
+    assert geot["ambiguous"] is True
+    assert {item["surface_form"] for item in geot["candidates"]} == {"걸어", "걷어"}
+    mut = validator.analyze_conjugation_form("묻", "어")
+    assert {item["meaning"] for item in mut["candidates"]} == {"ask", "bury"}
+
+    heard = validator.analyze_conjugation_form("듣", "어")
+    assert heard == {
+        "rule_applied": "ㄷ 불규칙",
+        "surface_form": "들어",
+        "braille_instruction": "받침 ㄷ을 ㄹ로 바꾸어 적음",
+    }
+    assert validator.analyze_conjugation_form("깨닫", "아")["surface_form"] == "깨달아"
+    assert validator.analyze_conjugation_form("닫", "아")["surface_form"] == "닫아"
+    assert validator.analyze_conjugation_form("걷", "고")["surface_form"] == "걷고"
+    print("Homograph conjugation checks passed.")
+
+
 def test_korean():
     print("=== Korean Loader & Converter Test ===")
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -122,7 +176,28 @@ def test_canonical_roundtrip():
 
     units = set(number_rules["collision_resolutions"]["trailing_letters"]["exempt_units"])
     assert ko_engine.exempt_units == units
-    assert KoValidator(data_dir=base_dir).exempt_units == units
+    ko_val_units = KoValidator(data_dir=base_dir)
+    assert ko_val_units.exempt_units == units
+    assert ko_engine.unit_boundary_enabled and ko_val_units.unit_boundary_enabled
+    assert "에" in ko_engine.josa_sorted and "에" in ko_val_units.josa_sorted
+
+    assert " " in ko_engine.text_to_braille("5동안")["braille"]
+    assert " " not in ko_engine.text_to_braille("5동")["braille"]
+    assert " " not in ko_engine.text_to_braille("5동에")["braille"]
+    assert " " not in ko_engine.text_to_braille("5동에서")["braille"]
+    assert " " not in ko_engine.text_to_braille("5미터가")["braille"]
+    assert " " not in ko_engine.text_to_braille("1945년에")["braille"]
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동안")["braille"]) == "5 동안"
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동")["braille"]) == "5동"
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동에")["braille"]) == "5동에"
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동에서")["braille"]) == "5동에서"
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5미터가")["braille"]) == "5미터가"
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("1945년에")["braille"]) == "1945년에"
+    assert ko_val_units.check_number_letter_collision("5동안")
+    assert not ko_val_units.check_number_letter_collision("5동")
+    assert not ko_val_units.check_number_letter_collision("5동에")
+    assert not ko_val_units.check_number_letter_collision("1945년에")
+    assert not ko_val_units.check_number_letter_collision("제2차 세계대전은 1945년에 끝났다. 5월 12일 3미터 앞.")
 
     for cell, senses in ko_engine.rev_uses.items():
         if len({sense["text"] for sense in senses}) > 1:
@@ -213,3 +288,4 @@ if __name__ == "__main__":
     test_korean()
     test_english()
     test_canonical_roundtrip()
+    test_homograph_conjugation()

@@ -55,7 +55,7 @@
     "rule": {
       "position": "suffix",
       "pairType": "closing",
-      "precededBy": ["hangul", "alphabetic", "number", "terminal_punctuation", "pausal_punctuation"],
+      "precededBy": ["hangul", "alphabetic", "number", "terminal_punctuation", "pausal_punctuation", "closing_quote"],
       "followedBy": ["space", "end_of_line", "terminal_punctuation", "pausal_punctuation", "closing_bracket"],
       "allowSpaceBefore": false
     },

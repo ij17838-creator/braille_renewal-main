@@ -133,6 +133,7 @@ class KoreanBrailleEngine:
             .get("exempt_units", [])
         )
         self.exempt_units_sorted = tuple(sorted(self.exempt_units, key=len, reverse=True))
+        self._load_unit_boundary()
 
         # 영문 단위 기호 매핑 로드
         self.roman_unit_symbols = (
@@ -469,10 +470,9 @@ class KoreanBrailleEngine:
                             is_sa_exception = True
                             rules_applied.append(f"제17항 제1호 적용: 모음 연접 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
 
-                # 혼동 초성·약자 운은 띄어쓰기로 수표를 끝낸다. 단위어는 붙여 적는다.
+                # 혼동 초성·약자 운은 띄어쓰기로 수표를 끝낸다. 경계가 맞는 단위어만 붙여 적는다.
                 if in_number_mode:
-                    tail_text = text[i:]
-                    is_exempt = tail_text.startswith(self.exempt_units_sorted)
+                    is_exempt = bool(self._match_exempt_unit(text[i:]))
                     if not is_exempt and (cho in self.affected_initials or ch in self.affected_abbreviations):
                         number_break = " "
                         if ch in self.affected_abbreviations:
@@ -716,6 +716,55 @@ class KoreanBrailleEngine:
             return False
         return True
 
+    def _load_unit_boundary(self):
+        """ko_number_rules.json의 단위 경계와 조사 목록을 읽는다."""
+        boundary = (
+            self.num_rules.get("collision_resolutions", {})
+            .get("trailing_letters", {})
+            .get("unit_boundary", {})
+        )
+        self.unit_boundary_enabled = bool(boundary.get("enabled", False))
+        self.josa_sorted = tuple(
+            sorted({item for item in boundary.get("josa", []) if item}, key=len, reverse=True)
+        )
+        self.josa_scan_limit = max((len(item) for item in self.josa_sorted), default=1)
+
+    def _unit_boundary_ok(self, after: str) -> bool:
+        """단위 직후가 경계이거나 조사일 때만 참이다.
+
+        조사가 아닌 한글 음절이 바로 이어지면 단위로 보지 않는다.
+        '5동에'는 인정하고 '5동안'은 취소한다.
+        """
+        if not self.unit_boundary_enabled:
+            return True
+        if not after:
+            return True
+        head = after[0]
+        if not ("가" <= head <= "힣"):
+            return True
+        return any(after.startswith(josa) for josa in self.josa_sorted)
+
+    def _match_exempt_unit(self, tail_text: str) -> str:
+        """가장 긴 단위 후보 중 경계가 맞는 것만 고른다."""
+        for unit in self.exempt_units_sorted:
+            if unit and tail_text.startswith(unit) and self._unit_boundary_ok(tail_text[len(unit):]):
+                return unit
+        return ""
+
+    def _following_hangul(self, b_token: str, index: int) -> str:
+        """단위 점형 뒤에서 조사 길이만큼 한글 음절을 읽는다."""
+        chars = []
+        i = index
+        for _ in range(self.josa_scan_limit):
+            if i >= len(b_token):
+                break
+            syllable, consumed = self._decode_single_syllable(b_token, i)
+            if consumed <= 0 or len(syllable) != 1 or not ("가" <= syllable <= "힣"):
+                break
+            chars.append(syllable)
+            i += consumed
+        return "".join(chars)
+
     def _match_trailing_exempt_unit(self, b_token: str, region_start: int, region_end: int):
         """숫자 칸에 먹힌 단위어를 긴 점형부터 되살린다. 앞에 숫자가 한 칸 이상 남아야 한다."""
         for unit, ub in self.exempt_unit_braille:
@@ -726,7 +775,9 @@ class KoreanBrailleEngine:
                 if found_at < 0 or found_at >= region_end:
                     break
                 if found_at > region_start and self._is_number_body(b_token[region_start:found_at]):
-                    found = found_at
+                    after = self._following_hangul(b_token, found_at + len(ub)) if self.unit_boundary_enabled else ""
+                    if self._unit_boundary_ok(after):
+                        found = found_at
                 pos = found_at + 1
             if found is not None:
                 return unit, found, len(ub)

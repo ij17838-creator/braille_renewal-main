@@ -1,4 +1,15 @@
 {
+  "entry_schema": {
+    "description": "example_stems와 contrasting_rules.examples는 같은 base를 뜻별로 가를 수 있다. meaning과 sense_id는 선택이며, 없으면 단일 활용이다.",
+    "example_stems": {
+      "required": ["base"],
+      "optional": ["vowel_trigger", "transformed", "example", "meaning", "sense_id", "aliases"]
+    },
+    "contrasting_examples": {
+      "required": ["base"],
+      "optional": ["example", "meaning", "sense_id", "aliases"]
+    }
+  },
   "irregular_rules": {
     "digeut": {
       "name": "ㄷ 불규칙",
@@ -10,13 +21,25 @@
         "final_consonant_changes_to": "ㄹ",
         "example_stems": [
           { "base": "듣", "vowel_trigger": "들", "example": "듣다 -> 들어요 / 들으면" },
-          { "base": "걷", "vowel_trigger": "걸", "example": "걷다 -> 걸어요 / 걸으면 (길을 가다일 때. 소매 등을 올리는 걷다는 걷어요로 규칙 활용)" },
-          { "base": "묻", "vowel_trigger": "물", "example": "묻다 -> 물어요 (질문하다의 뜻일 때)" }
+          { "base": "걷", "vowel_trigger": "걸", "sense_id": "geot-walk", "meaning": "walk", "aliases": ["길을 가다"], "example": "걷다 -> 걸어요 / 걸으면 (길을 가다)" },
+          { "base": "묻", "vowel_trigger": "물", "sense_id": "mut-ask", "meaning": "ask", "aliases": ["질문하다"], "example": "묻다 -> 물어요 (질문하다)" },
+          { "base": "깨닫", "vowel_trigger": "깨달", "example": "깨닫다 -> 깨달아 / 깨달으면" }
         ],
+        "contrasting_rules": {
+          "compare_with_regular": {
+            "name": "규칙 활용",
+            "mechanism": "같은 철자라도 의미가 다르면 받침 ㄷ을 ㄹ로 바꾸지 않는다",
+            "examples": [
+              { "base": "걷", "sense_id": "geot-roll", "meaning": "roll", "aliases": ["소매를 걷다"], "example": "걷다 -> 걷어요 (소매 등을 올리다)" },
+              { "base": "묻", "sense_id": "mut-bury", "meaning": "bury", "aliases": ["흙 속에 넣다"], "example": "묻다 -> 묻어요 (흙 속에 넣다)" }
+            ]
+          }
+        },
         "regular_exceptions": [
           { "base": "받", "example": "받다 -> 받아요 / 받으면" },
           { "base": "닫", "example": "닫다 -> 닫아요 / 닫으면" },
-          { "base": "믿", "example": "믿다 -> 믿어요 / 믿으면" }
+          { "base": "믿", "example": "믿다 -> 믿어요 / 믿으면" },
+          { "base": "얻", "example": "얻다 -> 얻어 / 얻으면" }
         ]
       }
     },
@@ -47,7 +70,10 @@
           { "base": "잡", "example": "잡다 -> 잡아요 / 잡으면" },
           { "base": "뽑", "example": "뽑다 -> 뽑아요 / 뽑으면" },
           { "base": "입", "example": "입다 -> 입어요 / 입으면" },
-          { "base": "좁", "example": "좁다 -> 좁아요 / 좁으면" }
+          { "base": "좁", "example": "좁다 -> 좁아요 / 좁으면" },
+          { "base": "집", "example": "집다 -> 집어요 / 집으면" },
+          { "base": "씹", "example": "씹다 -> 씹어요 / 씹으면" },
+          { "base": "접", "example": "접다 -> 접어요 / 접으면" }
         ]
       }
     },
@@ -70,7 +96,9 @@
           { "base": "벗", "example": "벗다 -> 벗어요 / 벗으면" },
           { "base": "웃", "example": "웃다 -> 웃어요 / 웃으면" },
           { "base": "씻", "example": "씻다 -> 씻어요 / 씻으면" },
-          { "base": "빼앗", "example": "빼앗다 -> 빼앗아요 / 빼앗으면" }
+          { "base": "빼앗", "example": "빼앗다 -> 빼앗아요 / 빼앗으면" },
+          { "base": "솟", "example": "솟다 -> 솟아요 / 솟으면" },
+          { "base": "빗", "example": "빗다 -> 빗어요 / 빗으면" }
         ]
       }
     },
@@ -89,14 +117,15 @@
           { "base": "모르", "example": "모르다 -> 몰라 / 몰라서" },
           { "base": "빠르", "example": "빠르다 -> 빨라 / 빨라서" },
           { "base": "부르", "example": "부르다 -> 불러 / 불러서" },
-          { "base": "흐르", "example": "흐르다 -> 흘러 / 흘러서" }
+          { "base": "흐르", "example": "흐르다 -> 흘러 / 흘러서" },
+          { "base": "이르", "vowel_trigger": "일ㄹ", "sense_id": "ireu-tell", "meaning": "tell", "aliases": ["말하다"], "example": "이르다 -> 일러 / 일러서 (말하다)" }
         ],
         "contrasting_rules": {
           "compare_with_leobeulgyuchik": {
             "name": "러 불규칙",
             "mechanism": "어간의 '르'는 유지되고 어미 '-어'가 '-러'로 바뀜",
             "examples": [
-              { "base": "이르", "meaning": "도착하다", "example": "이르다 -> 이르러" },
+              { "base": "이르", "sense_id": "ireu-arrive", "meaning": "arrive", "aliases": ["도착하다"], "example": "이르다 -> 이르러" },
               { "base": "푸르", "meaning": "색상", "example": "푸르다 -> 푸르러" }
             ]
           }
