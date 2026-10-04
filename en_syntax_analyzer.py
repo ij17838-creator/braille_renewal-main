@@ -69,6 +69,14 @@ class BrailleRuleValidator:
             word = (item.get("word") or letter).lower()
             self.word_to_wordsign[word] = {**item, "letter": letter}
 
+        isolated = spell_data.get("isolated_letter") or {}
+        isolated_rule = isolated.get("rule") or {}
+        self.letter_grade1_indicator = isolated_rule.get("grade1IndicatorUnicode") or ""
+        self.isolated_letters = {}
+        for key, item in (isolated.get("items") or {}).items():
+            letter = (item.get("word") or key).lower()
+            self.isolated_letters[letter] = item
+
     def _resolve_root_glyph(self, root: str) -> Dict[str, Any]:
         """강세 약어(ch, the) 또는 철자표의 한 글자(d, c)를 점형으로 찾는다."""
         if root in self.contractions:
@@ -191,15 +199,20 @@ class BrailleRuleValidator:
 
         self.apostrophe_word_suffixes = set()
         self.numeric_apostrophe_blocks = set()
+        self.apostrophe_suffix_bodies = []
         for rule in (adjacent.get("apostrophe_exceptions") or {}).get("rules", []):
             pattern = rule.get("pattern", "")
             suffixes = set(self._suffixes_from_pattern(pattern))
             if pattern.startswith("word"):
                 if rule.get("allows_contraction"):
                     self.apostrophe_word_suffixes.update(suffixes)
+                    self.apostrophe_suffix_bodies.extend(
+                        suffix[1:] for suffix in suffixes if suffix.startswith("'")
+                    )
             elif pattern.startswith("numeric"):
                 if not rule.get("allows_contraction", True):
                     self.numeric_apostrophe_blocks.update(suffixes)
+        self.apostrophe_suffix_bodies = sorted(set(self.apostrophe_suffix_bodies), key=len, reverse=True)
 
     def _load_data(self):
         with open(find_data_file("lexicon_en.json", self.base_data_dir), "r", encoding="utf-8") as f:
@@ -570,10 +583,9 @@ class BrailleRuleValidator:
         )
 
     def _wordsign_entry(self, lower_token: str) -> Optional[Dict[str, Any]]:
+        """알파벳 단어약어는 but, can처럼 단어에만 대응한다. 한 글자 b는 철자표의 단독 글자다."""
         if lower_token in self.word_to_wordsign:
             return self.word_to_wordsign[lower_token]
-        if len(lower_token) == 1 and lower_token in self.alphabetic_wordsigns:
-            return self.alphabetic_wordsigns[lower_token]
         return None
 
     def _wordsign_suffix_issue(self, lower_token: str) -> Optional[Dict[str, Any]]:
@@ -620,7 +632,11 @@ class BrailleRuleValidator:
 
         tokens = []
         for tok in raw_tokens:
-            apostrophe_match = re.match(r"^([a-zA-Z]+)(['’](?i:s|d|re|ve|ll|m|t))$", tok)
+            suffix_body = "|".join(re.escape(body) for body in self.apostrophe_suffix_bodies)
+            apostrophe_match = (
+                re.match(rf"^([a-zA-Z]+)(['’](?i:{suffix_body}))$", tok)
+                if suffix_body else None
+            )
             plural_possessive = re.match(r"^([a-zA-Z]+s)(['’])$", tok)
 
             if apostrophe_match:
@@ -770,7 +786,22 @@ class BrailleRuleValidator:
                 morphemes = self.segment_morphemes(lower_token)
                 item_report["morphemes"] = morphemes
 
-                if not wordsign_suppressed:
+                isolated = self.isolated_letters.get(lower_token) if len(lower_token) == 1 else None
+                if isolated:
+                    note = {
+                        "type": "Isolated Letter",
+                        "letter": lower_token,
+                        "unicode": isolated.get("unicode"),
+                    }
+                    if isolated.get("requiresGrade1") and self._is_standing_alone(tokens, i):
+                        note["indicator"] = self.letter_grade1_indicator
+                        note["reason"] = (
+                            f"Standing-alone letter '{lower_token}' uses the grade-1 symbol "
+                            f"indicator ({self.letter_grade1_indicator}) before the letter cell."
+                        )
+                    item_report["validations"].append(note)
+
+                if not wordsign_suppressed and not isolated:
                     wordsign = self._wordsign_entry(lower_token)
                     if wordsign:
                         if self._is_standing_alone(tokens, i):

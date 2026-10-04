@@ -265,7 +265,7 @@ def test_canonical_roundtrip():
     assert en_engine.braille_to_text(en_engine.contraction_items["con"]["unicode"] + a) == "cona"
     assert en_engine.text_to_braille("adda") == a + d + d + a
     assert en_engine.braille_to_text(en_engine.contraction_items["dis"]["unicode"] + a) == "disa"
-    assert en_engine.braille_to_text(a + "⠂" + a) == "aea"
+    assert en_engine.braille_to_text(a + "⠂" + a) == "aeaa"
     assert en_engine.braille_to_text(a + "⠲") == "a."
     assert en_engine.braille_to_text(a + "⠖") == "a!"
     assert en_engine.braille_to_text(en_engine.num_prefix + a + "⠂" + b) == "1,2"
