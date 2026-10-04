@@ -77,18 +77,40 @@
 
   "isolated_letter": {
     "category": "standing_alone_letter",
-    "description": "약어가 아닌 단독 알파벳(a, i, o 또는 외자 기호)으로 표기될 때 1급 점자 기호표 등이 필요한 조건",
+    "description": "약어가 아닌 단독 알파벳. a, i, o는 약어가 없어 글자 칸만 적고, 나머지 글자는 단어약어로 읽히지 않도록 앞에 1급 기호표(⠰, 5·6점)를 붙인다.",
     "rule": {
       "position": "standalone",
-      "requiresGrade1Indicator": true,
+      "grade1IndicatorDots": [5, 6],
+      "grade1IndicatorUnicode": "⠰",
       "priority": 50
     },
     "items": {
-            "a": { "word": "a", "dots": [[1]], "unicode": "⠁", "requiresGrade1": false },
+      "a": { "word": "a", "dots": [[1]], "unicode": "⠁", "requiresGrade1": false },
+      "b": { "word": "b", "dots": [[5, 6], [1, 2]], "unicode": "⠰⠃", "requiresGrade1": true },
+      "c": { "word": "c", "dots": [[5, 6], [1, 4]], "unicode": "⠰⠉", "requiresGrade1": true },
+      "d": { "word": "d", "dots": [[5, 6], [1, 4, 5]], "unicode": "⠰⠙", "requiresGrade1": true },
+      "e": { "word": "e", "dots": [[5, 6], [1, 5]], "unicode": "⠰⠑", "requiresGrade1": true },
+      "f": { "word": "f", "dots": [[5, 6], [1, 2, 4]], "unicode": "⠰⠋", "requiresGrade1": true },
+      "g": { "word": "g", "dots": [[5, 6], [1, 2, 4, 5]], "unicode": "⠰⠛", "requiresGrade1": true },
+      "h": { "word": "h", "dots": [[5, 6], [1, 2, 5]], "unicode": "⠰⠓", "requiresGrade1": true },
       "i": { "word": "i", "dots": [[2, 4]], "unicode": "⠊", "requiresGrade1": false },
+      "j": { "word": "j", "dots": [[5, 6], [2, 4, 5]], "unicode": "⠰⠚", "requiresGrade1": true },
+      "k": { "word": "k", "dots": [[5, 6], [1, 3]], "unicode": "⠰⠅", "requiresGrade1": true },
+      "l": { "word": "l", "dots": [[5, 6], [1, 2, 3]], "unicode": "⠰⠇", "requiresGrade1": true },
+      "m": { "word": "m", "dots": [[5, 6], [1, 3, 4]], "unicode": "⠰⠍", "requiresGrade1": true },
+      "n": { "word": "n", "dots": [[5, 6], [1, 3, 4, 5]], "unicode": "⠰⠝", "requiresGrade1": true },
       "o": { "word": "o", "dots": [[1, 3, 5]], "unicode": "⠕", "requiresGrade1": false },
-      "b": { "word": "b", "dots": [[1, 2]], "unicode": "⠃", "requiresGrade1": true },
-      "c": { "word": "c", "dots": [[1, 4]], "unicode": "⠉", "requiresGrade1": true }
+      "p": { "word": "p", "dots": [[5, 6], [1, 2, 3, 4]], "unicode": "⠰⠏", "requiresGrade1": true },
+      "q": { "word": "q", "dots": [[5, 6], [1, 2, 3, 4, 5]], "unicode": "⠰⠟", "requiresGrade1": true },
+      "r": { "word": "r", "dots": [[5, 6], [1, 2, 3, 5]], "unicode": "⠰⠗", "requiresGrade1": true },
+      "s": { "word": "s", "dots": [[5, 6], [2, 3, 4]], "unicode": "⠰⠎", "requiresGrade1": true },
+      "t": { "word": "t", "dots": [[5, 6], [2, 3, 4, 5]], "unicode": "⠰⠞", "requiresGrade1": true },
+      "u": { "word": "u", "dots": [[5, 6], [1, 3, 6]], "unicode": "⠰⠥", "requiresGrade1": true },
+      "v": { "word": "v", "dots": [[5, 6], [1, 2, 3, 6]], "unicode": "⠰⠧", "requiresGrade1": true },
+      "w": { "word": "w", "dots": [[5, 6], [2, 4, 5, 6]], "unicode": "⠰⠺", "requiresGrade1": true },
+      "x": { "word": "x", "dots": [[5, 6], [1, 3, 4, 6]], "unicode": "⠰⠭", "requiresGrade1": true },
+      "y": { "word": "y", "dots": [[5, 6], [1, 3, 4, 5, 6]], "unicode": "⠰⠽", "requiresGrade1": true },
+      "z": { "word": "z", "dots": [[5, 6], [1, 3, 5, 6]], "unicode": "⠰⠵", "requiresGrade1": true }
     }
   }
 }

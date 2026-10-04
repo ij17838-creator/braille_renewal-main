@@ -16,15 +16,15 @@
     },
     "items": {
       "un": { "morpheme": "un", "type": "negative" },
-      "re": { "morpheme": "re", "type": "repetitive" },
+      "re": { "morpheme": "re", "type": "again_or_back" },
       "pre": { "morpheme": "pre", "type": "locative_temporal" },
       "non": { "morpheme": "non", "type": "negative" },
       "anti": { "morpheme": "anti", "type": "oppositional" },
-      "mis": { "morpheme": "mis", "type": "pejorative" },
-      "over": { "morpheme": "over", "type": "degree" },
-      "under": { "morpheme": "under", "type": "degree" },
+      "mis": { "morpheme": "mis", "type": "incorrect" },
+      "over": { "morpheme": "over", "type": "excessive_or_above" },
+      "under": { "morpheme": "under", "type": "insufficient_or_below" },
       "sub": { "morpheme": "sub", "type": "locative" },
-      "trans": { "morpheme": "trans", "type": "locative" },
+      "trans": { "morpheme": "trans", "type": "across_or_change" },
       "inter": { "morpheme": "inter", "type": "relational" },
       "semi": { "morpheme": "semi", "type": "degree" }
     }
@@ -45,7 +45,7 @@
       },
       "es": {
         "morpheme": "es",
-        "grammar": "plural_or_3rd_singular_sibilant"
+        "grammar": "plural_or_3rd_singular"
       },
       "ed": {
         "morpheme": "ed",
@@ -77,7 +77,7 @@
     "items": {
       "able": { "morpheme": "able", "targetPos": "adjective" },
       "ible": { "morpheme": "ible", "targetPos": "adjective" },
-      "ful": { "morpheme": "ful", "targetPos": "adjective" },
+      "ful": { "morpheme": "ful", "targetPos": "adjective_or_noun" },
       "ish": { "morpheme": "ish", "targetPos": "adjective" },
       "ist": { "morpheme": "ist", "targetPos": "noun" },
       "ism": { "morpheme": "ism", "targetPos": "noun" },
@@ -86,7 +86,7 @@
       "ship": { "morpheme": "ship", "targetPos": "noun" },
       "hood": { "morpheme": "hood", "targetPos": "noun" },
       "dom": { "morpheme": "dom", "targetPos": "noun" },
-      "ly": { "morpheme": "ly", "targetPos": "adverb" }
+      "ly": { "morpheme": "ly", "targetPos": "adverb_or_adjective" }
     }
   },
 
@@ -124,7 +124,8 @@
       },
       "struct": {
         "stem": "struct",
-        "pos": ["verb"],
+        "pos": ["bound_root"],
+        "gloss": "build",
         "allowPrefix": true,
         "allowSuffix": true,
         "hasSilentE": false,
@@ -132,7 +133,8 @@
       },
       "tract": {
         "stem": "tract",
-        "pos": ["verb"],
+        "pos": ["bound_root"],
+        "gloss": "pull",
         "allowPrefix": true,
         "allowSuffix": true,
         "hasSilentE": false,
@@ -194,21 +196,34 @@
     },
     "spelling_transformations": {
       "drop_silent_e": {
-        "triggerSuffixes": ["ing", "ed", "er", "est", "able", "ist", "ize"],
+        "triggerSuffixes": ["ing", "ed", "er", "est", "able", "ible", "ish", "ist", "ism", "ize", "ise"],
         "requiresStemProperty": "hasSilentE",
-        "action": "remove_last_letter"
+        "action": "remove_last_letter",
+        "keepSilentE": {
+          "whenStemEndsWith": ["ce", "ge"],
+          "beforeSuffixes": ["able", "ous"]
+        }
       },
       "double_final_consonant": {
         "triggerSuffixes": ["ing", "ed", "er", "est"],
         "pattern": "[^aeiou][aeiou][bcdfghjklmnpqrstvz]$",
         "excludedEndings": ["w", "x", "y"],
         "requiresStemProperty": "doubleConsonantAllowed",
-        "action": "duplicate_last_consonant"
+        "requiresStress": "monosyllable_or_stressed_final_syllable",
+        "quCountsAsOnset": true,
+        "action": "duplicate_last_consonant",
+        "finalC": {
+          "ending": "c",
+          "action": "insert_k_before_suffix"
+        }
       },
       "y_to_i": {
-        "triggerSuffixes": ["es", "ed", "er", "est", "ly", "ful"],
+        "triggerSuffixes": ["es", "ed", "er", "est", "able", "ly", "ful"],
         "pattern": "[^aeiou]y$",
-        "action": "replace_y_with_i"
+        "action": "replace_y_with_i",
+        "keepY": {
+          "monosyllableBeforeSuffixes": ["ly"]
+        }
       }
     }
   }

@@ -9,7 +9,7 @@
         "canFollowLetters": true,
         "canPrecedeLetters": true
       },
-      "description": "어두/어중/어말 어디서든 다른 철자와 결합해 쓰이는 묶음자 약어",
+      "description": "어두/어중/어말 어디서든 다른 철자와 결합해 쓰이는 묶음자 약어. ch, sh, th, wh, ou, st는 단어 전체일 때 child, shall, this, which, out, still로 읽는다.",
             "items": {
         "ch": { "word": "ch", "dots": [[1, 6]], "unicode": "⠡" },
         "gh": { "word": "gh", "dots": [[1, 2, 6]], "unicode": "⠣" },
@@ -23,6 +23,27 @@
         "st": { "word": "st", "dots": [[3, 4]], "unicode": "⠌" },
         "ing": { "word": "ing", "dots": [[3, 4, 6]], "unicode": "⠬" },
         "ar": { "word": "ar", "dots": [[3, 4, 5]], "unicode": "⠜" }
+      }
+    },
+    {
+      "category": "strong_wordsign",
+      "type": "strong_wordsign_only",
+      "priority": 8,
+      "rule": {
+        "canStandAlone": true,
+        "standingAloneOnly": true,
+        "canFollowLetters": false,
+        "canPrecedeLetters": false,
+        "allowPunctuation": true
+      },
+      "description": "독립 단어로만 쓰이는 강세 단어약어. 점형은 묶음자 ch, sh, th, wh, ou, st와 같고, 더 긴 단어 안에서는 그 묶음자로 읽는다.",
+      "items": {
+        "child": { "word": "child", "dots": [[1, 6]], "unicode": "⠡" },
+        "shall": { "word": "shall", "dots": [[1, 4, 6]], "unicode": "⠩" },
+        "this": { "word": "this", "dots": [[1, 4, 5, 6]], "unicode": "⠹" },
+        "which": { "word": "which", "dots": [[1, 5, 6]], "unicode": "⠱" },
+        "out": { "word": "out", "dots": [[1, 2, 5, 6]], "unicode": "⠳" },
+        "still": { "word": "still", "dots": [[3, 4]], "unicode": "⠌" }
       }
     },
     {

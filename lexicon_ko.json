@@ -10,7 +10,7 @@
         "final_consonant_changes_to": "ㄹ",
         "example_stems": [
           { "base": "듣", "vowel_trigger": "들", "example": "듣다 -> 들어요 / 들으면" },
-          { "base": "걷", "vowel_trigger": "걸", "example": "걷다 -> 걸어요 / 걸으면" },
+          { "base": "걷", "vowel_trigger": "걸", "example": "걷다 -> 걸어요 / 걸으면 (길을 가다일 때. 소매 등을 올리는 걷다는 걷어요로 규칙 활용)" },
           { "base": "묻", "vowel_trigger": "물", "example": "묻다 -> 물어요 (질문하다의 뜻일 때)" }
         ],
         "regular_exceptions": [
@@ -31,7 +31,7 @@
         "inserted_vowel": {
           "default": "우",
           "yang_vowel_monosyllabic_exception": {
-            "condition": "어간이 1음절이고 모음이 'ㅏ' 또는 'ㅗ'인 일부 용언이 '-아/어'를 만날 때",
+            "condition": "'-아/어' 앞에서 '오'가 되는 것은 돕다·곱다뿐이다. 아름답다처럼 ㅏ가 들어 있어도 '워'가 된다. '-(으)' 앞에서는 돕다·곱다도 '우'이다",
             "inserted_vowel": "오",
             "examples": [
               { "base": "돕", "with_ah": "도와", "with_eumyeon": "도우면" },
@@ -63,7 +63,7 @@
         "description": "받침 'ㅅ'은 탈락하지만 모음끼리 축약되지 않고 독립된 음절을 유지함",
         "example_stems": [
           { "base": "짓", "transformed": "지", "example": "짓다 -> 지어 / 지으면 (져 X)" },
-          { "base": "낫", "transformed": "나", "example": "낫다 -> 나아 / 나으면 (나 X)" },
+          { "base": "낫", "transformed": "나", "example": "낫다 -> 나아 / 나으면 (한 음절 '나'로 줄이지 않음)" },
           { "base": "붓", "transformed": "부", "example": "붓다 -> 부어 / 부으면 (붜 X)" }
         ],
         "regular_exceptions": [
@@ -111,7 +111,7 @@
       },
       "transformation": {
         "stem_final_vowel_drops": true,
-        "vowel_harmony_determined_by": "어간 'ㅡ'의 바로 앞 음절 모음 (앞 음절이 없으면 음성 모음 취급)",
+        "vowel_harmony_determined_by": "어간 'ㅡ' 바로 앞 음절의 모음. ㅏ·ㅑ·ㅗ·ㅛ이면 '아', 그 밖이거나 앞 음절이 없으면 '어'",
         "example_stems": [
           { "base": "바쁘", "preceding_vowel": "ㅏ (양성)", "example": "바쁘다 -> 바빠 (바ㅃ + 아)" },
           { "base": "예쁘", "preceding_vowel": "ㅖ (음성)", "example": "예쁘다 -> 예뻐 (예ㅃ + 어)" },
@@ -124,11 +124,13 @@
       "name": "ㄹ 탈락 (규칙적 음운 변동)",
       "target_final_consonant": "ㄹ",
       "trigger_condition": {
-        "following_starts_with_consonant": ["ㄴ", "ㅂ", "ㅅ", "ㄹ"],
-        "following_starts_with_filler_vowel": "-(으) 계열 매개모음 어미 결합 시 매개모음 탈락"
+        "rieul_drops_before": ["ㄴ", "ㅂ", "ㅅ", "오"],
+        "single_rieul_before_rieul_ending": "어미 '-ㄹ' 앞에서는 ㄹ이 겹치지 않고 하나 남는다 (살 + -ㄹ → 살)",
+        "filler_eu_only": "'-(으)면'처럼 매개모음 '으'만 빠지는 어미 앞에서는 ㄹ이 남는다"
       },
       "transformation": {
-        "final_consonant_drops": true,
+        "final_consonant_drops_before_nieun_bieup_siot_o": true,
+        "filler_eu_drops_and_rieul_stays": true,
         "example_stems": [
           { "base": "살", "with_ni": "사니", "with_b_nida": "삽니다", "with_si": "사시다", "with_myeon": "살면" },
           { "base": "알", "with_neun": "아는", "with_b_nida": "압니다", "with_so": "아오", "with_myeon": "알면" },
@@ -155,8 +157,8 @@
         "vowel_eomi": "-아/-어 결합 시 또는 '-(으)' 매개모음 결합 시"
       },
       "transformation": {
-        "with_eu_vowel": "ㅎ 탈락 (파랗다 + 으면 -> 파라면)",
-        "with_ah_uh_vowel": "ㅎ 탈락 및 앞 모음과 축약되어 'ㅐ' 또는 'ㅒ'로 변환 (파랗다 + 아 -> 파래, 하얗다 + 아 -> 하얘)"
+        "with_eu_vowel": "ㅎ이 빠지고 매개모음 으도 빠진다 (파랗다 + 으면 -> 파라면)",
+        "with_ah_uh_vowel": "ㅎ이 빠지며 모음이 바뀐다. ㅏ·ㅓ·ㅗ·ㅜ·ㅡ·ㅣ 계열은 ㅐ (파래, 그래, 노래, 누레), ㅑ는 ㅒ (하얗다 + 아 -> 하얘), ㅕ는 ㅖ (허옇다 + 어 -> 허예)"
       },
       "regular_exceptions": [
         { "base": "좋", "example": "좋다 -> 좋아 / 좋으면" },

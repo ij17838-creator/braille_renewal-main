@@ -67,6 +67,15 @@ class KoreanBrailleEngine:
                 self.complete_syllables[k] = u
                 self.rev_complete[u] = k
 
+        yeong = syllable_items.get("영", {})
+        yeong_override = yeong.get("initial_vowel_override") or {}
+        self.yeong_unicode = yeong.get("unicode", "")
+        self.yeong_override_initials = set(yeong_override.get("initials", []))
+        self.yeong_surface_vowel = yeong_override.get("surface_vowel", "ㅓ")
+        geot = syllable_items.get("것", {})
+        self.geot_unicode = geot.get("unicode", "")
+        self.geot_tensed = set(geot.get("tensed_same_abbreviation", []))
+
         # 3. 기본 자모음 매핑
         self.chosung_map = {k: v["unicode"] for k, v in self.ko.get("chosung", {}).get("items", {}).items()}
         self.rev_chosung = {v: k for k, v in self.chosung_map.items() if v}  # ㅇ(빈 문자열) 제외
@@ -102,11 +111,11 @@ class KoreanBrailleEngine:
                 f"ko.json 사 풀어쓰기 {stored_sa!r}가 초성 ㅅ+중성 ㅏ({self.sa_expanded!r})와 다릅니다."
             )
 
+        number_prefix_rule = self.ko.get("special_rules", {}).get("number_prefix_rule", {})
         self.affected_initials = set(
-            self.ko.get("special_rules", {})
-            .get("number_prefix_rule", {})
-            .get("affected_initials", ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"])
+            number_prefix_rule.get("affected_initials", ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"])
         )
+        self.affected_abbreviations = set(number_prefix_rule.get("affected_abbreviations", []))
 
         # 한글 단위어 예외 목록 (한글 음절 충돌 방지용)
         self.exempt_units = set(
@@ -360,31 +369,30 @@ class KoreanBrailleEngine:
                 number_break = ""
                 rules_applied = []
 
-                # 한국 점자 규정 제18항: 음절 약어 '사' 예외(풀어쓰기) 판별
-                # 제18항 제2호: 숫자 바로 뒤에 '사'가 올 경우 풀어 적음 (예: "4사분기")
-                # 제18항 제1호: '사' 뒤에 바로 모음으로 시작하는 음절이 이어지는 경우 풀어 적음 (예: "사이")
+                # 제17항: '사' 약자 예외. 제18항은 그래서·그러나 등 단어 약어이다.
+                # 제2호: 숫자 바로 뒤에 '사'가 오면 풀어 적음 (예: "4사분기")
+                # 제1호: '사' 뒤에 모음으로 시작하는 음절이 이어지면 풀어 적음 (예: "사이")
                 is_sa_exception = False
                 if ch == '사':
-                    # 예외 1: 직전 위치가 숫자이거나 수표 모드 유지 상태였던 경우
                     if in_number_mode or (i > 0 and text[i-1].isdigit()):
                         is_sa_exception = True
-                        rules_applied.append(f"제18항 제2호 적용: 숫자 뒤 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
-
-                    # 예외 2: 다음 글자가 초성 'ㅇ'으로 시작하여 모음으로 이어지는 음절인 경우
+                        rules_applied.append(f"제17항 제2호 적용: 숫자 뒤 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
                     elif i + 1 < n and '가' <= text[i+1] <= '힣':
                         next_decomp = self.decompose(text[i+1])
                         if next_decomp and next_decomp[0] == 'ㅇ':
                             is_sa_exception = True
-                            rules_applied.append(f"제18항 제1호 적용: 모음 연접 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
+                            rules_applied.append(f"제17항 제1호 적용: 모음 연접 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
 
-                # 혼동 초성은 띄어쓰기로 수표를 끝낸다. 단위어는 붙여 적는다.
+                # 혼동 초성·약자 운은 띄어쓰기로 수표를 끝낸다. 단위어는 붙여 적는다.
                 if in_number_mode:
                     tail_text = text[i:]
                     is_exempt = tail_text.startswith(self.exempt_units_sorted)
-
-                    if cho in self.affected_initials and not is_exempt:
+                    if not is_exempt and (cho in self.affected_initials or ch in self.affected_abbreviations):
                         number_break = " "
-                        rules_applied.append(f"초성 '{cho}'이 숫자와 겹치므로 띄어쓰기로 숫자 입력 종료")
+                        if ch in self.affected_abbreviations:
+                            rules_applied.append(f"약자 '{ch}'이 숫자와 겹치므로 띄어쓰기로 숫자 입력 종료")
+                        else:
+                            rules_applied.append(f"초성 '{cho}'이 숫자와 겹치므로 띄어쓰기로 숫자 입력 종료")
                     in_number_mode = False
 
                 if is_sa_exception:
@@ -434,6 +442,21 @@ class KoreanBrailleEngine:
             base_cho = self.TENSER_MAP[cho]
             rules.append(f"된소리 초성 '{cho}' 된소리표(⠠) 적용")
 
+        if raw_char in self.geot_tensed and self.geot_unicode:
+            rules.append(f"된소리표와 '것' 약자 결합 ('{raw_char}')")
+            return tenser_prefix + self.geot_unicode, rules
+
+        # ㅅ·ㅆ·ㅈ·ㅉ·ㅊ 뒤의 '영' 약자는 성·썽·정·쩡·청. 셩·졍·쳥 등은 풀어 적는다.
+        skip_yeong_abbr = False
+        if self.yeong_unicode and cho in self.yeong_override_initials and jong == 'ㅇ':
+            if jung == self.yeong_surface_vowel:
+                cho_b = "" if base_cho == 'ㅇ' else self.chosung_map.get(base_cho, "")
+                rules.append(f"'{cho}' 뒤 '영' 약자는 '{raw_char}'")
+                return tenser_prefix + cho_b + self.yeong_unicode, rules
+            if jung == 'ㅕ':
+                skip_yeong_abbr = True
+                rules.append(f"'{raw_char}'은 '영' 약자를 쓰지 않고 풀어 적음")
+
         # C. '가' 계열 약자 (초성 + 'ㅏ')
         base_ga = base_cho + 'ㅏ'
         if jung == 'ㅏ' and base_ga in self.ga_series:
@@ -443,7 +466,7 @@ class KoreanBrailleEngine:
             return tenser_prefix + ga_b + jong_b, rules
 
         # D. '모음+받침' 약자
-        if (jung, jong) in self.vowel_coda_series:
+        if not skip_yeong_abbr and (jung, jong) in self.vowel_coda_series:
             vc_b = self.vowel_coda_series[(jung, jong)]
             if base_cho == 'ㅇ':
                 rules.append(f"초성 'ㅇ' 생략 및 모음+받침 약자 적용 (중성:{jung}, 종성:{jong})")
@@ -617,6 +640,12 @@ class KoreanBrailleEngine:
         is_tense = False
         offset = 0
 
+        if self.geot_unicode and self.geot_tensed:
+            geot_token = self.TENSER_SIGN + self.geot_unicode
+            if b_token.startswith(geot_token, start_idx):
+                tensed = "껏" if "껏" in self.geot_tensed else next(iter(self.geot_tensed))
+                return tensed, len(geot_token)
+
         # 1. 6점(⠠) 처리 정밀화: 된소리표 vs 초성 'ㅅ' 구분
         if b_token[start_idx] == self.TENSER_SIGN:
             if start_idx + 1 < len(b_token):
@@ -665,6 +694,8 @@ class KoreanBrailleEngine:
         if c1 in self.rev_chosung and c2 and c2 in self.rev_vowel_coda:
             jung, jong = self.rev_vowel_coda[c2]
             cho = apply_tense(self.rev_chosung[c1])
+            if c2 == self.yeong_unicode and cho in self.yeong_override_initials:
+                jung = self.yeong_surface_vowel
             return self.compose(cho, jung, jong), offset + 2
 
         # 3. '가' 계열 약자 + 종성 (2셀)

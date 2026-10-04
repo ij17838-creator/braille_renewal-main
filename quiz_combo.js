@@ -186,7 +186,14 @@ function buildKorean(data) {
   const numPrefix = numbers.numeric_indicators?.num_prefix?.unicode || '⠼';
   const digits = {};
   Object.entries(numbers.digits || {}).forEach(([k, v]) => { digits[k] = v.unicode; });
-  const affected = ko.special_rules?.number_prefix_rule?.affected_initials || ['ㄴ', 'ㄷ', 'ㅁ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+  const numberRule = ko.special_rules?.number_prefix_rule || {};
+  const affected = numberRule.affected_initials || ['ㄴ', 'ㄷ', 'ㅁ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+  const affectedAbbr = new Set(numberRule.affected_abbreviations || []);
+  const yeong = ko.abbreviation_syllable?.items?.['영'] || {};
+  const yeongOverride = new Set(yeong.initial_vowel_override?.initials || []);
+  const yeongVowel = yeong.initial_vowel_override?.surface_vowel || 'ㅓ';
+  const yeongCell = yeong.unicode || '';
+  const geotTensed = new Set(ko.abbreviation_syllable?.items?.['것']?.tensed_same_abbreviation || []);
   const exempt = rules.collision_resolutions?.trailing_letters?.exempt_units || ['년', '월', '일', '시', '분', '초', '개', '명', '원'];
 
   const punct = [];
@@ -213,9 +220,11 @@ function buildKorean(data) {
     }
 
     let head = '';
-    if (afterNumber && affected.includes(cho) && !exemptHit) {
+    if (afterNumber && (affected.includes(cho) || affectedAbbr.has(ch)) && !exemptHit) {
       head = ' ';
-      labels.push(`수표 뒤 '${cho}' 앞 띄어쓰기로 숫자 종료`);
+      labels.push(affectedAbbr.has(ch)
+        ? `수표 뒤 약자 '${ch}' 앞 띄어쓰기로 숫자 종료`
+        : `수표 뒤 '${cho}' 앞 띄어쓰기로 숫자 종료`);
     }
 
     if (complete[ch]) {
@@ -230,13 +239,25 @@ function buildKorean(data) {
       labels.push(`된소리 ${cho}`);
     }
 
+    if (geotTensed.has(ch) && complete['것']) {
+      labels.push("된소리 + '것' 약자");
+      return { braille: head + tenser + complete['것'], label: labels.join(', ') };
+    }
+
+    if (yeongCell && yeongOverride.has(cho) && jong === 'ㅇ' && jung === yeongVowel) {
+      const choB = baseCho === 'ㅇ' ? '' : (choMap[baseCho] || '');
+      labels.push(`'${cho}' 뒤 '영' 약자는 '${ch}'`);
+      return { braille: head + tenser + choB + yeongCell, label: labels.join(', ') };
+    }
+
     if (jung === 'ㅏ' && gaByOnset[baseCho]) {
       const tail = jong ? (jongMap[jong] || '') : '';
       labels.push(`'${baseCho}ㅏ' 약자` + (jong ? ` + 받침 ${jong}` : ''));
       return { braille: head + tenser + gaByOnset[baseCho] + tail, label: labels.join(', ') };
     }
 
-    if (jong && vc[`${jung}|${jong}`]) {
+    const spellYeong = yeongOverride.has(cho) && jung === 'ㅕ' && jong === 'ㅇ';
+    if (!spellYeong && jong && vc[`${jung}|${jong}`]) {
       if (baseCho === 'ㅇ') {
         labels.push('모음·받침 약자');
         return { braille: head + tenser + vc[`${jung}|${jong}`], label: labels.join(', ') };
@@ -411,7 +432,8 @@ function buildEnglish(data) {
       const text = (item.word || key || '').toLowerCase();
       if (!text || !item.unicode) return;
       if (group.rule?.standingAloneOnly) {
-        wholeWords.push({ word: item.word || key, unicode: item.unicode, rule: '하점 단어약어' });
+        const ruleName = group.category === 'strong_wordsign' ? '강세 단어약어' : '하점 단어약어';
+        wholeWords.push({ word: item.word || key, unicode: item.unicode, rule: ruleName });
         return;
       }
       if (type === 'initial_contractions' || type === 'strong_wordsign' || group.rule?.canStandAlone) {

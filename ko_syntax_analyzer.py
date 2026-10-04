@@ -33,11 +33,11 @@ class BrailleRuleValidator:
 
     def _init_rules(self):
         # 1. 숫자 뒤 충돌 주의 초성 (ㄴ, ㄷ, ㅁ, ㅋ, ㅌ, ㅍ, ㅎ)
+        number_prefix_rule = self.ko_data.get("special_rules", {}).get("number_prefix_rule", {})
         self.affected_initials = set(
-            self.ko_data.get("special_rules", {})
-            .get("number_prefix_rule", {})
-            .get("affected_initials", ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"])
+            number_prefix_rule.get("affected_initials", ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"])
         )
+        self.affected_abbreviations = set(number_prefix_rule.get("affected_abbreviations", []))
 
         # 2. 숫자 뒤 단위어 예외 목록 (다음절 단위어 추가 및 길이 역순 정렬)
         raw_units = (
@@ -108,14 +108,19 @@ class BrailleRuleValidator:
                     continue
 
                 decomp = self.decompose(next_ch)
-                if decomp and decomp[0] in self.affected_initials:
+                initial = decomp[0] if decomp else ""
+                if next_ch in self.affected_abbreviations or initial in self.affected_initials:
+                    if next_ch in self.affected_abbreviations:
+                        message = f"숫자 '{curr_ch}' 뒤에 약자 '{next_ch}'이 붙어 있어 띄어쓰기가 필요합니다."
+                    else:
+                        message = f"숫자 '{curr_ch}' 뒤에 초성 '{initial}'이(가) 오는 음절 '{next_ch}'이 붙어 있어 띄어쓰기가 필요합니다."
                     issues.append({
                         "type": "NUMBER_HANGUL_COLLISION",
                         "index": i + 1,
                         "trigger": f"{curr_ch}{next_ch}",
-                        "initial": decomp[0],
+                        "initial": initial or next_ch,
                         "rule": "띄어쓰기로 숫자 입력 종료",
-                        "message": f"숫자 '{curr_ch}' 뒤에 초성 '{decomp[0]}'이(가) 오는 음절 '{next_ch}'이 붙어 있어 띄어쓰기가 필요합니다."
+                        "message": message
                     })
         return issues
 

@@ -33,19 +33,19 @@
       "다": { "syllable": "다", "dots": [[2, 4]], "unicode": "⠊", "type": "ga_series" },
       "마": { "syllable": "마", "dots": [[1, 5]], "unicode": "⠑", "type": "ga_series" },
       "바": { "syllable": "바", "dots": [[4, 5]], "unicode": "⠘", "type": "ga_series" },
-      "사": { "syllable": "사", "dots": [[1, 2, 3]], "unicode": "⠇", "type": "ga_series", "expanded_unicode": "⠠⠣", "expanded_dots": [[6], [1, 2, 6]], "exception_rules": { "vowel_connection": "제18항 제1호: '사' 뒤에 바로 모음이 이어지는 경우 풀어 적음 (예: 사이 -> ⠠⠣⠕)", "after_number": "제18항 제2호: 숫자 뒤에 '사'가 올 경우 풀어 적음 (예: 4사분기 -> ⠼⠙⠠⠣...)" } },
+      "사": { "syllable": "사", "dots": [[1, 2, 3]], "unicode": "⠇", "type": "ga_series", "expanded_unicode": "⠠⠣", "expanded_dots": [[6], [1, 2, 6]], "exception_rules": { "vowel_connection": "제17항 제1호: '사' 뒤에 바로 모음이 이어지는 경우 풀어 적음 (예: 사이 -> ⠠⠣⠕). 제18항은 그래서·그러나 등 단어 약어이다", "after_number": "제17항 제2호: 숫자 뒤에 '사'가 올 경우 풀어 적음 (예: 4사분기 -> ⠼⠙⠠⠣...)" } },
       "자": { "syllable": "자", "dots": [[4, 6]], "unicode": "⠨", "type": "ga_series" },
       "카": { "syllable": "카", "dots": [[1, 2, 4]], "unicode": "⠋", "type": "ga_series" },
       "타": { "syllable": "타", "dots": [[1, 2, 5]], "unicode": "⠓", "type": "ga_series" },
       "파": { "syllable": "파", "dots": [[1, 4, 5]], "unicode": "⠙", "type": "ga_series" },
       "하": { "syllable": "하", "dots": [[2, 4, 5]], "unicode": "⠚", "type": "ga_series" },
-      "것": { "syllable": "것", "dots": [[4, 5, 6], [2, 3, 4]], "unicode": "⠸⠎", "type": "complete_syllable" },
+      "것": { "syllable": "것", "dots": [[4, 5, 6], [2, 3, 4]], "unicode": "⠸⠎", "type": "complete_syllable", "tensed_same_abbreviation": ["껏"], "ssang_jong_exception": "껐은 것 약자를 쓰지 않고 꺼(된소리+ㄱ+ㅓ) 뒤에 받침 ㅆ을 적는다" },
       "억": { "syllable": "억", "dots": [[1, 4, 5, 6]], "unicode": "⠹", "type": "vowel_coda_series" },
       "언": { "syllable": "언", "dots": [[2, 3, 4, 5, 6]], "unicode": "⠾", "type": "vowel_coda_series" },
       "얼": { "syllable": "얼", "dots": [[2, 3, 4, 5]], "unicode": "⠞", "type": "vowel_coda_series" },
       "연": { "syllable": "연", "dots": [[1, 6]], "unicode": "⠡", "type": "vowel_coda_series" },
       "열": { "syllable": "열", "dots": [[1, 2, 5, 6]], "unicode": "⠳", "type": "vowel_coda_series" },
-      "영": { "syllable": "영", "dots": [[1, 2, 4, 5, 6]], "unicode": "⠻", "type": "vowel_coda_series" },
+      "영": { "syllable": "영", "dots": [[1, 2, 4, 5, 6]], "unicode": "⠻", "type": "vowel_coda_series", "initial_vowel_override": { "initials": ["ㅅ", "ㅆ", "ㅈ", "ㅉ", "ㅊ"], "surface_vowel": "ㅓ", "surface_jong": "ㅇ", "note": "이 초성 뒤에서는 같은 점형을 성·썽·정·쩡·청으로 읽는다. 셩·쎵·졍·쪙·쳥은 약자를 쓰지 않고 ㅕ와 받침 ㅇ으로 풀어 적는다" } },
       "옥": { "syllable": "옥", "dots": [[1, 3, 4, 6]], "unicode": "⠭", "type": "vowel_coda_series" },
       "온": { "syllable": "온", "dots": [[1, 2, 3, 5, 6]], "unicode": "⠷", "type": "vowel_coda_series" },
       "옹": { "syllable": "옹", "dots": [[1, 2, 3, 4, 5, 6]], "unicode": "⠿", "type": "vowel_coda_series" },
@@ -164,8 +164,9 @@
     "number_prefix_rule": {
       "trigger_after": "number",
       "affected_initials": ["ㄴ", "ㄷ", "ㅁ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"],
+      "affected_abbreviations": ["운"],
       "action": "terminate_number_with_space",
-      "note": "수표(⠼) 뒤에 초성 'ㄴ, ㄷ, ㅁ, ㅋ, ㅌ, ㅍ, ㅎ'이 오면 숫자와 혼동되므로 띄어쓰기로 숫자 입력을 종료한다"
+      "note": "수표(⠼) 뒤에 초성 ㄴ·ㄷ·ㅁ·ㅋ·ㅌ·ㅍ·ㅎ(숫자 3·9·5·6·8·4·0)이나 약자 운(숫자 7)이 오면 띄어쓰기로 숫자 입력을 종료한다. 1급 점자표는 넣지 않는다"
     }
   }
 }

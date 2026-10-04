@@ -414,6 +414,7 @@ function exceptionCards(slice, data) {
 
   const rule = ko?.special_rules?.number_prefix_rule;
   const affected = new Set(rule?.affected_initials || []);
+  const affectedAbbr = new Set(rule?.affected_abbreviations || []);
   const pads = [];
   const affectedSyllables = [];
   for (const [syllable, item] of Object.entries(items)) {
@@ -422,6 +423,9 @@ function exceptionCards(slice, data) {
     if (!parts) continue;
     if (affected.has(parts[0])) affectedSyllables.push(syllable);
     else pads.push(syllable);
+  }
+  for (const syllable of affectedAbbr) {
+    if (items[syllable]) affectedSyllables.push(syllable);
   }
 
   const padRun = (count, start) => {
@@ -534,11 +538,12 @@ function exceptionCards(slice, data) {
       const after = padRun(frame.after, index + frame.before);
       if (!num || !abbr || !parts || !before || !after) return;
       const letter = `${texts(before)}${digit} ${syllable}${texts(after)}`;
+      const collision = affectedAbbr.has(syllable) ? `약자 ${syllable}` : parts[0];
       push(
         letter,
         [...stepsOf(before).flat(), ...num, space, ...abbr, ...stepsOf(after).flat()],
         [...stepsOf(before).flat(), ...num, ...abbr, ...stepsOf(after).flat()],
-        `숫자 뒤에 ${parts[0]}이 오면 숫자로 읽히지 않도록 띄어쓰기로 숫자 입력을 끝냅니다.`,
+        `숫자 뒤에 ${collision}이 오면 숫자로 읽히지 않도록 띄어쓰기로 숫자 입력을 끝냅니다.`,
         (right, wrong) => `${letter}: 붙여 적으면 ${wrong}(×), 띄어 쓴 ${right}(○)`,
         'space'
       );
