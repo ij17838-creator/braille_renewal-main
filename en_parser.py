@@ -11,12 +11,10 @@ from data_paths import find_data_file
 # =====================================================================
 class MorphemeSegmenter:
     """
-    lexicon_en.json 규칙을 기반으로 단어를 (접두사)-(어근)-(접미사)로 분절하여
-    형태소 경계(Morpheme Boundary)를 가로지르는 잘못된 약어 적용을 방지합니다.
-    사전에 등록되지 않은 단어라도 일반적인 접두사/접미사 규칙을 기반으로 완화 분절합니다.
+    lexicon_en.json에 실제로 있는 접두사·어근·접미사만 분절한다.
+    사전에 없는 접미 모양(er, tion 등)으로 경계를 만들면 other의 the, reading의 ea처럼
+    허용된 약어까지 막는다.
     """
-    DEFAULT_PREFIXES = ["re", "un", "dis", "pre", "mis", "in", "im", "non"]
-    DEFAULT_SUFFIXES = ["ing", "ed", "ly", "tion", "ment", "ness", "ful", "less", "able", "ible", "er", "est", "s", "es"]
 
     def __init__(self, lexicon_path: str):
         if not os.path.exists(lexicon_path):
@@ -61,13 +59,21 @@ class MorphemeSegmenter:
             if tokens_without_prefix:
                 return tokens_without_prefix
 
-        # 3. 사전 미포함 단어 Fallback 분절 완화 규칙
-        fallback_tokens = self._fallback_segment(w)
-        if fallback_tokens:
-            return fallback_tokens
+        # reaction = re + action 처럼, 접두 뒤가 등록된 어근으로 시작하면 그 경계만 남긴다.
+        rooted = self._prefix_on_root(w)
+        if rooted:
+            return rooted
 
-        # 분절 규칙에 걸리지 않는 일반 어휘
         return [w]
+
+    def _prefix_on_root(self, word: str) -> Optional[List[str]]:
+        for prefix in sorted(self.prefixes, key=len, reverse=True):
+            if not word.startswith(prefix) or len(word) == len(prefix):
+                continue
+            rest = word[len(prefix):]
+            if any(rest == root or rest.startswith(root) for root in self.roots):
+                return [prefix, rest]
+        return None
 
     def _match_root_and_suffix(self, sub_word: str) -> Optional[List[str]]:
         if sub_word in self.roots:
@@ -100,37 +106,6 @@ class MorphemeSegmenter:
 
         return None
 
-    def _fallback_segment(self, w: str) -> Optional[List[str]]:
-        """사전에 등록되지 않은 단어의 접두사/접미사 완화 분절"""
-        all_prefixes = sorted(set(list(self.prefixes.keys()) + self.DEFAULT_PREFIXES), key=len, reverse=True)
-        all_suffixes = sorted(set(list(self.inflectional_suffixes.keys()) + list(self.derivational_suffixes.keys()) + self.DEFAULT_SUFFIXES), key=len, reverse=True)
-
-        matched_p = ""
-        core = w
-
-        for p in all_prefixes:
-            if core.startswith(p) and len(core) - len(p) >= 3:
-                matched_p = p
-                core = core[len(p):]
-                break
-
-        matched_s = ""
-        for s in all_suffixes:
-            if core.endswith(s) and len(core) - len(s) >= 2:
-                matched_s = s
-                core = core[:-len(s)]
-                break
-
-        res = []
-        if matched_p:
-            res.append(matched_p)
-        if core:
-            res.append(core)
-        if matched_s:
-            res.append(matched_s)
-
-        return res if len(res) > 1 else None
-
 
 # =====================================================================
 # 2. 통합 점자 ↔ 텍스트 변환 엔진 (Braille Engine)
@@ -140,6 +115,9 @@ class BrailleEngine:
     UEB 규정에 따른 양방향 변환 엔진.
     수표 모드(⠼), 1급 점자표(⠆, 2·3점), 형태소 경계 검사, 약어 우선순위를 처리합니다.
     """
+    # 대문자표는 영어 JSON에 따로 없고, 점역과 역점역이 같은 칸을 쓴다.
+    CAP_LETTER = "\u2820"
+    CAP_WORD = "\u2820\u2820"
     def __init__(self, base_data_dir: Optional[str] = None):
         self.base_data_dir = base_data_dir
         lexicon_path = find_data_file("lexicon_en.json", base_data_dir)
@@ -191,6 +169,10 @@ class BrailleEngine:
             braille = item.get("unicode")
             if braille and item.get("requiresGrade1"):
                 self.isolated_braille_to_letter[braille] = letter
+        self.isolated_prefixes = sorted(
+            self.isolated_braille_to_letter.items(),
+            key=lambda pair: -len(pair[0]),
+        )
 
     def _load_digits(self):
         """숫자 칸은 numbers.json이 기준이다. 같은 칸의 알파벳은 철자표와 맞아야 한다."""
@@ -354,6 +336,8 @@ class BrailleEngine:
         self.contraction_rules = {}
         self.rev_groupsign_senses = {}
         self.contraction_items = {}
+        self.groupsign_cells = set()
+        self.ambiguous_medial_cells = set()
 
         c_path = self._find_file("en_contractions.json")
         if not os.path.exists(c_path):
@@ -403,6 +387,9 @@ class BrailleEngine:
                     )
 
         self.groupsigns.sort(key=lambda item: (item[2], -len(item[0])))
+        self.groupsign_cells = {cell for braille in self.rev_groupsign_senses for cell in braille}
+        punct_exact = {braille for braille, _char in self.punctuation_sequences}
+        self.ambiguous_medial_cells = punct_exact & set(self.rev_groupsign_senses)
 
     def _add_symbol_sense(self, braille: str, char: str, context: str):
         if not braille:
@@ -462,8 +449,8 @@ class BrailleEngine:
         tokens = self._token_re.findall(text)
         result = []
         in_numeric_mode = False
-        cap_letter = "\u2820"
-        cap_word = "\u2820\u2820"
+        cap_letter = self.CAP_LETTER
+        cap_word = self.CAP_WORD
 
         for index, token in enumerate(tokens):
             if not token:
@@ -507,8 +494,17 @@ class BrailleEngine:
                     braille_word = self._translate_word(stem, standing_alone=standing) + self._spell_chars(suffix)
                 else:
                     braille_word = self._translate_word(lower, standing_alone=standing)
-                if came_from_numeric and braille_word.startswith(self.grade1_prefix):
-                    braille_word = self._spell_chars(lower)
+                if came_from_numeric and (
+                    braille_word.startswith(self.grade1_prefix)
+                    or self._leading_numeric_continuation(braille_word)
+                ):
+                    braille_word = self._contract_surface(
+                        lower,
+                        whole_word=True,
+                        standing_alone=standing,
+                        avoid_numeric_prefix=True,
+                        avoid_grade1_prefix=True,
+                    )
                 prefix_indicator = ""
                 if came_from_numeric and braille_word and braille_word[0] in self.grade1_cells:
                     prefix_indicator = self.grade1_prefix
@@ -545,7 +541,7 @@ class BrailleEngine:
             if shortform is not None:
                 return shortform
 
-        return self._contract_surface(word, whole_word=True)
+        return self._contract_surface(word, whole_word=True, standing_alone=standing_alone)
 
     def _wordsign_blocked(self, word: str) -> bool:
         """en_spell.json은 알파벳 단어약어 뒤에 일반 접미를 붙이지 않는다. 's만 예외다."""
@@ -618,51 +614,65 @@ class BrailleEngine:
             bounds.add(cursor)
         return bounds
 
-    def _contract_surface(self, text: str, whole_word: bool) -> str:
+    def _contract_surface(
+        self,
+        text: str,
+        whole_word: bool,
+        standing_alone: bool = True,
+        avoid_numeric_prefix: bool = False,
+        avoid_grade1_prefix: bool = False,
+    ) -> str:
+        """왼쪽부터 가장 긴 유효 약어를 고른다. 길이가 같으면 priority가 작은 쪽을 쓴다."""
         if not text:
             return ""
         boundaries = self._surface_boundaries(text) if whole_word else set()
-        claimed = []
-
-        def overlaps(start: int, end: int) -> bool:
-            return any(not (end <= left or start >= right) for left, right, _braille in claimed)
-
-        for pattern, braille, _priority, rule in self.groupsigns:
-            cursor = 0
-            while True:
-                found = text.find(pattern, cursor)
-                if found < 0:
-                    break
-                end = found + len(pattern)
-                if overlaps(found, end) or not self._print_span_ok(text, found, end, rule, whole_word, boundaries):
-                    cursor = found + 1
-                    continue
-                claimed.append((found, end, braille))
-                cursor = end
-
-        claimed.sort()
         out = []
-        cursor = 0
-        for start, end, braille in claimed:
-            if cursor < start:
-                out.append(self._spell_chars(text[cursor:start]))
-            out.append(braille)
-            cursor = end
-        if cursor < len(text):
-            out.append(self._spell_chars(text[cursor:]))
+        index = 0
+        while index < len(text):
+            best = None
+            for pattern, braille, priority, rule in self.groupsigns:
+                if not pattern or not text.startswith(pattern, index):
+                    continue
+                end = index + len(pattern)
+                if avoid_numeric_prefix and index == 0 and self._leading_numeric_continuation(braille):
+                    continue
+                if avoid_grade1_prefix and index == 0 and braille.startswith(self.grade1_prefix):
+                    continue
+                if not self._print_span_ok(
+                    text, index, end, rule, whole_word, boundaries, standing_alone
+                ):
+                    continue
+                rank = (len(pattern), -priority)
+                if best is None or rank > best[0]:
+                    best = (rank, braille, end)
+            if best:
+                out.append(best[1])
+                index = best[2]
+                continue
+            out.append(self._spell_chars(text[index]))
+            index += 1
         return "".join(out)
 
-    def _print_span_ok(self, text: str, start: int, end: int, rule: dict, whole_word: bool, boundaries: set) -> bool:
+    def _print_span_ok(
+        self,
+        text: str,
+        start: int,
+        end: int,
+        rule: dict,
+        whole_word: bool,
+        boundaries: set,
+        standing_alone: bool = True,
+    ) -> bool:
         if any(start < bound < end for bound in boundaries):
             return False
         at_start = start == 0
         at_end = end == len(text)
         whole = at_start and at_end
-        if rule.get("avoidWhenStandingAlone") and whole:
+        if rule.get("avoidWhenStandingAlone") and whole and standing_alone:
             return False
         if rule.get("standingAloneOnly"):
             return False
-        if whole and whole_word and not rule.get("canStandAlone", False):
+        if whole and whole_word and standing_alone and not rule.get("canStandAlone", False):
             return False
         if rule.get("requiresSurroundingLetters") and not (start > 0 and end < len(text)):
             return False
@@ -673,6 +683,34 @@ class BrailleEngine:
         if not rule.get("canPrecedeLetters", True) and not at_end:
             return False
         return True
+
+    def _leading_numeric_continuation(self, braille: str) -> bool:
+        """⠐+a~j처럼 숫자 연결자로 읽히는 앞부분은 단어 약어로 두지 않는다."""
+        if not braille:
+            return False
+        for conn, _char, ends_mode in self.numeric_sequences:
+            if ends_mode or not conn or not braille.startswith(conn):
+                continue
+            if self._braille_continuation_reaches_digit(braille, len(conn)):
+                return True
+        return False
+
+    def _braille_continuation_reaches_digit(self, token: str, index: int) -> bool:
+        while index < len(token):
+            if token[index] in self.rev_digits:
+                return True
+            stepped = False
+            for braille, _char, ends_mode in self.numeric_sequences:
+                if not braille or not token.startswith(braille, index):
+                    continue
+                if ends_mode:
+                    return False
+                index += len(braille)
+                stepped = True
+                break
+            if not stepped:
+                return False
+        return False
 
     def braille_to_text(self, braille_str: str) -> str:
         tokens = re.findall(r"[\u2800-\u28FF]+|[^\u2800-\u28FF]+", braille_str)
@@ -689,45 +727,57 @@ class BrailleEngine:
             return self._decode_braille_with_numeric_mode(b_token)
         return self._decode_word_token(b_token)
 
+    def _strip_capital(self, token: str) -> Tuple[str, Optional[str]]:
+        if token.startswith(self.CAP_WORD):
+            return token[len(self.CAP_WORD):], "word"
+        if token.startswith(self.CAP_LETTER):
+            return token[len(self.CAP_LETTER):], "letter"
+        return token, None
+
+    def _apply_capital(self, text: str, mode: Optional[str]) -> str:
+        if mode == "word":
+            return text.upper()
+        if mode == "letter" and text:
+            return text[0].upper() + text[1:]
+        return text
+
     def _decode_word_token(self, token: str, standing_alone: bool = True) -> str:
         if standing_alone and token in self.braille_to_wordsign:
             return self.braille_to_wordsign[token]
         leading, core, trailing = self._peel_edge_punctuation(token)
         target = core or token
+        target, cap_mode = self._strip_capital(target)
+
+        def finish(text: str) -> str:
+            return leading + self._apply_capital(text, cap_mode) + trailing
+
         glued_apostrophe = "'" in leading or "'" in trailing
         if standing_alone and not glued_apostrophe and target in self.braille_to_wordsign:
-            return leading + self.braille_to_wordsign[target] + trailing
+            return finish(self.braille_to_wordsign[target])
         if standing_alone and not glued_apostrophe:
             with_suffix = self._decode_wordsign_suffix(target)
             if with_suffix is not None:
-                return leading + with_suffix + trailing
+                return finish(with_suffix)
         if standing_alone:
             shortform = self._decode_shortform_token(target)
             if shortform is None:
                 shortform = self._decode_prefixed_shortform(target)
             if shortform is not None:
-                return leading + shortform + trailing
-        decoded = self._decode_contracted(target, allow_shortform=False)
+                return finish(shortform)
+        decoded = self._decode_contracted(
+            target, allow_shortform=False, standing_alone=standing_alone
+        )
         if core and core != token:
-            return leading + decoded + trailing
-        return decoded
+            return finish(decoded)
+        return self._apply_capital(decoded, cap_mode)
 
     def _peel_edge_punctuation(self, token: str) -> Tuple[str, str, str]:
+        """뒤쪽 부호를 먼저 떼어 his. / his?처럼 약어와 같은 칸이 부호로 읽히지 않게 한다."""
         leading = []
         trailing = []
         changed = True
         while changed and token:
             changed = False
-            for braille, char in self.punctuation_sequences:
-                if len(braille) >= len(token):
-                    continue
-                if token.startswith(braille) and not self._groupsign_matches(token, 0, braille):
-                    leading.append(char)
-                    token = token[len(braille):]
-                    changed = True
-                    break
-            if changed:
-                continue
             for braille, char in self.punctuation_sequences:
                 if len(braille) >= len(token):
                     continue
@@ -740,6 +790,16 @@ class BrailleEngine:
                 token = token[:-len(braille)]
                 changed = True
                 break
+            if changed:
+                continue
+            for braille, char in self.punctuation_sequences:
+                if len(braille) >= len(token):
+                    continue
+                if token.startswith(braille) and not self._groupsign_matches(token, 0, braille):
+                    leading.append(char)
+                    token = token[len(braille):]
+                    changed = True
+                    break
         trailing.reverse()
         return "".join(leading), token, "".join(trailing)
 
@@ -800,19 +860,27 @@ class BrailleEngine:
                 return best[1]
         return None
 
-    def _decode_contracted(self, token: str, allow_shortform: bool = True, final_fragment: bool = False) -> str:
+    def _decode_contracted(
+        self,
+        token: str,
+        allow_shortform: bool = True,
+        final_fragment: bool = False,
+        standing_alone: bool = True,
+    ) -> str:
         if allow_shortform:
             shortform = self._decode_shortform_token(token)
             if shortform is not None:
                 return shortform
         if not final_fragment and token in self.isolated_braille_to_letter:
-            claimed = self._best_groupsign(token, 0, final_fragment=False)
+            claimed = self._best_groupsign(token, 0, final_fragment=False, standing_alone=standing_alone)
             if not claimed or claimed[1] != len(token):
                 return self.isolated_braille_to_letter[token]
         out = []
         index = 0
         while index < len(token):
-            groupsign = self._best_groupsign(token, index, final_fragment=final_fragment)
+            groupsign = self._best_groupsign(
+                token, index, final_fragment=final_fragment, standing_alone=standing_alone
+            )
             if groupsign:
                 out.append(groupsign[0])
                 index += groupsign[1]
@@ -822,11 +890,80 @@ class BrailleEngine:
                 out.append(punctuation[0])
                 index += punctuation[1]
                 continue
+            if token.startswith(self.CAP_WORD, index) and index + len(self.CAP_WORD) < len(token):
+                rest = self._decode_contracted(
+                    token[index + len(self.CAP_WORD):],
+                    allow_shortform=True,
+                    standing_alone=standing_alone,
+                )
+                out.append(rest.upper())
+                break
+            if token.startswith(self.CAP_LETTER, index) and index + len(self.CAP_LETTER) < len(token):
+                unit = self._plain_unit(
+                    token, index + len(self.CAP_LETTER), final_fragment, standing_alone
+                )
+                if unit:
+                    out.append(self._apply_capital(unit[0], "letter"))
+                    index = unit[1]
+                    continue
+            isolated = self._isolated_letter_at(token, index)
+            if isolated:
+                out.append(isolated[0])
+                index += isolated[1]
+                continue
             out.append(self.rev_spelling.get(token[index], token[index]))
             index += 1
         return "".join(out)
 
-    def _best_groupsign(self, token: str, index: int, final_fragment: bool = False, exact_braille: Optional[str] = None):
+    def _isolated_letter_at(self, token: str, index: int):
+        for braille, letter in self.isolated_prefixes:
+            if token.startswith(braille, index):
+                return letter, len(braille)
+        return None
+
+    def _plain_unit(self, token: str, index: int, final_fragment: bool, standing_alone: bool):
+        groupsign = self._best_groupsign(
+            token, index, final_fragment=final_fragment, standing_alone=standing_alone
+        )
+        if groupsign:
+            return groupsign[0], index + groupsign[1]
+        isolated = self._isolated_letter_at(token, index)
+        if isolated:
+            return isolated[0], index + isolated[1]
+        cell = token[index]
+        if cell in self.rev_spelling:
+            return self.rev_spelling[cell], index + 1
+        return None
+
+    def _side_is_word(self, token: str, index: int) -> bool:
+        """이웃 칸이 글자이거나, 글자 약어의 시작이면 단어가 이어진 것이다."""
+        if index < 0 or index >= len(token):
+            return False
+        cell = token[index]
+        if cell == self.letter_grade1_indicator:
+            return False
+        if cell in self.rev_spelling:
+            return True
+        return any(token.startswith(braille, index) for braille in self.rev_groupsign_senses)
+
+    def _preceded_by_word(self, token: str, index: int) -> bool:
+        if index <= 0:
+            return False
+        prev = token[index - 1]
+        if prev in self.rev_spelling:
+            return True
+        if prev in self.ambiguous_medial_cells:
+            return False
+        return prev in self.groupsign_cells
+
+    def _best_groupsign(
+        self,
+        token: str,
+        index: int,
+        final_fragment: bool = False,
+        exact_braille: Optional[str] = None,
+        standing_alone: bool = True,
+    ):
         match_text = None
         match_len = 0
         match_priority = 10 ** 9
@@ -838,7 +975,9 @@ class BrailleEngine:
                 continue
             length = len(braille)
             for sense in senses:
-                if not self._groupsign_context_ok(token, index, length, sense["rule"], final_fragment):
+                if not self._groupsign_context_ok(
+                    token, index, length, sense["rule"], final_fragment, standing_alone
+                ):
                     continue
                 priority = sense["priority"]
                 if length > match_len or (length == match_len and priority < match_priority):
@@ -849,17 +988,42 @@ class BrailleEngine:
             return None
         return match_text, match_len
 
-    def _groupsign_context_ok(self, token: str, index: int, length: int, rule: dict, final_fragment: bool = False) -> bool:
+    def _groupsign_context_ok(
+        self,
+        token: str,
+        index: int,
+        length: int,
+        rule: dict,
+        final_fragment: bool = False,
+        standing_alone: bool = True,
+    ) -> bool:
         end = index + length
-        prev_letter = index > 0 and token[index - 1] in self.rev_spelling
-        next_letter = end < len(token) and token[end] in self.rev_spelling
         follows = end < len(token)
         precedes = index > 0
         whole = index == 0 and end == len(token)
-        if whole:
-            if rule.get("avoidWhenStandingAlone"):
+        span = token[index:end]
+        if (
+            self.letter_grade1_indicator
+            and span.startswith(self.letter_grade1_indicator)
+            and not rule.get("canStandAlone", False)
+            and not final_fragment
+        ):
+            preceded = self._preceded_by_word(token, index)
+            followed = follows and self._side_is_word(token, end)
+            if not preceded and not followed:
                 return False
-            if rule.get("standingAloneOnly") or rule.get("canStandAlone"):
+        if whole:
+            if rule.get("avoidWhenStandingAlone") and standing_alone:
+                return False
+            if rule.get("standingAloneOnly"):
+                return standing_alone
+            if rule.get("canStandAlone") and standing_alone:
+                return True
+            if (
+                not standing_alone
+                and not rule.get("requiresSurroundingLetters")
+                and not rule.get("requiresFollowingLetters")
+            ):
                 return True
             if (
                 final_fragment
@@ -871,7 +1035,12 @@ class BrailleEngine:
         if rule.get("standingAloneOnly"):
             return False
         if rule.get("requiresSurroundingLetters"):
-            return precedes and follows and prev_letter and next_letter
+            return (
+                precedes
+                and follows
+                and self._side_is_word(token, index - 1)
+                and self._side_is_word(token, end)
+            )
         if not rule.get("canFollowLetters", True) and precedes:
             return False
         if rule.get("requiresFollowingLetters") and not follows:
@@ -902,13 +1071,19 @@ class BrailleEngine:
             if in_num:
                 matched = False
                 for braille, char, ends_mode in self.numeric_sequences:
-                    if token.startswith(braille, index):
-                        res.append(char)
-                        index += len(braille)
-                        if ends_mode:
-                            in_num = False
-                        matched = True
-                        break
+                    if not token.startswith(braille, index):
+                        continue
+                    if (
+                        not ends_mode
+                        and not self._braille_continuation_reaches_digit(token, index + len(braille))
+                    ):
+                        continue
+                    res.append(char)
+                    index += len(braille)
+                    if ends_mode:
+                        in_num = False
+                    matched = True
+                    break
                 if matched:
                     continue
                 if token[index] in self.rev_digits:
