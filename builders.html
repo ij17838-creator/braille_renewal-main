@@ -709,7 +709,7 @@
       document.getElementById('target-prompt-text').textContent = state.unitId === 'ko-dots'
         ? '이 점의 자리를 블록으로 놓으세요'
         : '점형에 맞춰 블록을 순서대로 맞추세요';
-      quizData.available_blocks = shufflePieces(state.answerPieces.slice());
+      quizData.available_blocks = blocksForPool(quizData, state.answerPieces);
 
       document.getElementById('target-braille-preview').innerHTML = renderBrailleHTML(quizData.target_braille || "");
       document.getElementById('workbench-status-desc').textContent = '블록을 순서대로 올린 뒤 배치를 확인합니다.';
@@ -726,6 +726,65 @@
         [copy[i], copy[j]] = [copy[j], copy[i]];
       }
       return copy;
+    }
+
+    // 정답 조각이 하나뿐이면 그 블록만 누르면 맞는다. 같은 단원 재료에서 틀린 블록을 하나 더 넣는다.
+    function blocksForPool(quiz, pieces) {
+      const list = pieces.slice();
+      if (list.length === 1) list.push(wrongBlockFor(quiz, list[0]));
+      return shufflePieces(list);
+    }
+
+    function wrongBlockFor(quiz, correct) {
+      const taken = new Set([String(correct).trim()]);
+      const options = [];
+      const sources = []
+        .concat(Array.isArray(quiz.available_blocks) ? quiz.available_blocks : [])
+        .concat(Array.isArray(quiz.distractors_text) ? quiz.distractors_text : []);
+      sources.forEach((item) => {
+        if (item == null) return;
+        const text = String(item);
+        const key = text.trim();
+        if (!key || taken.has(key)) return;
+        taken.add(key);
+        options.push(text);
+      });
+      if (options.length) return options[Math.floor(Math.random() * options.length)];
+      return fallbackWrongBlock(correct);
+    }
+
+    function fallbackWrongBlock(correct) {
+      const text = String(correct);
+      const chars = Array.from(text);
+      if (!chars.length) return state.lang === 'EN' ? 'a' : '가';
+      const idx = Math.floor(Math.random() * chars.length);
+      const ch = chars[idx];
+      let nextChar = '';
+      if (ch >= '0' && ch <= '9') {
+        nextChar = String((Number(ch) + 1 + Math.floor(Math.random() * 8)) % 10);
+      } else if (ch >= '가' && ch <= '힣') {
+        const span = 0xD7A3 - 0xAC00 + 1;
+        const shifted = ((ch.charCodeAt(0) - 0xAC00 + 28) % span + span) % span;
+        nextChar = String.fromCharCode(0xAC00 + shifted);
+      } else if (ch >= 'ㄱ' && ch <= 'ㅎ') {
+        const jamo = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ';
+        nextChar = jamo[(jamo.indexOf(ch) + 1) % jamo.length];
+      } else if (ch >= 'ㅏ' && ch <= 'ㅣ') {
+        const jamo = 'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ';
+        const at = jamo.indexOf(ch);
+        nextChar = jamo[at < 0 ? 0 : (at + 1) % jamo.length];
+      } else if (/[a-z]/i.test(ch)) {
+        const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+        const at = alphabet.indexOf(ch.toLowerCase());
+        const letter = alphabet[(at + 1) % alphabet.length];
+        nextChar = ch === ch.toUpperCase() ? letter.toUpperCase() : letter;
+      } else {
+        nextChar = state.lang === 'EN' ? 'a' : '가';
+      }
+      chars[idx] = nextChar;
+      const next = chars.join('');
+      if (next.trim() && next.trim() !== text.trim()) return next;
+      return `${text}${state.lang === 'EN' ? 's' : '가'}`;
     }
 
     function blockLabel(text) {
