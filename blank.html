@@ -534,7 +534,15 @@
     function renderBrailleHTML(str) {
       let html = `<div class="braille-word text-2xl font-bold">`;
       for (let i = 0; i < str.length; i++) {
-        const code = str.charCodeAt(i);
+        const ch = str[i];
+        const code = ch.charCodeAt(0);
+        // 점역기의 낱말 공백(U+0020)과 빈 점칸(U+2800)은 같은 빈 칸으로 보여 준다.
+        if (ch === ' ' || ch === '\n' || code === 0x2800) {
+          html += `<div class="braille-cell">`;
+          for (let dot = 0; dot < 6; dot += 1) html += `<div class="braille-dot inactive"></div>`;
+          html += `</div>`;
+          continue;
+        }
         if (code >= 0x2800 && code <= 0x28FF) {
           const pat = code - 0x2800;
           html += `<div class="braille-cell">`;
@@ -550,6 +558,60 @@
         }
       }
       return html + `</div>`;
+    }
+
+    // 한글 점역(ko_parser): 낱말 사이와 수표 종료는 일반 공백이다. 빈 점칸은 쓰지 않는다.
+    // 영어 점역(en_parser): 낱말 사이도 일반 공백이다. 숫자와 숫자 사이만 숫자 빈칸(⠐)이다.
+    const DIGIT_CELLS = new Set(['⠁', '⠃', '⠉', '⠙', '⠑', '⠋', '⠛', '⠓', '⠊', '⠚']);
+    const NUMERIC_CONTINUATIONS = new Set(['⠂', '⠲', '⠒', '⠌']);
+
+    function canonicalBraille(str) {
+      return (str || '').replace(/\u2800/g, ' ');
+    }
+
+    function englishNumberOpen(braille, index) {
+      let open = false;
+      for (let i = 0; i < index; i += 1) {
+        const ch = braille[i];
+        if (ch === ' ') open = false;
+        else if (ch === '⠼') open = true;
+        else if (!open) continue;
+        else if (ch === '⠆') open = false;
+        else if (DIGIT_CELLS.has(ch) || NUMERIC_CONTINUATIONS.has(ch)) continue;
+        else if (ch === '⠐' && DIGIT_CELLS.has(braille[i + 1] || '')) continue;
+        else open = false;
+      }
+      return open;
+    }
+
+    function isParserBreak(lang, braille, index) {
+      if (braille[index] === ' ') return true;
+      if (lang !== 'EN' || braille[index] !== '⠐') return false;
+      return DIGIT_CELLS.has(braille[index - 1] || '')
+        && DIGIT_CELLS.has(braille[index + 1] || '')
+        && englishNumberOpen(braille, index);
+    }
+
+    function nextBreakChar(lang, target, typed) {
+      const model = canonicalBraille(target);
+      const input = canonicalBraille(typed);
+      let ti = 0;
+      let ii = 0;
+      while (ti < model.length && ii < input.length) {
+        const modelBreak = isParserBreak(lang, model, ti);
+        const inputBreak = isParserBreak(lang, input, ii);
+        if (modelBreak && inputBreak) {
+          if (model[ti] !== input[ii]) return ' ';
+          ti += 1;
+          ii += 1;
+          continue;
+        }
+        if (modelBreak || inputBreak || model[ti] !== input[ii]) return ' ';
+        ti += 1;
+        ii += 1;
+      }
+      if (ii === input.length && ti < model.length && isParserBreak(lang, model, ti)) return model[ti];
+      return ' ';
     }
 
     // 4. 데이터 로더 및 정규화
@@ -710,10 +772,12 @@
       renderLiveDotPreview();
     }
 
-    // 문장은 낱말 사이에 빈 칸이 들어간다. 빈 칸도 한 칸으로 센다.
+    // 띄어쓰기는 점역기와 같은 칸을 넣는다. 한글은 항상 일반 공백이고, 영어 숫자 사이에만 ⠐를 넣는다.
     function commitSpace() {
       commitCell();
-      currentInputBraille += "\u2800";
+      const q = quizList[currentQuizIndex];
+      const target = q ? (q.target_braille || '') : '';
+      currentInputBraille += nextBreakChar(appState.lang, target, currentInputBraille);
       renderLiveDotPreview();
     }
 
@@ -788,7 +852,7 @@
       const q = quizList[currentQuizIndex];
       if (!q) return;
 
-      const isCorrect = (currentInputBraille.trim() === (q.target_braille || "").trim());
+      const isCorrect = canonicalBraille(currentInputBraille) === canonicalBraille(q.target_braille || '');
       const outcome = stage.onAnswer(isCorrect, 0);
       if (!outcome.consumed) return;
 
