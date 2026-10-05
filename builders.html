@@ -536,7 +536,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech } from './shell.js';
 
     // =========================================================================
     // 1. 상태 저장소 & 프론트엔드/파이썬 통신 인터페이스 (State & Bridge)
@@ -599,6 +599,7 @@
     }
 
     function speak(text) {
+      if (!text) return;
       const live = document.getElementById('builder-live-region');
       if (live) live.textContent = text;
       if (!globalSettings.tts || !window.speechSynthesis) {
@@ -698,12 +699,7 @@
 
       renderWorkbench();
       renderPool();
-
-      speak(state.unitId === 'ko-dots'
-        ? '이 점의 자리를 고르세요.'
-        : (state.lang === 'EN'
-          ? 'Choose the meaning of the braille.'
-          : '제시된 점형의 뜻을 블록에서 고르세요.'));
+      speak(describeForSpeech(quizData.target_braille || '', state.lang));
     }
 
     function translatedBraille(text, lang) {
@@ -780,12 +776,13 @@
         label.className = 'choice-label text-slate-800';
         label.textContent = text;
         btn.append(index, label);
-        btn.setAttribute('aria-label', `선택지 ${idx + 1}번, 블록 내용 ${text}`);
-        
+        btn.setAttribute('aria-label', `선택지 ${idx + 1}번, ${describeForSpeech(text, state.lang)}`);
+
         bindChoiceClick(
           btn,
           () => pickBlock(text, idx, btn),
-          () => chooseCorrectBlock()
+          () => chooseCorrectBlock(),
+          () => speak(describeForSpeech(text, state.lang))
         );
         container.appendChild(btn);
       });
@@ -809,7 +806,6 @@
       state.assembledBlocks.forEach(item => item.elem.classList.remove('opacity-30', 'pointer-events-none'));
       state.assembledBlocks = [{ text: blockText, poolIdx, elem: btnElem }];
       btnElem.classList.add('opacity-30', 'pointer-events-none');
-      speak(`${blockText} 블록 선택`);
       renderWorkbench();
     }
 
@@ -1004,8 +1000,10 @@
       const poolLength = state.currentQuiz?.available_blocks?.length || 0;
       if (num >= 1 && num <= poolLength) {
         const poolBtns = document.querySelectorAll('#block-pool-container button');
-        if (poolBtns[num - 1] && !poolBtns[num - 1].classList.contains('pointer-events-none')) {
-          poolBtns[num - 1].click();
+        const text = state.currentQuiz.available_blocks[num - 1];
+        const btn = poolBtns[num - 1];
+        if (text && btn && !btn.classList.contains('pointer-events-none')) {
+          pickBlock(text, num - 1, btn);
           e.preventDefault();
         }
       } else if (e.key === 'Enter') {
@@ -1030,14 +1028,7 @@
 
     document.getElementById('btn-audio-hint').addEventListener('click', () => {
       if (!state.currentQuiz) return;
-      const rule = state.currentQuiz.rule_type || state.currentQuiz.category || '';
-      if (state.unitId === 'ko-dots') {
-        speak('이 점의 자리를 고르세요.');
-      } else if (state.lang === 'EN') {
-        speak(rule ? `Choose the meaning of the braille. ${rule}.` : 'Choose the meaning of the braille.');
-      } else {
-        speak(rule ? `제시된 점형의 뜻을 고르세요. ${rule}.` : '제시된 점형의 뜻을 고르세요.');
-      }
+      speak(describeForSpeech(state.currentQuiz.target_braille || '', state.lang));
     });
 
         document.getElementById('btn-open-weakness-modal').addEventListener('click', openWeaknessModal);

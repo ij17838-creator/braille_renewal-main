@@ -386,7 +386,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech } from './shell.js';
 
     // 1. 상태 객체
     const urlParams = new URLSearchParams(window.location.search);
@@ -452,6 +452,7 @@
     }
 
     function speak(text) {
+      if (!text) return;
       const live = document.getElementById('a11y-live-region');
       if (live) live.textContent = text;
       if (!appState.tts || !window.speechSynthesis) {
@@ -552,9 +553,7 @@
       appState.currentQuiz.options = options;
 
       renderCards(options);
-      speak(appState.unitId === 'ko-dots'
-        ? `문제: ${q.target_text}. 이 점의 자리를 고르세요.`
-        : `문제: ${q.target_text}. ${q.hint || ''}. 올바른 점자 카드를 선택하세요.`);
+      speak(describeForSpeech(q.target_text, appState.lang));
     }
 
     function renderCards(options) {
@@ -565,7 +564,7 @@
         const cardBtn = document.createElement('button');
         cardBtn.className = 'glass-card rounded-2xl p-5 flex flex-col items-center justify-between min-h-[140px] relative group text-slate-800 shadow-md focus:ring-4';
         cardBtn.setAttribute('data-index', idx);
-        cardBtn.setAttribute('aria-label', `${idx + 1}번 선택지 점자 카드`);
+        cardBtn.setAttribute('aria-label', `선택지 ${idx + 1}번, ${describeForSpeech(opt.braille, appState.lang)}`);
 
         cardBtn.innerHTML = `
           <div class="w-full flex justify-between items-center text-xs font-mono font-bold text-slate-400 group-hover:text-indigo-600 transition-colors">
@@ -584,7 +583,8 @@
         bindChoiceClick(
           cardBtn,
           () => handleSelectOption(opt, cardBtn),
-          () => chooseCorrectCard()
+          () => chooseCorrectCard(),
+          () => speak(describeForSpeech(opt.braille, appState.lang))
         );
 
         grid.appendChild(cardBtn);
@@ -685,11 +685,7 @@
     });
 
     document.getElementById('btn-hint').onclick = () => {
-      if (appState.currentQuiz) {
-        speak(appState.unitId === 'ko-dots'
-          ? `문제: ${appState.currentQuiz.target_text}. 이 점의 자리를 고르세요.`
-          : `문제: ${appState.currentQuiz.target_text}. 힌트: ${appState.currentQuiz.hint || ''}`);
-      }
+      if (appState.currentQuiz) speak(describeForSpeech(appState.currentQuiz.target_text, appState.lang));
     };
 
     document.getElementById('btn-go-hub').onclick = () => {

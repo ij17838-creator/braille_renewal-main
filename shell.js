@@ -88,37 +88,81 @@ export function normalizeTheme(theme) {
   return theme;
 }
 
-const DOUBLE_CLICK_MS = 500;
+function isBrailleChar(ch) {
+  const code = ch.codePointAt(0);
+  return code >= 0x2800 && code <= 0x28FF;
+}
 
-// 켜져 있으면 선택지를 더블 클릭할 때 누른 항목 대신 정답을 고른다.
-// 한 번 클릭은 그대로 그 선택지를 고르되, 더블 클릭과 겹치지 않게 잠시 기다린다.
-export function bindChoiceClick(element, onSingle, onDoubleCorrect) {
-  let timer = null;
-  const clearTimer = () => {
-    if (!timer) return;
-    clearTimeout(timer);
-    timer = null;
+// 글이면 그대로, 점자면 칸마다 읽는다. 1·2·4점이 한 칸이면 "1,2,4점".
+// 점이 없는 칸은 "빈칸", 점자 사이의 공백은 "띄어쓰기".
+export function describeForSpeech(text, lang) {
+  const value = String(text ?? '');
+  if (!value) return '';
+  const english = String(lang || '').toUpperCase() === 'EN';
+  const blankLabel = english ? 'blank' : '빈칸';
+  const gapLabel = english ? 'space' : '띄어쓰기';
+  const chars = Array.from(value);
+  const parts = [];
+  let plain = '';
+
+  const flushPlain = () => {
+    const chunk = plain.trim();
+    plain = '';
+    if (chunk) parts.push(chunk);
   };
+
+  const isSpace = (ch) => ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t';
+  const nearest = (from, step) => {
+    for (let i = from; i >= 0 && i < chars.length; i += step) {
+      if (!isSpace(chars[i])) return chars[i];
+    }
+    return '';
+  };
+
+  for (let i = 0; i < chars.length; i += 1) {
+    const ch = chars[i];
+    if (isSpace(ch)) {
+      const besideBraille = isBrailleChar(nearest(i - 1, -1)) || isBrailleChar(nearest(i + 1, 1));
+      if (besideBraille) {
+        flushPlain();
+        if (parts[parts.length - 1] !== gapLabel) parts.push(gapLabel);
+      } else {
+        plain += ' ';
+      }
+      continue;
+    }
+    if (isBrailleChar(ch)) {
+      flushPlain();
+      const pattern = ch.codePointAt(0) - 0x2800;
+      const dots = [];
+      const masks = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20];
+      for (let bit = 0; bit < masks.length; bit += 1) {
+        if (pattern & masks[bit]) dots.push(bit + 1);
+      }
+      if (!dots.length) parts.push(blankLabel);
+      else parts.push(english ? `dots ${dots.join(', ')}` : `${dots.join(',')}점`);
+      continue;
+    }
+    plain += ch;
+  }
+  flushPlain();
+  return parts.join(', ');
+}
+
+// 꺼져 있으면 한 번 클릭이 그 선택지다.
+// 켜져 있으면 한 번 클릭은 선택지를 읽어 주고, 두 번 클릭은 누른 항목 대신 정답을 고른다.
+export function bindChoiceClick(element, onSingle, onDoubleCorrect, onPreview) {
   element.addEventListener('click', (event) => {
     if (!loadSettings().doubleClickAnswer) {
       onSingle();
       return;
     }
-    if (event.detail > 1) {
-      clearTimer();
-      return;
-    }
-    clearTimer();
-    const wait = event.detail ? DOUBLE_CLICK_MS : 50;
-    timer = setTimeout(() => {
-      timer = null;
-      onSingle();
-    }, wait);
+    if (event.detail > 1) return;
+    if (typeof onPreview === 'function') onPreview();
   });
   element.addEventListener('dblclick', (event) => {
     if (!loadSettings().doubleClickAnswer) return;
     event.preventDefault();
-    clearTimer();
     onDoubleCorrect();
   });
 }

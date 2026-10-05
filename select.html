@@ -401,7 +401,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech } from './shell.js';
 
     // 1. UEB / 한글 규칙 라벨 매퍼
     const RULE_LABELS = {
@@ -486,6 +486,7 @@
     }
 
     function speak(text) {
+      if (!text) return;
       const live = document.getElementById('select-live-region');
       if (live) live.textContent = text;
       if (!globalSettings.tts || !window.speechSynthesis) {
@@ -689,13 +690,7 @@
         : (quizObj.hint || `${readableRule}에 맞는 올바른 점자 카드를 선택하세요.`);
 
       renderCards(options);
-
-      let speechText = dotUnit
-        ? `문제: ${targetText}. 이 점의 자리를 고르세요.`
-        : (quizObj.prompt_audio || (state.lang === "KO"
-          ? `문제: ${targetText}. ${readableRule}. 올바른 점자 카드를 1번에서 4번 중 선택하세요.`
-          : `Question. Choose the correct braille for ${targetText}.`));
-      speak(speechText);
+      speak(describeForSpeech(targetText, state.lang));
     }
 
     function renderCards(options) {
@@ -706,7 +701,7 @@
         const cardBtn = document.createElement('button');
         cardBtn.className = 'glass-card rounded-2xl p-5 flex flex-col items-center justify-between min-h-[140px] relative group text-slate-800 shadow-md focus:ring-4';
         cardBtn.setAttribute('data-index', idx);
-        cardBtn.setAttribute('aria-label', `선택지 ${idx + 1}번 카드. 점자 기호`);
+        cardBtn.setAttribute('aria-label', `선택지 ${idx + 1}번, ${describeForSpeech(opt.braille, state.lang)}`);
 
         cardBtn.innerHTML = `
           <div class="w-full flex justify-between items-center text-xs font-mono font-bold text-slate-400 group-hover:text-indigo-600 transition-colors">
@@ -725,7 +720,8 @@
         bindChoiceClick(
           cardBtn,
           () => handleOptionSelect(opt, cardBtn),
-          () => chooseCorrectCard()
+          () => chooseCorrectCard(),
+          () => speak(describeForSpeech(opt.braille, state.lang))
         );
 
         grid.appendChild(cardBtn);
@@ -911,17 +907,7 @@
 
     document.getElementById('btn-audio-hint').addEventListener('click', () => {
       if (!state.currentQuiz) return;
-      if (state.unitId === 'ko-dots') {
-        speak(`문제: ${state.currentQuiz.target_text}. 이 점의 자리를 고르세요.`);
-      } else if (state.currentQuiz.prompt_audio) {
-        speak(state.currentQuiz.prompt_audio);
-      } else {
-        const ruleLabel = getReadableRule(state.currentQuiz.rule_type);
-        const hintText = state.currentQuiz.hint || ruleLabel;
-        speak(state.lang === "KO"
-          ? `문제: ${state.currentQuiz.target_text}. 힌트: ${hintText}`
-          : `Question: ${state.currentQuiz.target_text}. Hint: ${hintText}`);
-      }
+      speak(describeForSpeech(state.currentQuiz.target_text, state.lang));
     });
 
         document.getElementById('btn-open-weakness-modal').addEventListener('click', openWeaknessModal);

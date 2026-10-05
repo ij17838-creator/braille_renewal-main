@@ -477,7 +477,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems, createStageSession } from './shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems, createStageSession, describeForSpeech } from './shell.js';
 
     // 1. 상태 관리
     const urlParams = new URLSearchParams(window.location.search);
@@ -537,6 +537,7 @@
     }
 
     function speak(text) {
+      if (!text) return;
       const live = document.getElementById('a11y-live-region');
       if (live) live.textContent = text;
       if (!appState.tts || !window.speechSynthesis) {
@@ -743,9 +744,7 @@
       document.getElementById('keyboard-dock').classList.remove('hidden');
       document.getElementById('block-dock').classList.add('hidden');
 
-      speak(dotUnit
-        ? `문제: ${q.target_text}. 이 점의 자리를 고르세요.`
-        : `뜻. ${q.target_text}. 알맞은 점형을 입력하세요.`);
+      speak(describeForSpeech(q.target_text || '', appState.lang));
     }
 
     function renderBlockPool(blocks) {
@@ -1082,11 +1081,7 @@
     };
     document.getElementById('btn-replay-clue').onclick = () => {
       const q = quizList[currentQuizIndex];
-      if (q) {
-        speak(appState.unitId === 'ko-dots'
-          ? `문제: ${q.target_text}. 이 점의 자리를 고르세요.`
-          : `뜻. ${q.target_text}. 알맞은 점형을 입력하세요.`);
-      }
+      if (q) speak(describeForSpeech(q.target_text || '', appState.lang));
     };
     document.getElementById('btn-back-to-hub').onclick = navigateBack;
 
