@@ -15,15 +15,15 @@ import {
   unitsFor,
   materialsFor,
   isComposeUnit,
-  abbreviationIndex,
   assemblyText,
   makeStep,
   stepsPattern
 } from './curriculum.js';
 import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed, loadStudyMode } from './shell.js';
 
-const BLANK_CELL = '\u2800';
-const SPACE_STEP = makeStep('띄어쓰기', [[]], BLANK_CELL);
+const SPACE_STEP = makeStep('띄어쓰기', [], ' ', '단어 사이');
+const NUMERIC_SPACE = '⠐';
+const NUMERIC_SPACE_STEP = makeStep('숫자 빈칸', [[5]], NUMERIC_SPACE);
 const LANG_CODE = { ko: 'KO', en: 'EN' };
 
 /** 앞 단원을 모두 통과해야 열리는 단원인지 본다. 게임 화면이 들어가기 전에 쓴다. */
@@ -120,6 +120,25 @@ function dotsToUnicode(dots) {
   return String.fromCharCode(0x2800 + pattern);
 }
 
+function partsToSteps(parts) {
+  const steps = [];
+  (parts || []).forEach((part) => {
+    let cells = part.braille || '';
+    if (cells.startsWith(' ')) {
+      steps.push(makeStep('띄어쓰기', [], ' ', '수표 종료'));
+      cells = cells.slice(1);
+    }
+    if (!cells) return;
+    if (cells === NUMERIC_SPACE) {
+      steps.push(NUMERIC_SPACE_STEP);
+      return;
+    }
+    const dotCells = Array.from(cells).map((ch) => unicodeToDots(ch) || []);
+    steps.push(makeStep(part.label || part.text, dotCells, cells));
+  });
+  return steps;
+}
+
 function mutateBraille(braille) {
   const chars = Array.from(braille);
   if (!chars.length) return '';
@@ -162,6 +181,7 @@ function buildKorean(data) {
   Object.entries(ko.abbreviation_word?.items || {}).forEach(([word, item]) => {
     if (item.unicode) wordAbbr[word] = item.unicode;
   });
+  const wordAbbrSorted = Object.entries(wordAbbr).sort((a, b) => b[0].length - a[0].length);
 
   const gaByOnset = {};
   const vc = {};
@@ -217,8 +237,18 @@ function buildKorean(data) {
   const punct = [];
   Object.values(marks).forEach(block => {
     Object.entries(block?.items || {}).forEach(([ch, item]) => {
-      if (ch.length === 1 && item.unicode) punct.push({ ch, name: item.word || ch, unicode: item.unicode });
+      if (item.unicode) punct.push({ ch, name: item.word || ch, unicode: item.unicode });
     });
+  });
+  punct.sort((a, b) => b.ch.length - a.ch.length);
+
+  const connectors = {};
+  Object.values(rules.symbols || {}).forEach((item) => {
+    if (!item.char || !item.unicode || item.char === ' ') return;
+    connectors[item.char] = {
+      unicode: item.unicode,
+      persists: item.persists_numeric_mode !== false
+    };
   });
 
   function translateSyllable(ch, nextCh, afterNumber, rest) {
@@ -297,21 +327,52 @@ function buildKorean(data) {
     return { braille: head + tenser + choB + jungB + jongB, label: labels.join(' + ') };
   }
 
-  function translate(text) {
-    if (wordAbbr[text]) {
-      return {
-        braille: wordAbbr[text],
-        parts: [{ text, braille: wordAbbr[text], label: `단어 약어 '${text}'` }],
-        rule: '단어 약어'
-      };
-    }
+  function hangulChar(ch) {
+    return !!ch && ch >= '가' && ch <= '힣';
+  }
 
+  function translate(text) {
     let braille = '';
     const parts = [];
     let inNumber = false;
     let i = 0;
     while (i < text.length) {
       const ch = text[i];
+      if (ch === ' ' || ch === '\n' || ch === '\r') {
+        const gap = ch === '\n' || ch === '\r' ? ch : ' ';
+        braille += gap;
+        inNumber = false;
+        parts.push({ text: gap, braille: gap, label: '띄어쓰기' });
+        i += 1;
+        continue;
+      }
+
+      const longMark = punct.find((item) => item.ch.length > 1 && text.startsWith(item.ch, i));
+      if (longMark) {
+        braille += longMark.unicode;
+        inNumber = false;
+        parts.push({ text: longMark.ch, braille: longMark.unicode, label: longMark.name });
+        i += longMark.ch.length;
+        continue;
+      }
+
+      let matchedWord = null;
+      for (const [word, cells] of wordAbbrSorted) {
+        if (!text.startsWith(word, i)) continue;
+        const prev = i ? text[i - 1] : '';
+        const next = text[i + word.length] || '';
+        if (hangulChar(prev) || hangulChar(next)) break;
+        matchedWord = { word, cells };
+        break;
+      }
+      if (matchedWord) {
+        braille += matchedWord.cells;
+        inNumber = false;
+        parts.push({ text: matchedWord.word, braille: matchedWord.cells, label: `단어 약어 '${matchedWord.word}'` });
+        i += matchedWord.word.length;
+        continue;
+      }
+
       if (ch >= '0' && ch <= '9') {
         let token = '';
         let tokenBraille = '';
@@ -328,6 +389,15 @@ function buildKorean(data) {
         continue;
       }
 
+      if (inNumber && connectors[ch] && i + 1 < text.length && text[i + 1] >= '0' && text[i + 1] <= '9') {
+        const link = connectors[ch];
+        braille += link.unicode;
+        if (!link.persists) inNumber = false;
+        parts.push({ text: ch, braille: link.unicode, label: '수표 연결' });
+        i += 1;
+        continue;
+      }
+
       const afterNumber = inNumber;
       inNumber = false;
       if (ch >= '가' && ch <= '힣') {
@@ -339,7 +409,7 @@ function buildKorean(data) {
         continue;
       }
 
-      const mark = punct.find(p => p.ch === ch);
+      const mark = punct.find((item) => item.ch === ch);
       if (mark) {
         braille += mark.unicode;
         parts.push({ text: ch, braille: mark.unicode, label: mark.name });
@@ -433,13 +503,28 @@ function buildEnglish(data) {
 
   const shortformItems = [];
   Object.values(shortforms).forEach(block => {
-    const fallbackSuffixes = block?.rule?.allowSuffix ? (block.rule.allowedSuffixes || []) : [];
+    const sectionRule = block?.rule || {};
+    const fallbackSuffixes = Array.isArray(sectionRule.allowedSuffixes) ? sectionRule.allowedSuffixes : [];
     Object.values(block?.items || {}).forEach(item => {
       if (!item.word || !item.unicode) return;
-      const suffixes = Array.isArray(item.allowedSuffixes) ? item.allowedSuffixes : fallbackSuffixes;
-      shortformItems.push({ word: item.word, unicode: item.unicode, suffixes });
+      const specified = Array.isArray(item.allowedSuffixes);
+      const suffixes = specified ? item.allowedSuffixes : fallbackSuffixes;
+      shortformItems.push({
+        word: item.word,
+        unicode: item.unicode,
+        suffixes,
+        suffixesSpecified: specified,
+        rule: sectionRule
+      });
     });
   });
+  const closedAffixes = new Set([
+    ...Object.keys(lexicon.inflectional_suffixes?.items || {}),
+    ...Object.keys(lexicon.derivational_suffixes?.items || {}),
+    's',
+    "'s"
+  ]);
+  const lexiconPrefixes = new Set(Object.keys(lexicon.prefixes?.items || {}));
 
   const wholeWords = alphaWords.map(item => ({ ...item }));
   const groups = [];
@@ -478,7 +563,8 @@ function buildEnglish(data) {
   const prefixes = Object.keys(lexicon.prefixes?.items || {});
   const roots = Object.values(lexicon.roots?.items || {}).map(item => ({
     stem: item.stem,
-    hasSilentE: !!item.hasSilentE
+    hasSilentE: !!item.hasSilentE,
+    doubleConsonant: !!item.doubleConsonantAllowed
   })).filter(item => item.stem);
   const plainSuffixes = ['s', 'ed', 'ing', 'er', 'est', 'ly'];
 
@@ -486,7 +572,7 @@ function buildEnglish(data) {
   const digits = {};
   Object.entries(numbers.digits || {}).forEach(([k, v]) => { digits[k] = v.unicode; });
 
-  function greedy(word) {
+  function greedy(word, opts = {}) {
     let i = 0;
     let out = '';
     const lower = word.toLowerCase();
@@ -499,7 +585,7 @@ function buildEnglish(data) {
         if (group.where === 'medial' && (atStart || atEnd)) continue;
         if (group.avoidStandingAlone && atStart && atEnd) continue;
         if (group.where === 'prefix' && !(atStart && !atEnd)) continue;
-        if (group.where === 'final' && !(atEnd && !atStart)) continue;
+        if (group.where === 'final' && !(atEnd && (!atStart || opts.finalAtStart))) continue;
         matched = group;
         break;
       }
@@ -555,6 +641,11 @@ function buildEnglish(data) {
       if (!pool.length) return null;
       const item = pick(pool);
       const suffix = pick(item.suffixes);
+      const surface = `${item.word}${suffix}`.toLowerCase();
+      const own = shortformByWord.get(surface);
+      if (own && own.unicode) {
+        return pack([{ text: own.word, role: 'shortform', label: '축어' }], '축어');
+      }
       return pack([
         { text: item.word, role: 'shortform', label: '축어' },
         { text: suffix, role: 'suffix', label: `어미 ${suffix}` }
@@ -567,8 +658,17 @@ function buildEnglish(data) {
       const suffix = pick(plainSuffixes);
       const useSuffix = mode.includes('s');
       let stem = root.stem;
-      if (useSuffix && root.hasSilentE && SILENT_E_SUFFIXES.includes(suffix) && stem.endsWith('e')) {
-        stem = stem.slice(0, -1);
+      if (useSuffix && /[^aeiou]y$/i.test(stem) && ['es', 'ed', 'er', 'est', 'ly'].includes(suffix)) {
+        const oneBeat = (stem.toLowerCase().match(/[aeiouy]+/g) || []).length <= 1;
+        if (!(suffix === 'ly' && oneBeat)) stem = `${stem.slice(0, -1)}i`;
+      } else if (useSuffix && root.hasSilentE && SILENT_E_SUFFIXES.includes(suffix) && /e$/i.test(stem)) {
+        const keepE = /[cg]e$/i.test(stem) && suffix === 'able';
+        if (!keepE) stem = stem.slice(0, -1);
+      } else if (
+        useSuffix && root.doubleConsonant && ['ing', 'ed', 'er', 'est'].includes(suffix)
+        && /[^aeiou][aeiou][bcdfghjklmnpqrstvz]$/i.test(stem)
+      ) {
+        stem += stem.slice(-1);
       }
       const chunks = [];
       if (mode.includes('p') && prefixes.length) {
@@ -605,17 +705,125 @@ function buildEnglish(data) {
     return null;
   }
 
+  function shortformSuffixOk(suffix, data) {
+    const rule = data.rule || {};
+    const allowed = new Set(data.suffixes || []);
+    const specified = !!data.suffixesSpecified;
+    if (suffix === "'s" || suffix === '’s') {
+      return !!rule.allowApostropheS && (!specified || allowed.has("'s"));
+    }
+    if (suffix === 's' && !rule.allowPluralS) return false;
+    if (allowed.has(suffix) && (rule.allowSuffix || specified)) return true;
+    if (rule.allowCompound && suffix && !closedAffixes.has(suffix)) return true;
+    return false;
+  }
+
+  function shortformPartsOk(head, tail, data) {
+    if (!head && !tail) return false;
+    const rule = data.rule || {};
+    if (head && (!lexiconPrefixes.has(head) || !rule.allowPrefix)) return false;
+    if (tail && !shortformSuffixOk(tail, data)) return false;
+    return true;
+  }
+
+  function renderShortform(word) {
+    const exact = shortformByWord.get(word);
+    if (exact) return exact.unicode;
+    const keys = Array.from(shortformByWord.keys()).sort((a, b) => b.length - a.length);
+    for (const key of keys) {
+      const data = shortformByWord.get(key);
+      let start = 0;
+      while (start <= word.length) {
+        const idx = word.indexOf(key, start);
+        if (idx < 0) break;
+        start = idx + 1;
+        const head = word.slice(0, idx);
+        const tail = word.slice(idx + key.length);
+        if (!shortformPartsOk(head, tail, data)) continue;
+        const prefix = head ? greedy(head) : '';
+        const suffix = tail ? greedy(tail, { finalAtStart: true }) : '';
+        if ((head && !prefix) || (tail && !suffix)) continue;
+        return prefix + data.unicode + suffix;
+      }
+    }
+    return '';
+  }
+
   function translateWord(word) {
-    const known = wholeByWord.get(word.toLowerCase()) || shortformByWord.get(word.toLowerCase());
+    const lower = word.toLowerCase();
+    const known = wholeByWord.get(lower);
     if (known && known.unicode) {
       return { braille: known.unicode, parts: [{ text: word, braille: known.unicode, label: word }], rule: '단어' };
     }
-    const braille = greedy(word);
+    const shortform = renderShortform(lower);
+    if (shortform) {
+      return { braille: shortform, parts: [{ text: word, braille: shortform, label: word }], rule: '축어' };
+    }
+    const braille = greedy(lower);
     if (!braille) return null;
     return { braille, parts: [{ text: word, braille, label: word }], rule: '철자' };
   }
 
-  return { byRecipe, translateWord };
+  // 띄어쓴 숫자열은 수표를 반복하지 않고 숫자 빈칸(⠐)으로 잇는다. 글자 앞 띄어쓰기는 수표를 끝낸다.
+  function translateText(text) {
+    let braille = '';
+    const parts = [];
+    let inNumber = false;
+    let i = 0;
+    while (i < text.length) {
+      const ch = text[i];
+      if (ch >= '0' && ch <= '9') {
+        let token = '';
+        let tokenBraille = inNumber ? '' : numPrefix;
+        while (i < text.length && text[i] >= '0' && text[i] <= '9') {
+          if (!digits[text[i]]) return null;
+          token += text[i];
+          tokenBraille += digits[text[i]];
+          i += 1;
+        }
+        inNumber = true;
+        braille += tokenBraille;
+        parts.push({ text: token, braille: tokenBraille, label: `number ${token}` });
+        continue;
+      }
+      if (ch === ' ') {
+        const next = text[i + 1] || '';
+        if (inNumber && next >= '0' && next <= '9') {
+          braille += NUMERIC_SPACE;
+          parts.push({ text: ' ', braille: NUMERIC_SPACE, label: '숫자 빈칸' });
+          i += 1;
+          continue;
+        }
+        inNumber = false;
+        braille += ' ';
+        parts.push({ text: ' ', braille: ' ', label: 'space' });
+        i += 1;
+        continue;
+      }
+      inNumber = false;
+      const mark = EN_PUNCT.find((item) => item.ch === ch);
+      if (mark) {
+        braille += mark.unicode;
+        parts.push({ text: mark.ch, braille: mark.unicode, label: mark.name });
+        i += 1;
+        continue;
+      }
+      let word = '';
+      while (i < text.length && /[A-Za-z'’]/.test(text[i])) {
+        word += text[i] === '’' ? "'" : text[i];
+        i += 1;
+      }
+      if (!word) return null;
+      const piece = translateWord(word);
+      if (!piece) return null;
+      braille += piece.braille;
+      parts.push(...piece.parts);
+    }
+    if (!braille || !parts.length) return null;
+    return { braille, parts, rule: parts.length > 1 ? '형태소 결합' : (parts[0].label || '단어'), text };
+  }
+
+  return { byRecipe, translateWord, translateText };
 }
 
 function recipesFor(lang, game) {
@@ -808,7 +1016,7 @@ function numberToken(digitCards) {
   return tokenOf('number', chosen.map((card) => card.letter).join(''), stepsPattern(steps), steps, '숫자');
 }
 
-function assembleSentence(tokens, mark) {
+function assembleSentence(tokens, mark, lang) {
   const parts = [];
   const steps = [];
   let text = '';
@@ -816,7 +1024,15 @@ function assembleSentence(tokens, mark) {
   tokens.forEach((token, index) => {
     if (index > 0) {
       text += ' ';
-      braille += BLANK_CELL;
+      const prev = tokens[index - 1];
+      if (lang === 'en' && prev.kind === 'number' && token.kind === 'number' && token.braille.startsWith('⠼')) {
+        const body = token.braille.slice(1);
+        braille += NUMERIC_SPACE + body;
+        steps.push(NUMERIC_SPACE_STEP, ...token.steps.slice(1));
+        parts.push({ text: token.text, braille: NUMERIC_SPACE + body, label: token.label });
+        return;
+      }
+      braille += ' ';
       steps.push(SPACE_STEP);
     }
     text += token.text;
@@ -833,7 +1049,7 @@ function assembleSentence(tokens, mark) {
   return { text, braille, steps, parts, tokens, mark };
 }
 
-function sentenceMaker(generators, marks) {
+function sentenceMaker(generators, marks, lang) {
   const kinds = Object.keys(generators);
   if (!kinds.length) return null;
 
@@ -854,7 +1070,7 @@ function sentenceMaker(generators, marks) {
         if (!made) return null;
         tokens.push(made);
       }
-      return assembleSentence(tokens, marks.length ? pick(marks) : null);
+      return assembleSentence(tokens, marks.length ? pick(marks) : null, lang);
     },
     // 한 칸 조각만 바꾼 문장. 점형이 겹치면 뜻 보기에서 정답이 둘이 되므로 점형이 다른 것만 모은다.
     variants(sentence) {
@@ -868,7 +1084,7 @@ function sentenceMaker(generators, marks) {
         if (!swapped || swapped.braille === old.braille) continue;
         const tokens = sentence.tokens.slice();
         tokens[index] = swapped;
-        const alt = assembleSentence(tokens, sentence.mark);
+        const alt = assembleSentence(tokens, sentence.mark, lang);
         if (seenBraille.has(alt.braille) || seenText.has(alt.text)) continue;
         seenBraille.add(alt.braille);
         seenText.add(alt.text);
@@ -879,54 +1095,35 @@ function sentenceMaker(generators, marks) {
   };
 }
 
-// 음절 낱말: 통과한 약자·풀어 쓴 음절을 잇는다.
-// 사 바로 뒤에 ㅇ 첫소리가 오면 풀어 써야 하므로 그 조합은 만들지 않고,
-// 받침은 억·언·얼 계열로 바뀌는 조합을 피해서 붙인다.
-function koreanWord(pieces, jongs, abbr) {
+// 음절을 이은 뒤 ko_parser와 같은 규칙으로 다시 점역한다.
+// '사' 뒤 모음은 풀어 쓰고, 받침이 붙으면 약자(억·언·얼, 가 계열)를 그대로 쓴다.
+function koreanWord(pieces, jongs, translate) {
   const count = 1 + Math.floor(Math.random() * 3);
   let text = '';
-  let braille = '';
-  let steps = [];
-  let last = '';
   for (let i = 0; i < count; i++) {
-    let piece = null;
-    for (let attempt = 0; attempt < 8 && !piece; attempt++) {
-      const candidate = pick(pieces);
-      const head = decompose(candidate.letter);
-      if (last === '사' && head && head[0] === 'ㅇ') continue;
-      piece = candidate;
-    }
-    if (!piece) break;
+    const piece = pick(pieces);
+    if (!piece || !piece.letter) break;
     let syllable = piece.letter;
-    let cells = piece.pattern;
-    let pieceSteps = piece.steps;
     const parts = decompose(piece.letter);
     if (jongs.length && parts && !parts[2] && (piece.kind === 'syllable' || piece.kind === 'ga') && Math.random() < 0.35) {
       const jong = pick(jongs);
       const composed = compose(parts[0], parts[1], jong.letter);
-      // 가 계열은 약자 + 받침이 맞는 표기다. 그 밖에는 받침을 붙여 약자(억·언·얼, 것)로 바뀌면 붙이지 않는다.
-      const blocked = piece.kind === 'ga' ? abbr.syllables.has(composed) : abbr.applies(parts[0], parts[1], jong.letter);
-      if (composed && !blocked) {
-        syllable = composed;
-        cells += jong.pattern;
-        pieceSteps = pieceSteps.concat(jong.steps.map((step) => ({ ...step, label: `받침 ${step.label}` })));
-      }
+      if (composed) syllable = composed;
     }
     text += syllable;
-    braille += cells;
-    steps = steps.concat(pieceSteps);
-    last = syllable;
   }
-  return text ? tokenOf('word', text, braille, steps, '낱말') : null;
+  if (!text) return null;
+  const made = translate(text);
+  if (!made || !made.braille) return null;
+  return tokenOf('word', text, made.braille, partsToSteps(made.parts), '낱말');
 }
 
-function koreanTokens(cards, ko) {
+function koreanTokens(cards, translate) {
   const by = groupByKind(cards);
-  const abbr = abbreviationIndex(ko);
   const pieces = [].concat(by.syllable || [], by.ga || [], by.eok || []);
   const jongs = (by.jongsung || []).filter((card) => JONGSUNG.includes(card.letter));
   const generators = {};
-  if (pieces.length) generators.word = () => koreanWord(pieces, jongs, abbr);
+  if (pieces.length) generators.word = () => koreanWord(pieces, jongs, translate);
   if (by.word && by.word.length) {
     generators.wordsign = () => {
       const card = pick(by.word);
@@ -935,7 +1132,7 @@ function koreanTokens(cards, ko) {
   }
   if (by.digit && by.digit.length) generators.number = () => numberToken(by.digit);
   const marks = (by.mark || []).filter((card) => ['.', '?', '!'].includes(card.letter));
-  return sentenceMaker(generators, marks);
+  return sentenceMaker(generators, marks, 'ko');
 }
 
 function englishTokens(cards) {
@@ -949,7 +1146,7 @@ function englishTokens(cards) {
     };
   }
   if (by.digit && by.digit.length) generators.number = () => numberToken(by.digit);
-  return sentenceMaker(generators, []);
+  return sentenceMaker(generators, [], 'en');
 }
 
 export function createEngine(data) {
@@ -1073,60 +1270,38 @@ export function createEngine(data) {
 
   const HANGUL_KINDS = new Set(['syllable', 'ga', 'eok']);
   const WORD_KINDS = new Set(['word', 'wordsign', 'shortform', 'contraction']);
-  const AFFECTED_ONSET = new Set(['ㄴ', 'ㄷ', 'ㅁ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']);
   const OPEN_MARKS = new Set(['“', '‘', '《', '〈', '(', '[', '<tn>', '<i>']);
   const END_MARKS = new Set(['”', '’', '》', '〉', ')', ']', '</tn>', '<b>', '.', '?', '!']);
 
-  function firstSyllable(card) {
-    for (const ch of card.letter) {
-      const parts = decompose(ch);
-      if (parts) return parts;
-    }
-    return null;
+  function hangulCard(card) {
+    return HANGUL_KINDS.has(card.kind);
   }
 
-  function needsGap(left, right) {
-    if (WORD_KINDS.has(left.kind) || WORD_KINDS.has(right.kind)) return true;
-    if (left.kind === 'digit' && right.kind === 'digit') return true;
-    if (left.kind === 'digit') {
-      const parts = firstSyllable(right);
-      return !!(parts && AFFECTED_ONSET.has(parts[0]));
+  // 글자 사이의 띄어쓰기만 넣는다. 수표가 겹치는 초성 앞의 빈칸은 점자에만 두고, 숫자는 한 수로 붙인다.
+  function printSpace(left, right) {
+    if (left.kind === 'digit' && right.kind === 'digit') return false;
+    if (left.kind === 'digit' && (hangulCard(right) || right.kind === 'word')) return false;
+    if ((hangulCard(left) || left.kind === 'word') && (hangulCard(right) || right.kind === 'word')) {
+      return left.kind === 'word' || right.kind === 'word';
     }
-    return false;
+    if (left.kind === 'mark' || right.kind === 'mark') return false;
+    return true;
   }
 
-  function illegalJoin(seq) {
-    for (let i = 0; i < seq.length - 1; i += 1) {
-      const left = seq[i];
-      const right = seq[i + 1];
-      const last = [...left.letter].pop();
-      const first = [...right.letter][0];
-      if (last === '사') {
-        const parts = decompose(first);
-        if (parts && parts[0] === 'ㅇ') return true;
-      }
-      if (left.kind === 'digit' && first === '사') return true;
-    }
-    return false;
-  }
-
-  function renderSeq(seq) {
+  function renderSeq(seq, lang) {
     let text = '';
-    let braille = '';
-    const steps = [];
-    const parts = [];
     seq.forEach((card, index) => {
-      if (index > 0 && needsGap(seq[index - 1], card)) {
-        text += ' ';
-        braille += BLANK_CELL;
-        steps.push(SPACE_STEP);
-      }
+      if (index > 0 && printSpace(seq[index - 1], card)) text += ' ';
       text += card.letter;
-      braille += card.pattern;
-      if (card.steps) steps.push(...card.steps);
-      parts.push({ text: card.letter, braille: card.pattern, label: card.letter });
     });
-    return { text, braille, steps, parts };
+    const made = lang === 'en' ? en.translateText(text) : ko.translate(text);
+    if (!made || !made.braille) return null;
+    return {
+      text,
+      braille: made.braille,
+      steps: partsToSteps(made.parts),
+      parts: made.parts
+    };
   }
 
   function arrangeTopic(topic, fillers, slot) {
@@ -1190,21 +1365,20 @@ export function createEngine(data) {
       }
       if (!picked.length) break;
       const seq = arrangeTopic(card, picked, slot);
-      if (!illegalJoin(seq)) fillers = picked;
+      if (renderSeq(seq, unit.lang)) fillers = picked;
     }
     if (!fillers) return null;
 
-    const made = renderSeq(arrangeTopic(card, fillers, slot));
-    if (!made.text || made.text === card.letter) return null;
+    const made = renderSeq(arrangeTopic(card, fillers, slot), unit.lang);
+    if (!made || !made.text || made.text === card.letter) return null;
 
     const distractBraille = [];
     const distractTexts = [];
     for (const alt of shuffle(alts)) {
       if (distractBraille.length >= 3) break;
       const seq = arrangeTopic(alt, fillers, slot);
-      if (illegalJoin(seq)) continue;
-      const other = renderSeq(seq);
-      if (!other.braille || other.braille === made.braille || other.text === made.text) continue;
+      const other = renderSeq(seq, unit.lang);
+      if (!other || !other.braille || other.braille === made.braille || other.text === made.text) continue;
       distractBraille.push(other.braille);
       distractTexts.push(other.text);
     }
@@ -1259,7 +1433,7 @@ export function createEngine(data) {
 
   function fromSentence(unit) {
     const cards = sentenceCards(unit);
-    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, data.ko);
+    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, ko.translate);
     if (!maker) return null;
     const recentList = recentSentences.get(unit.id) || [];
     let sentence = null;
@@ -1337,7 +1511,7 @@ export function createEngine(data) {
     }, lang, seq);
   }
 
-  return { next, translateKo: ko.translate, translateEn: en.translateWord };
+  return { next, translateKo: ko.translate, translateEn: en.translateText };
 }
 
 export async function loadQuizEngine() {

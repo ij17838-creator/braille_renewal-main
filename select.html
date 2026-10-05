@@ -197,6 +197,7 @@
 
     /* 점자 그리드 스타일 */
     .braille-word { display: inline-flex; gap: var(--braille-word-gap); align-items: center; justify-content: center; flex-wrap: wrap; }
+    .braille-gap { display: inline-block; width: 0.35em; height: 1em; }
     .braille-cell { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); grid-auto-flow: row; gap: var(--braille-cell-gap); padding: 0.12em; border-radius: 0.2em; }
     .braille-dot { width: var(--braille-dot-size); height: var(--braille-dot-size); border-radius: 50%; box-sizing: border-box; }
     .braille-dot.active { background-color: currentColor; }
@@ -523,6 +524,10 @@
       let html = `<div class="braille-word text-3xl">`;
       for (let i = 0; i < text.length; i++) {
         const charCode = text.charCodeAt(i);
+        if (text[i] === ' ') {
+          html += `<span class="braille-gap"></span>`;
+          continue;
+        }
         if (charCode >= 0x2800 && charCode <= 0x28FF) {
           const pattern = charCode - 0x2800;
           html += `<div class="braille-cell">`;
@@ -637,34 +642,36 @@
     }
         function loadQuizData(quizObj) {
       if (!quizObj) return;
-      stage.allowNext();
-      state.currentQuiz = quizObj;
-      state.isAnsweringLocked = false;
-
-      // 이전 카드의 disabled 상태 해제 및 컨테이너 초기화
-      const grid = document.getElementById('card-selection-grid');
-      if (grid) grid.innerHTML = '';
-
       const targetText = quizObj.target_text || quizObj.text || "";
       const targetBraille = quizObj.target_braille || quizObj.braille || "";
+      if (!targetText || !targetBraille) return;
       quizObj.target_text = targetText;
       quizObj.target_braille = targetBraille;
 
-      let options = [{ braille: targetBraille, isCorrect: true }];
+      const options = [{ braille: targetBraille, isCorrect: true }];
+      const seenBraille = new Set([targetBraille]);
+      const pushOption = (braille) => {
+        if (!braille || seenBraille.has(braille) || options.length >= 4) return;
+        seenBraille.add(braille);
+        options.push({ braille, isCorrect: false });
+      };
 
-      if (Array.isArray(quizObj.distractors_braille) && quizObj.distractors_braille.length > 0) {
-        options.push(...quizObj.distractors_braille.map(b => ({ braille: b, isCorrect: false })));
-        if (options.length < 4) {
-          const needed = 4 - options.length;
-          const extra = generateCognitiveDistractors(targetBraille, needed);
-          options.push(...extra.map(b => ({ braille: b, isCorrect: false })));
-        }
-      } else {
-        const distractors = generateCognitiveDistractors(targetBraille, 3);
-        options.push(...distractors.map(b => ({ braille: b, isCorrect: false })));
+      const given = Array.isArray(quizObj.distractors_braille) ? quizObj.distractors_braille : [];
+      given.forEach(pushOption);
+      let guard = 0;
+      while (options.length < 4 && guard < 6) {
+        generateCognitiveDistractors(targetBraille, 4).forEach(pushOption);
+        guard += 1;
       }
 
-      options = options.slice(0, 4);
+      if (options.length < 2) return;
+
+      stage.allowNext();
+      state.currentQuiz = quizObj;
+      state.isAnsweringLocked = false;
+      const grid = document.getElementById('card-selection-grid');
+      if (grid) grid.innerHTML = '';
+
       for (let i = options.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [options[i], options[j]] = [options[j], options[i]];
@@ -789,7 +796,9 @@
     }
 
     function generateNextQuiz() {
-      loadQuizData(pickLocalQuiz());
+      let quiz = null;
+      for (let i = 0; i < 6 && !quiz; i += 1) quiz = pickLocalQuiz();
+      loadQuizData(quiz);
     }
 
     function updateTitleAndBadges() {
