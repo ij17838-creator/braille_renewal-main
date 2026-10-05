@@ -220,6 +220,9 @@ function buildKorean(data) {
   const unitBoundary = rules.collision_resolutions?.trailing_letters?.unit_boundary || {};
   const unitBoundaryOn = !!unitBoundary.enabled;
   const josa = (unitBoundary.josa || []).slice().sort((a, b) => b.length - a.length);
+  const romanUnits = Object.entries(
+    rules.collision_resolutions?.trailing_letters?.roman_unit_symbols || {}
+  ).sort((a, b) => b[0].length - a[0].length);
 
   function unitBoundaryOk(after) {
     if (!unitBoundaryOn) return true;
@@ -232,6 +235,23 @@ function buildKorean(data) {
   function isExemptUnit(rest) {
     if (!rest) return false;
     return exempt.some(unit => rest.startsWith(unit) && unitBoundaryOk(rest.slice(unit.length)));
+  }
+
+  // 검사기와 같이, 숫자 바로 뒤의 혼동 초성·약자는 단위가 아니면 띄어 적는다.
+  function separateCollisions(text) {
+    let out = '';
+    for (let i = 0; i < text.length; i += 1) {
+      const ch = text[i];
+      const prev = out[out.length - 1] || '';
+      if (prev >= '0' && prev <= '9' && ch >= '가' && ch <= '힣') {
+        const rest = text.slice(i);
+        const parts = decompose(ch);
+        const cho = parts ? parts[0] : '';
+        if (!isExemptUnit(rest) && (affected.includes(cho) || affectedAbbr.has(ch))) out += ' ';
+      }
+      out += ch;
+    }
+    return out;
   }
 
   const punct = [];
@@ -398,6 +418,17 @@ function buildKorean(data) {
         continue;
       }
 
+      if (inNumber) {
+        const unit = romanUnits.find(([name]) => text.startsWith(name, i));
+        if (unit) {
+          braille += unit[1];
+          inNumber = false;
+          parts.push({ text: unit[0], braille: unit[1], label: `단위 ${unit[0]}` });
+          i += unit[0].length;
+          continue;
+        }
+      }
+
       const afterNumber = inNumber;
       inNumber = false;
       if (ch >= '가' && ch <= '힣') {
@@ -483,7 +514,7 @@ function buildKorean(data) {
     return translate(randomSyllable());
   }
 
-  return { byRecipe, translate };
+  return { byRecipe, translate, separateCollisions };
 }
 
 function buildEnglish(data) {
@@ -571,17 +602,103 @@ function buildEnglish(data) {
   const numPrefix = numbers.numeric_indicators?.num_prefix?.unicode || '⠼';
   const digits = {};
   Object.entries(numbers.digits || {}).forEach(([k, v]) => { digits[k] = v.unicode; });
+  const grade1Indicator = numbers.grade1_indicators?.grade1_symbol?.unicode || '⠆';
+  const grade1Cells = new Set(Object.values(digits));
+  const isolatedLetter = {};
+  Object.entries(spell.isolated_letter?.items || {}).forEach(([key, item]) => {
+    const letter = String(item.word || key).toLowerCase();
+    if (item.unicode) isolatedLetter[letter] = item.unicode;
+  });
+
+  function standingLetter(letter) {
+    return isolatedLetter[String(letter || '').toLowerCase()] || '';
+  }
+
+  const APOSTROPHE_CELL = '⠄';
+  const APOSTROPHE_SUFFIXES = ["'d", "'ll", "'re", "'s", "'t", "'ve"];
+
+  function spellPlain(text) {
+    let out = '';
+    for (const ch of text) {
+      if (ch === "'") out += APOSTROPHE_CELL;
+      else if (letters[ch]) out += letters[ch];
+      else return '';
+    }
+    return out;
+  }
+
+  const rootItems = lexicon.roots?.items || {};
+  const prefixList = Object.keys(lexicon.prefixes?.items || {}).sort((a, b) => b.length - a.length);
+  const suffixList = [
+    ...Object.keys(lexicon.inflectional_suffixes?.items || {}),
+    ...Object.keys(lexicon.derivational_suffixes?.items || {})
+  ].sort((a, b) => b.length - a.length);
+  const disallowBridge = (lexicon.combining_rules?.bridge_rule?.disallowCrossMorphemeContraction) !== false;
+
+  function surfaceParts(sub) {
+    if (rootItems[sub]) return [sub];
+    for (const suffix of suffixList) {
+      if (!sub.endsWith(suffix)) continue;
+      const stem = sub.slice(0, -suffix.length);
+      if (stem && rootItems[stem]) return [stem, suffix];
+    }
+    return null;
+  }
+
+  // 사전에 있는 접두·어근·접미가 이어진 단어만 경계를 만든다. 경계를 가로지르는 약어는 쓰지 않는다.
+  function morphemeBounds(word) {
+    if (!disallowBridge) return new Set();
+    let matched = '';
+    let rest = word;
+    for (const prefix of prefixList) {
+      if (word.startsWith(prefix) && word.length > prefix.length) {
+        matched = prefix;
+        rest = word.slice(prefix.length);
+        break;
+      }
+    }
+    let parts = surfaceParts(rest);
+    if (parts) parts = matched ? [matched, ...parts] : parts;
+    else if (matched) parts = surfaceParts(word);
+    if (!parts) {
+      for (const prefix of prefixList) {
+        if (!word.startsWith(prefix) || word.length === prefix.length) continue;
+        const tail = word.slice(prefix.length);
+        if (Object.keys(rootItems).some((root) => tail === root || tail.startsWith(root))) {
+          parts = [prefix, tail];
+          break;
+        }
+      }
+    }
+    if (!parts || parts.length < 2 || parts.join('') !== word) return new Set();
+    const bounds = new Set();
+    let cursor = 0;
+    parts.slice(0, -1).forEach((part) => {
+      cursor += part.length;
+      bounds.add(cursor);
+    });
+    return bounds;
+  }
+
+  function crossesBoundary(bounds, start, end) {
+    for (const bound of bounds) {
+      if (start < bound && bound < end) return true;
+    }
+    return false;
+  }
 
   function greedy(word, opts = {}) {
     let i = 0;
     let out = '';
     const lower = word.toLowerCase();
+    const bounds = opts.bridge === false ? new Set() : morphemeBounds(lower);
     while (i < lower.length) {
       let matched = null;
       for (const group of groups) {
         if (!lower.startsWith(group.text, i)) continue;
         const atStart = i === 0;
         const atEnd = i + group.text.length === lower.length;
+        if (crossesBoundary(bounds, i, i + group.text.length)) continue;
         if (group.where === 'medial' && (atStart || atEnd)) continue;
         if (group.avoidStandingAlone && atStart && atEnd) continue;
         if (group.where === 'prefix' && !(atStart && !atEnd)) continue;
@@ -740,8 +857,8 @@ function buildEnglish(data) {
         const head = word.slice(0, idx);
         const tail = word.slice(idx + key.length);
         if (!shortformPartsOk(head, tail, data)) continue;
-        const prefix = head ? greedy(head) : '';
-        const suffix = tail ? greedy(tail, { finalAtStart: true }) : '';
+        const prefix = head ? greedy(head, { bridge: false }) : '';
+        const suffix = tail ? greedy(tail, { finalAtStart: true, bridge: false }) : '';
         if ((head && !prefix) || (tail && !suffix)) continue;
         return prefix + data.unicode + suffix;
       }
@@ -749,8 +866,25 @@ function buildEnglish(data) {
     return '';
   }
 
-  function translateWord(word) {
+  function translateWord(word, opts = {}) {
     const lower = word.toLowerCase();
+    const standing = opts.standingAlone !== false;
+    const apostrophe = lower.match(/^([a-z]+)('[a-z]+)$/);
+    if (apostrophe && APOSTROPHE_SUFFIXES.includes(apostrophe[2])) {
+      const stem = translateWord(apostrophe[1], opts);
+      const tail = spellPlain(apostrophe[2]);
+      if (stem && tail) {
+        return {
+          braille: stem.braille + tail,
+          parts: stem.parts.concat([{ text: apostrophe[2], braille: tail, label: apostrophe[2] }]),
+          rule: '어미'
+        };
+      }
+    }
+    if (standing && lower.length === 1 && isolatedLetter[lower]) {
+      const cell = isolatedLetter[lower];
+      return { braille: cell, parts: [{ text: word, braille: cell, label: word }], rule: '단독 알파벳' };
+    }
     const known = wholeByWord.get(lower);
     if (known && known.unicode) {
       return { braille: known.unicode, parts: [{ text: word, braille: known.unicode, label: word }], rule: '단어' };
@@ -800,6 +934,7 @@ function buildEnglish(data) {
         i += 1;
         continue;
       }
+      const cameFromNumber = inNumber;
       inNumber = false;
       const mark = EN_PUNCT.find((item) => item.ch === ch);
       if (mark) {
@@ -814,16 +949,23 @@ function buildEnglish(data) {
         i += 1;
       }
       if (!word) return null;
-      const piece = translateWord(word);
+      const piece = translateWord(word, { standingAlone: !cameFromNumber });
       if (!piece) return null;
-      braille += piece.braille;
-      parts.push(...piece.parts);
+      let wordBraille = piece.braille;
+      if (cameFromNumber && wordBraille && grade1Cells.has(Array.from(wordBraille)[0])) {
+        wordBraille = grade1Indicator + wordBraille;
+        braille += wordBraille;
+        parts.push({ text: word, braille: wordBraille, label: `1급 점자표 + ${word}` });
+      } else {
+        braille += wordBraille;
+        parts.push(...piece.parts);
+      }
     }
     if (!braille || !parts.length) return null;
     return { braille, parts, rule: parts.length > 1 ? '형태소 결합' : (parts[0].label || '단어'), text };
   }
 
-  return { byRecipe, translateWord, translateText };
+  return { byRecipe, translateWord, translateText, standingLetter };
 }
 
 function recipesFor(lang, game) {
@@ -1027,6 +1169,7 @@ function assembleSentence(tokens, mark, lang) {
       const prev = tokens[index - 1];
       if (lang === 'en' && prev.kind === 'number' && token.kind === 'number' && token.braille.startsWith('⠼')) {
         const body = token.braille.slice(1);
+        text += token.text;
         braille += NUMERIC_SPACE + body;
         steps.push(NUMERIC_SPACE_STEP, ...token.steps.slice(1));
         parts.push({ text: token.text, braille: NUMERIC_SPACE + body, label: token.label });
@@ -1277,7 +1420,7 @@ export function createEngine(data) {
     return HANGUL_KINDS.has(card.kind);
   }
 
-  // 글자 사이의 띄어쓰기만 넣는다. 수표가 겹치는 초성 앞의 빈칸은 점자에만 두고, 숫자는 한 수로 붙인다.
+  // 글자 사이의 띄어쓰기만 넣는다. 숫자와 겹치는 한글은 separateCollisions가 검사기대로 띄운다.
   function printSpace(left, right) {
     if (left.kind === 'digit' && right.kind === 'digit') return false;
     if (left.kind === 'digit' && (hangulCard(right) || right.kind === 'word')) return false;
@@ -1294,6 +1437,7 @@ export function createEngine(data) {
       if (index > 0 && printSpace(seq[index - 1], card)) text += ' ';
       text += card.letter;
     });
+    if (lang !== 'en') text = ko.separateCollisions(text);
     const made = lang === 'en' ? en.translateText(text) : ko.translate(text);
     if (!made || !made.braille) return null;
     return {
@@ -1404,15 +1548,27 @@ export function createEngine(data) {
         distractTexts: placed.distractTexts
       };
     }
+    let text = card.letter;
+    let braille = card.pattern;
+    let explanation = card.explain || card.dotText;
+    const distractBraille = nearPatterns(card, scope);
+    if (card.kind === 'alphabet') {
+      const alone = en.standingLetter(card.letter);
+      if (alone && alone !== braille) {
+        distractBraille.unshift(braille);
+        braille = alone;
+        explanation = `단독 알파벳 ${card.letter}은 단어 약어와 겹치므로 앞에 1급 기호표 ⠰를 붙입니다. ${explanation}`;
+      }
+    }
     return {
       key: itemKey(owner, card),
-      text: card.letter,
-      braille: card.pattern,
-      parts: [{ text: card.letter, braille: card.pattern, label: owner.title }],
+      text,
+      braille,
+      parts: [{ text, braille, label: owner.title }],
       rule: owner.title,
       hint: review ? `${owner.title} 복습` : `${unit.title} 단원`,
-      explanation: card.explain || card.dotText,
-      distractBraille: nearPatterns(card, scope),
+      explanation,
+      distractBraille,
       distractTexts: nearTexts(unit, card, scope)
     };
   }
