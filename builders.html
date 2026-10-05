@@ -280,6 +280,8 @@
 
     /* 점자 6점 그리드 시각화 */
     .braille-word { display: inline-flex; gap: var(--braille-word-gap); align-items: center; justify-content: center; flex-wrap: wrap; }
+    /* 셀 간격과 다른 폭. 한글 수표 종료 띄어쓰기와 영어 단어 경계가 붙어 보이지 않게 한다. */
+    .braille-gap { display: block; width: 0.85em; height: 1em; flex: 0 0 auto; }
     .braille-cell {
       display: inline-grid;
       grid-template-columns: repeat(2, 1fr);
@@ -619,12 +621,26 @@
       if (type === 'wrong') sfxWrong.triggerAttackRelease("C2", "8n");
     }
 
+    function escapeText(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
     // 점자 유니코드(U+2800~U+28FF) 6점 도트 렌더러
     function renderBrailleHTML(text) {
       if (!text) return '';
+      const gapLabel = state.lang === 'EN' ? 'space' : '띄어쓰기';
       let html = `<div class="braille-word">`;
       for (let i = 0; i < text.length; i++) {
-        const charCode = text.charCodeAt(i);
+        const ch = text[i];
+        if (ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t') {
+          html += `<span class="braille-gap" role="separator" aria-label="${gapLabel}"></span>`;
+          continue;
+        }
+        const charCode = ch.charCodeAt(0);
         if (charCode >= 0x2800 && charCode <= 0x28FF) {
           const pattern = charCode - 0x2800;
           html += `<div class="braille-cell">`;
@@ -639,7 +655,7 @@
           bits.forEach(dot => html += `<div class="braille-dot ${dot.on ? 'active' : 'inactive'}" style="grid-row:${dot.row};grid-column:${dot.col}"></div>`);
           html += `</div>`;
         } else {
-          html += `<span class="font-bold mx-0.5 text-base text-slate-600">${text[i]}</span>`;
+          html += `<span class="font-bold mx-0.5 text-base text-slate-600">${escapeText(ch)}</span>`;
         }
       }
       html += `</div>`;
@@ -681,28 +697,64 @@
       renderWorkbench();
       renderPool();
 
-      speak('제시된 점형의 뜻을 블록에서 고르세요.');
+      speak(state.lang === 'EN'
+        ? 'Choose the meaning of the braille.'
+        : '제시된 점형의 뜻을 블록에서 고르세요.');
+    }
+
+    function translatedBraille(text, lang) {
+      if (!quizEngine || !text) return '';
+      try {
+        const made = lang === 'EN'
+          ? (typeof quizEngine.translateEn === 'function' ? quizEngine.translateEn(text) : null)
+          : (typeof quizEngine.translateKo === 'function' ? quizEngine.translateKo(text) : null);
+        return made && made.braille ? made.braille : '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    // 정답과 점형이 같은 보기는 뺀다. 한글은 수표 충돌을 띄어 푼 형태, 영어는 약어·1급 점자표가 겹친 형태가 여기 걸린다.
+    function withoutBrailleCollisions(list, correct, shown, lang) {
+      if (!shown || !quizEngine) return list;
+      return list.filter(item => {
+        if (item === correct) return true;
+        const braille = translatedBraille(item, lang);
+        return !braille || braille !== shown;
+      });
     }
 
     function meaningChoices(quiz) {
       const correct = quiz.target_text || '';
+      const lang = String(quiz.lang || state.lang || 'KO').toUpperCase() === 'EN' ? 'EN' : 'KO';
+      let list;
       if (Array.isArray(quiz.meaning_options) && quiz.meaning_options.includes(correct)) {
-        return quiz.meaning_options.slice();
-      }
-      const extras = [];
-      const seen = new Set([correct]);
-      (quiz.distractors_text || []).forEach(item => {
-        if (item && !seen.has(item)) {
-          seen.add(item);
-          extras.push(item);
+        list = quiz.meaning_options.slice();
+      } else {
+        const extras = [];
+        const seen = new Set([correct]);
+        (quiz.distractors_text || []).forEach(item => {
+          if (item && !seen.has(item)) {
+            seen.add(item);
+            extras.push(item);
+          }
+        });
+        const bank = Array.isArray(quiz.available_blocks) ? quiz.available_blocks : [];
+        if (bank.includes(correct)) {
+          bank.forEach(item => {
+            if (item && !seen.has(item)) {
+              seen.add(item);
+              extras.push(item);
+            }
+          });
         }
-      });
-      const list = [correct, ...extras].filter(Boolean);
-      for (let i = list.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [list[i], list[j]] = [list[j], list[i]];
+        list = [correct, ...extras].filter(Boolean);
+        for (let i = list.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [list[i], list[j]] = [list[j], list[i]];
+        }
       }
-      return list;
+      return withoutBrailleCollisions(list, correct, quiz.target_braille || '', lang);
     }
 
     function renderPool() {
@@ -717,10 +769,13 @@
       state.currentQuiz.available_blocks.forEach((text, idx) => {
         const btn = document.createElement('button');
         btn.className = 'choice-chip glass-button rounded-2xl flex items-center gap-2 font-bold shadow-sm transition-all active:scale-95';
-        btn.innerHTML = `
-          <span class="choice-index text-slate-400 font-mono">[${idx + 1}]</span>
-          <span class="choice-label text-slate-800">${text}</span>
-        `;
+        const index = document.createElement('span');
+        index.className = 'choice-index text-slate-400 font-mono';
+        index.textContent = `[${idx + 1}]`;
+        const label = document.createElement('span');
+        label.className = 'choice-label text-slate-800';
+        label.textContent = text;
+        btn.append(index, label);
         btn.setAttribute('aria-label', `선택지 ${idx + 1}번, 블록 내용 ${text}`);
         
         bindChoiceClick(
@@ -970,8 +1025,12 @@
     });
 
     document.getElementById('btn-audio-hint').addEventListener('click', () => {
-      if (state.currentQuiz) {
-        speak(`문제: ${state.currentQuiz.target_text}. 올바른 점자 블록을 순서대로 조립하세요.`);
+      if (!state.currentQuiz) return;
+      const rule = state.currentQuiz.rule_type || state.currentQuiz.category || '';
+      if (state.lang === 'EN') {
+        speak(rule ? `Choose the meaning of the braille. ${rule}.` : 'Choose the meaning of the braille.');
+      } else {
+        speak(rule ? `제시된 점형의 뜻을 고르세요. ${rule}.` : '제시된 점형의 뜻을 고르세요.');
       }
     });
 
