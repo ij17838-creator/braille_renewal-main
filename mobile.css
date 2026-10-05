@@ -219,7 +219,7 @@
     display: none;
   }
 
-  #keyboard-dock .grid.grid-cols-2 button {
+  #keyboard-dock .dot-actions button {
     min-height: 2.65rem;
     font-size: 0.78rem !important;
     line-height: 1.25;

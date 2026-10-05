@@ -85,11 +85,26 @@
     }
 
     /* 키보드 버튼 */
+    .braille-key-btn {
+      touch-action: none;
+    }
     .braille-key-btn.active {
       background-color: #4f46e5 !important;
       color: #ffffff !important;
       transform: scale(0.95);
       box-shadow: 0 0 12px rgba(79, 70, 229, 0.4);
+    }
+    .braille-cell.cell-editing {
+      box-shadow: 0 0 0 2px #6366f1;
+      background: rgba(99, 102, 241, 0.12);
+      border-radius: 0.2em;
+    }
+    :root[data-theme] .braille-cell.cell-editing {
+      box-shadow: 0 0 0 2px var(--hc-accent);
+      background: transparent;
+    }
+    .dot-input-hint.is-warn {
+      color: #e11d48;
     }
 
     /* 빈칸 슬롯 */
@@ -345,11 +360,20 @@
             </button>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button id="btn-commit-cell" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">점자 입력 (Enter)</button>
-            <button id="btn-space-cell" class="glass-button py-2 rounded-xl text-xs font-bold text-slate-700">띄어쓰기 (Space)</button>
-            <button id="btn-key-clear" class="glass-button py-2 rounded-xl text-xs font-bold text-rose-600">지우기 (Backspace)</button>
-            <button id="btn-verify-investigation" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs shadow-md">판정 요청</button>
+          <p id="dot-input-hint" class="dot-input-hint text-[11px] text-center font-semibold text-slate-500">동시 입력 0.5초 · 역순 입력 불가</p>
+          <div class="dot-actions grid grid-cols-3 gap-2">
+            <button id="btn-space-cell" class="glass-button py-2 rounded-xl text-xs font-bold text-slate-700 leading-tight">
+              띄어쓰기
+              <span class="block text-[10px] font-semibold text-slate-400">Space</span>
+            </button>
+            <button id="btn-key-clear" class="glass-button py-2 rounded-xl text-xs font-bold text-rose-600 leading-tight">
+              지우기
+              <span class="block text-[10px] font-semibold text-rose-400">Backspace</span>
+            </button>
+            <button id="btn-verify-investigation" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs shadow-md leading-tight">
+              판정 요청
+              <span class="block text-[10px] font-semibold text-emerald-100">Enter</span>
+            </button>
           </div>
         </div>
 
@@ -682,7 +706,16 @@
     }
 
     // 5. 퀴즈 렌더링 및 조작
+    // 직전 점부터 이 시간 안에 들어온 점은 같은 칸(동시 입력)으로 본다.
+    const SIMUL_MS = 500;
     let activeDots = new Set();
+    let heldDots = new Set();
+    let ignoredHeld = new Set();
+    let cellOpen = false;
+    let lastDotAt = 0;
+    let maxDot = 0;
+    let commitTimer = 0;
+    let rejectTimer = 0;
     let currentInputBraille = "";
     let assembledBlocks = [];
 
@@ -693,8 +726,7 @@
       stage.allowNext();
       currentInputBraille = "";
       assembledBlocks = [];
-      activeDots.clear();
-      updateDotKeyUI();
+      resetEntryState();
       document.getElementById('sentence-card').classList.remove('answer-correct');
 
       document.getElementById('case-type-badge').textContent = q.category || '점형 입력';
@@ -748,96 +780,231 @@
       if (q && q.blocks) renderBlockPool(q.blocks);
     }
 
-    // 6. 키보드 인터랙션
+    // 6. 점형 입력
+    // 같이 누르고 있거나, 직전 점부터 SIMUL_MS 안에 누르면 한 칸이다.
+    // 손을 뗀 뒤 더 작은 번호는 역순이라 넣지 않는다.
+    function dotsToChar(dots) {
+      let pat = 0;
+      dots.forEach(d => { pat |= DOT_MASKS[d]; });
+      return String.fromCharCode(0x2800 + pat);
+    }
+
+    function hintText() {
+      return `동시 입력 ${(SIMUL_MS / 1000).toFixed(1)}초 · 역순 입력 불가`;
+    }
+
+    function showHint(message, warn) {
+      const hint = document.getElementById('dot-input-hint');
+      if (!hint) return;
+      hint.textContent = message || hintText();
+      hint.classList.toggle('is-warn', !!warn);
+    }
+
+    function rejectInput(message) {
+      const live = document.getElementById('a11y-live-region');
+      if (live) live.textContent = message;
+      showHint(message, true);
+      clearTimeout(rejectTimer);
+      rejectTimer = setTimeout(() => showHint(), 1200);
+    }
+
     function updateDotKeyUI() {
       document.querySelectorAll('.braille-key-btn').forEach(btn => {
-        const dot = parseInt(btn.dataset.dot);
+        const dot = parseInt(btn.dataset.dot, 10);
         btn.classList.toggle('active', activeDots.has(dot));
       });
     }
 
-    function toggleDot(dot) {
-      if (activeDots.has(dot)) activeDots.delete(dot);
-      else {
-        activeDots.add(dot);
-        playPitch(dot);
-      }
+    function renderLiveDotPreview() {
+      const openChar = cellOpen && activeDots.size > 0 ? dotsToChar(activeDots) : '';
+      const totalBraille = currentInputBraille + openChar;
+      const preview = document.getElementById('user-input-dots');
+      preview.innerHTML = totalBraille.length > 0 ? renderBrailleHTML(totalBraille) : '';
+      if (!openChar) return;
+      const cells = preview.querySelectorAll('.braille-cell');
+      const last = cells[cells.length - 1];
+      if (last) last.classList.add('cell-editing');
+    }
+
+    function refreshInputUI() {
       updateDotKeyUI();
       renderLiveDotPreview();
     }
 
-    function commitCell() {
-      if (activeDots.size === 0) return;
-      let pat = 0;
-      activeDots.forEach(d => pat |= DOT_MASKS[d]);
-      currentInputBraille += String.fromCharCode(0x2800 + pat);
+    function resetOpenCell() {
       activeDots.clear();
-      updateDotKeyUI();
-      renderLiveDotPreview();
+      cellOpen = false;
+      lastDotAt = 0;
+      maxDot = 0;
+      clearTimeout(commitTimer);
+    }
+
+    function resetEntryState() {
+      clearTimeout(rejectTimer);
+      heldDots.clear();
+      ignoredHeld.clear();
+      resetOpenCell();
+      showHint();
+      refreshInputUI();
+    }
+
+    function holdingActiveDot() {
+      for (const dot of heldDots) {
+        if (activeDots.has(dot)) return true;
+      }
+      return false;
+    }
+
+    function scheduleCommit() {
+      clearTimeout(commitTimer);
+      if (!cellOpen) return;
+      const wait = Math.max(0, lastDotAt + SIMUL_MS - performance.now());
+      commitTimer = setTimeout(() => {
+        if (!cellOpen || holdingActiveDot()) return;
+        commitOpenCell();
+      }, wait);
+    }
+
+    function commitOpenCell() {
+      clearTimeout(commitTimer);
+      if (!cellOpen || activeDots.size === 0) {
+        resetOpenCell();
+        refreshInputUI();
+        return;
+      }
+      currentInputBraille += dotsToChar(activeDots);
+      resetOpenCell();
+      refreshInputUI();
+    }
+
+    function addDot(dot, now) {
+      clearTimeout(rejectTimer);
+      showHint();
+      activeDots.add(dot);
+      if (dot > maxDot) maxDot = dot;
+      lastDotAt = now;
+      cellOpen = true;
+      playPitch(dot);
+      scheduleCommit();
+      refreshInputUI();
+    }
+
+    function noteDot(dot, othersHeld) {
+      const now = performance.now();
+      if (!cellOpen) {
+        addDot(dot, now);
+        return;
+      }
+      if (activeDots.has(dot)) return;
+
+      const within = now - lastDotAt <= SIMUL_MS;
+      if (!within && !othersHeld) {
+        commitOpenCell();
+        addDot(dot, performance.now());
+        return;
+      }
+      if (!within) {
+        rejectInput(dot < maxDot ? '역순 입력은 넣을 수 없습니다.' : '동시 입력 시간을 넘겼습니다.');
+        return;
+      }
+      if (!othersHeld && dot < maxDot) {
+        rejectInput('역순 입력은 넣을 수 없습니다.');
+        return;
+      }
+      addDot(dot, now);
+    }
+
+    function onDotDown(dot) {
+      if (!stage.canAnswer() || heldDots.has(dot)) return;
+      initAudio();
+      const othersHeld = [...heldDots].some(d => !ignoredHeld.has(d));
+      heldDots.add(dot);
+      if (ignoredHeld.has(dot)) return;
+      noteDot(dot, othersHeld);
+    }
+
+    function onDotUp(dot) {
+      if (!heldDots.delete(dot)) return;
+      ignoredHeld.delete(dot);
+      if (!cellOpen || holdingActiveDot()) return;
+      if (performance.now() - lastDotAt >= SIMUL_MS) commitOpenCell();
+      else scheduleCommit();
+    }
+
+    function eraseCurrentCell() {
+      if (!stage.canAnswer()) return;
+      if (cellOpen) {
+        heldDots.forEach(d => ignoredHeld.add(d));
+        resetOpenCell();
+        refreshInputUI();
+        return;
+      }
+      if (currentInputBraille.length > 0) {
+        currentInputBraille = currentInputBraille.slice(0, -1);
+        refreshInputUI();
+      }
     }
 
     // 띄어쓰기는 점역기와 같은 칸을 넣는다. 한글은 항상 일반 공백이고, 영어 숫자 사이에만 ⠐를 넣는다.
     function commitSpace() {
-      commitCell();
+      commitOpenCell();
+      heldDots.forEach(d => ignoredHeld.add(d));
       const q = quizList[currentQuizIndex];
       const target = q ? (q.target_braille || '') : '';
       currentInputBraille += nextBreakChar(appState.lang, target, currentInputBraille);
       renderLiveDotPreview();
     }
 
-    function renderLiveDotPreview() {
-      let previewDots = "";
-      if (activeDots.size > 0) {
-        let pat = 0;
-        activeDots.forEach(d => pat |= DOT_MASKS[d]);
-        previewDots = String.fromCharCode(0x2800 + pat);
-      }
-
-      const totalBraille = currentInputBraille + previewDots;
-      const preview = document.getElementById('user-input-dots');
-      preview.innerHTML = totalBraille.length > 0 ? renderBrailleHTML(totalBraille) : "";
-    }
-
-    // 키보드 이벤트
     window.addEventListener('keydown', (e) => {
-      if (!stage.canAnswer()) return;
-      initAudio();
-      const k = e.key.toLowerCase();
-      if (KEY_TO_DOT[k]) {
-        toggleDot(KEY_TO_DOT[k]);
+      if (e.repeat) return;
+      const dot = KEY_TO_DOT[e.key.toLowerCase()];
+      if (dot) {
+        onDotDown(dot);
         e.preventDefault();
-      } else if (e.key === 'Enter') {
-        commitCell();
+        return;
+      }
+      if (!stage.canAnswer()) return;
+      if (e.key === 'Enter') {
+        verifyAnswer();
         e.preventDefault();
       } else if (e.key === ' ') {
         commitSpace();
         e.preventDefault();
       } else if (e.key === 'Backspace') {
-        if (activeDots.size > 0) activeDots.clear();
-        else currentInputBraille = currentInputBraille.slice(0, -1);
-        updateDotKeyUI();
-        renderLiveDotPreview();
+        eraseCurrentCell();
         e.preventDefault();
       }
     });
 
-    document.querySelectorAll('.braille-key-btn').forEach(b => {
-      b.onclick = () => {
-        initAudio();
-        toggleDot(parseInt(b.dataset.dot));
-      };
+    window.addEventListener('keyup', (e) => {
+      const dot = KEY_TO_DOT[e.key.toLowerCase()];
+      if (dot) onDotUp(dot);
     });
 
-    document.getElementById('btn-commit-cell').onclick = commitCell;
+    window.addEventListener('blur', () => {
+      heldDots.clear();
+      ignoredHeld.clear();
+      if (cellOpen) commitOpenCell();
+    });
+
+    document.querySelectorAll('.braille-key-btn').forEach(btn => {
+      const dot = parseInt(btn.dataset.dot, 10);
+      btn.addEventListener('pointerdown', (e) => {
+        if (e.button != null && e.button !== 0) return;
+        e.preventDefault();
+        if (!stage.canAnswer()) return;
+        try { btn.setPointerCapture(e.pointerId); } catch (err) { /* 캡처가 없어도 입력은 받는다 */ }
+        onDotDown(dot);
+      });
+      const release = () => onDotUp(dot);
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointercancel', release);
+    });
+
     document.getElementById('btn-space-cell').onclick = () => {
       if (stage.canAnswer()) commitSpace();
     };
-    document.getElementById('btn-key-clear').onclick = () => {
-      activeDots.clear();
-      currentInputBraille = "";
-      updateDotKeyUI();
-      renderLiveDotPreview();
-    };
+    document.getElementById('btn-key-clear').onclick = eraseCurrentCell;
     document.getElementById('btn-reset-blocks').onclick = resetBlockSelection;
 
     function advanceQuiz() {
@@ -852,7 +1019,8 @@
     function verifyAnswer() {
       if (!stage.canAnswer()) return;
       initAudio();
-      commitCell();
+      commitOpenCell();
+      heldDots.forEach(d => ignoredHeld.add(d));
       const q = quizList[currentQuizIndex];
       if (!q) return;
 

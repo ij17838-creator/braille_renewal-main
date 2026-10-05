@@ -395,13 +395,14 @@
 
         <section class="bg-sky-50/80 border border-sky-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-blank-title">
           <h4 id="manual-blank-title" class="text-sm font-black text-slate-800">빈칸 수사대 · 쓰기</h4>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">뜻을 보여 주고, 그 점형을 직접 넣습니다. 점이 들어간 칸을 만든 뒤 점자 입력으로 한 칸을 확정하고, 칸이 모이면 판정 요청으로 제출합니다. 이 게임에서 80% 이상이면 그 단원의 네 게임 중 하나가 완료됩니다. 네 게임을 모두 채워야 순차에서는 다음 단원이 열리고, Free에서는 이 단원과 이전 단원이 해금됩니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">뜻을 보여 주고, 그 점형을 직접 넣습니다. 같이 누른 점은 한 칸이 되고, 칸이 모이면 판정 요청으로 제출합니다. 이 게임에서 80% 이상이면 그 단원의 네 게임 중 하나가 완료됩니다. 네 게임을 모두 채워야 순차에서는 다음 단원이 열리고, Free에서는 이 단원과 이전 단원이 해금됩니다.</p>
           <ul class="text-xs sm:text-sm text-slate-600 leading-relaxed flex flex-col gap-1.5 list-disc pl-4">
-            <li><span class="font-bold text-slate-800">1~6 버튼</span> — 그 번호의 점을 켜거나 끕니다. 키보드에서는 1=F(도), 2=D(레), 3=S(미), 4=J(파), 5=K(솔), 6=L(라)입니다.</li>
-            <li><span class="font-bold text-slate-800">점자 입력 (Enter)</span> — 지금 켠 점들로 한 칸을 확정합니다.</li>
-            <li><span class="font-bold text-slate-800">띄어쓰기 (Space)</span> — 빈 칸을 넣습니다. 아직 확정하지 않은 점이 있으면 그 칸을 먼저 넣습니다.</li>
-            <li><span class="font-bold text-slate-800">지우기</span> — 넣은 점형을 모두 지웁니다. Backspace는 켜 둔 점을 끄거나, 점이 없으면 마지막 칸만 지웁니다.</li>
-            <li><span class="font-bold text-slate-800">판정 요청</span> — 넣은 점형이 제시된 뜻과 맞는지 확인합니다.</li>
+            <li><span class="font-bold text-slate-800">1~6 버튼</span> — 그 번호의 점을 넣습니다. 키보드에서는 1=F(도), 2=D(레), 3=S(미), 4=J(파), 5=K(솔), 6=L(라)입니다.</li>
+            <li><span class="font-bold text-slate-800">동시 입력</span> — 점을 같이 누르거나, 직전 점부터 0.5초 안에 누르면 같은 칸입니다. 손가락을 모두 떼고 0.5초가 지나면 그 칸이 들어갑니다.</li>
+            <li><span class="font-bold text-slate-800">역순 입력 불가</span> — 손을 뗀 뒤 더 작은 번호의 점은 그 칸에 넣지 않습니다. 아직 누르고 있는 점과 같이 누른 점은 순서와 상관없이 넣습니다.</li>
+            <li><span class="font-bold text-slate-800">띄어쓰기 (Space)</span> — 빈 칸을 넣습니다. 아직 들어가지 않은 점이 있으면 그 칸을 먼저 넣습니다.</li>
+            <li><span class="font-bold text-slate-800">지우기 (Backspace)</span> — 지금 넣고 있는 칸의 점만 지웁니다. 그 칸이 없으면 바로 앞 칸만 지웁니다.</li>
+            <li><span class="font-bold text-slate-800">판정 요청 (Enter)</span> — 넣은 점형이 제시된 뜻과 맞는지 확인합니다.</li>
             <li><span class="font-bold text-slate-800">스피커</span> — 단서를 다시 듣습니다.</li>
           </ul>
         </section>
