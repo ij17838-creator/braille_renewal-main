@@ -688,7 +688,9 @@
       const ruleType = quizData.rule_type || quizData.meta?.type || quizData.meta?.structure || "일반";
       document.getElementById('prompt-category-tag').textContent = cat;
       document.getElementById('prompt-rule-badge').textContent = `규칙: ${ruleType}`;
-      document.getElementById('target-prompt-text').textContent = '이 점형에 알맞은 뜻을 고르세요';
+      document.getElementById('target-prompt-text').textContent = state.unitId === 'ko-dots'
+        ? '이 점의 자리를 고르세요'
+        : '이 점형에 알맞은 뜻을 고르세요';
       quizData.available_blocks = meaningChoices(quizData);
 
       document.getElementById('target-braille-preview').innerHTML = renderBrailleHTML(quizData.target_braille || "");
@@ -697,9 +699,11 @@
       renderWorkbench();
       renderPool();
 
-      speak(state.lang === 'EN'
-        ? 'Choose the meaning of the braille.'
-        : '제시된 점형의 뜻을 블록에서 고르세요.');
+      speak(state.unitId === 'ko-dots'
+        ? '이 점의 자리를 고르세요.'
+        : (state.lang === 'EN'
+          ? 'Choose the meaning of the braille.'
+          : '제시된 점형의 뜻을 블록에서 고르세요.'));
     }
 
     function translatedBraille(text, lang) {
@@ -814,7 +818,7 @@
       const revParsedSpan = document.getElementById('workbench-reverse-parsed');
 
       if (state.assembledBlocks.length === 0) {
-        slots.innerHTML = `<span class="text-slate-400 text-xs font-semibold">제시된 점형에 알맞은 뜻 블록을 하나 선택하세요.</span>`;
+        slots.innerHTML = `<span class="text-slate-400 text-xs font-semibold">${state.unitId === 'ko-dots' ? '이 점의 자리를 고르세요' : '제시된 점형에 알맞은 뜻 블록을 하나 선택하세요.'}</span>`;
         revParsedSpan.textContent = "비어 있음";
         return;
       }
@@ -1027,7 +1031,9 @@
     document.getElementById('btn-audio-hint').addEventListener('click', () => {
       if (!state.currentQuiz) return;
       const rule = state.currentQuiz.rule_type || state.currentQuiz.category || '';
-      if (state.lang === 'EN') {
+      if (state.unitId === 'ko-dots') {
+        speak('이 점의 자리를 고르세요.');
+      } else if (state.lang === 'EN') {
         speak(rule ? `Choose the meaning of the braille. ${rule}.` : 'Choose the meaning of the braille.');
       } else {
         speak(rule ? `제시된 점형의 뜻을 고르세요. ${rule}.` : '제시된 점형의 뜻을 고르세요.');

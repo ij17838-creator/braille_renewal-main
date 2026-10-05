@@ -298,7 +298,7 @@
       <!-- 문제 영역 -->
       <div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center overflow-y-auto">
         <div class="mb-3 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
-          <span>🔍 뜻:</span>
+          <span id="clue-label">🔍 뜻:</span>
           <span id="clue-text">데이터를 불러오는 중입니다...</span>
         </div>
 
@@ -698,7 +698,9 @@
       document.getElementById('sentence-card').classList.remove('answer-correct');
 
       document.getElementById('case-type-badge').textContent = q.category || '점형 입력';
-      document.getElementById('clue-text').textContent = '이 뜻에 맞는 점형을 입력하세요';
+      const dotUnit = appState.unitId === 'ko-dots';
+      document.getElementById('clue-label').textContent = dotUnit ? '🔍' : '🔍 뜻:';
+      document.getElementById('clue-text').textContent = dotUnit ? '이 점의 자리를 고르세요' : '이 뜻에 맞는 점형을 입력하세요';
       document.getElementById('case-description').textContent = `${appState.lang} · 뜻 → 점형`;
 
       document.getElementById('sentence-container').innerHTML = `
@@ -709,7 +711,9 @@
       document.getElementById('keyboard-dock').classList.remove('hidden');
       document.getElementById('block-dock').classList.add('hidden');
 
-      speak(`뜻. ${q.target_text}. 알맞은 점형을 입력하세요.`);
+      speak(dotUnit
+        ? `문제: ${q.target_text}. 이 점의 자리를 고르세요.`
+        : `뜻. ${q.target_text}. 알맞은 점형을 입력하세요.`);
     }
 
     function renderBlockPool(blocks) {
@@ -910,7 +914,11 @@
     };
     document.getElementById('btn-replay-clue').onclick = () => {
       const q = quizList[currentQuizIndex];
-      if (q) speak(`뜻. ${q.target_text}. 알맞은 점형을 입력하세요.`);
+      if (q) {
+        speak(appState.unitId === 'ko-dots'
+          ? `문제: ${q.target_text}. 이 점의 자리를 고르세요.`
+          : `뜻. ${q.target_text}. 알맞은 점형을 입력하세요.`);
+      }
     };
     document.getElementById('btn-back-to-hub').onclick = navigateBack;
 
