@@ -778,7 +778,11 @@
       const list = document.getElementById('unit-list');
       if (!list) return;
       const ids = orderedIds(units);
-      list.innerHTML = units.map((unit) => {
+      list.innerHTML = units.map((unit, index) => {
+        // 교재의 대단원(정자 점자, 약자와 약어, 문장 부호)이 바뀌는 자리에 제목을 넣는다.
+        const part = unit.part && unit.part !== units[index - 1]?.part
+          ? `<p class="px-2 pt-2 text-[11px] font-black text-slate-500" role="presentation">${escapeHtml(unit.part)}</p>`
+          : '';
         const open = isUnitOpen(lang, unit.id, ids);
         const selected = unit.id === selectedId;
         const saved = unitRecord(lang, unit.id);
@@ -793,7 +797,7 @@
         const tone = selected
           ? 'bg-emerald-500 text-white border-emerald-600'
           : 'bg-white text-slate-700 border-slate-200';
-        return `
+        return `${part}
           <button type="button" role="option" class="unit-chip w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 text-left ${tone}" data-unit="${escapeHtml(unit.id)}" ${open ? '' : 'disabled'} aria-selected="${selected ? 'true' : 'false'}" aria-label="${escapeHtml(label)}">
             <span>${escapeHtml(`${unit.label || unit.order}단원 · ${unit.title}`)}</span>
             <span class="shrink-0 ${selected ? 'text-emerald-50' : badge === '통과' ? 'text-emerald-700' : badge === '해금' ? 'text-indigo-600' : 'text-slate-400'}">${escapeHtml(badge)}</span>

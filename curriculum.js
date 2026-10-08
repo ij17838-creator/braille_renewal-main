@@ -76,14 +76,15 @@ export function materialsFor(unit, data) {
 }
 
 function cardsFromSlice(slice, data) {
-  if (slice.ranges) return syllableCards(slice, data);
+  if (slice.ranges || slice.syllables) return syllableCards(slice, data);
+  if (slice.role === 'abbr') return abbrCards(slice, data);
   if (slice.role === 'exception') return exceptionCards(slice, data);
   if (slice.role === 'keep_a') return keepACards(slice, data);
   const node = nodeAt(data, slice.bundle, slice.path || []);
   const prefix = prefixStep(slice, data);
   if (slice.role === 'contraction' && Array.isArray(node)) return contractionCards(node, slice);
   return glyphEntries(node)
-    .filter(([, item]) => acceptItem(item, slice.filter))
+    .filter(([key, item]) => acceptItem(item, slice.filter, key))
     .map(([key, item]) => glyphCard(key, item, slice.role, prefix));
 }
 
@@ -102,8 +103,9 @@ function resolveBundle(data, bundle) {
   return data;
 }
 
-function acceptItem(item, filter) {
+function acceptItem(item, filter, key) {
   if (!filter) return true;
+  if (Array.isArray(filter.keys) && !filter.keys.includes(key)) return false;
   if (filter.type) {
     const types = Array.isArray(filter.type) ? filter.type : [filter.type];
     if (!types.includes(item.type)) return false;
@@ -260,7 +262,7 @@ function contractionCards(groups, slice) {
     const rule = group.rule || {};
     const standalone = !!(rule.canStandAlone || rule.standingAloneOnly) && !rule.requiresFollowingLetters;
     for (const [key, item] of glyphEntries(group.items)) {
-      if (!acceptItem(item, slice.filter)) continue;
+      if (!acceptItem(item, slice.filter, key)) continue;
       const card = glyphCard(key, item, 'contraction', null);
       card.standalone = standalone;
       cards.push(card);
@@ -292,30 +294,49 @@ export function decomposeSyllable(ch) {
  * 풀어 쓴 음절 카드에는 여기에 걸리는 조합이 들어가지 않는다.
  *   - abbreviation_syllable에 있는 음절
  *   - 가·나·다 계열 첫소리 + ㅏ (된소리 포함, 받침이 붙어도 약자 + 받침)
- *   - 모음 + 받침이 억·언·얼 계열인 경우
+ *   - 모음 + 받침이 억·언·얼 계열인 경우 (ㅅ·ㅈ·ㅊ 뒤 성·정·청 포함)
  */
 export function abbreviationIndex(ko) {
   const items = ko?.abbreviation_syllable?.items || {};
   const syllables = new Set();
   const gaOnsets = new Set();
   const vowelCoda = new Set();
+  const vowelCodaKeys = new Set();
   for (const [syllable, item] of Object.entries(items)) {
     syllables.add(syllable);
     const parts = decomposeSyllable(syllable);
     if (!parts) continue;
     if (item.type === 'ga_series' && parts[1] === 'ㅏ' && !parts[2]) gaOnsets.add(parts[0]);
-    if (item.type === 'vowel_coda_series' && parts[2]) vowelCoda.add(`${parts[1]}|${parts[2]}`);
+    if (item.type === 'vowel_coda_series' && parts[2]) {
+      vowelCoda.add(`${parts[1]}|${parts[2]}`);
+      vowelCodaKeys.add(syllable);
+    }
   }
+  const override = items['영']?.initial_vowel_override || {};
+  const yeongInitials = new Set(override.initials || []);
+  const yeongVowel = override.surface_vowel || 'ㅓ';
+
+  // 모음 + 받침 자리에 억·언·얼 계열 약자가 들어가는지 본다.
+  function usesVowelCoda(cho, jung, jong) {
+    if (!jong) return false;
+    if (yeongInitials.has(cho) && jong === 'ㅇ') {
+      if (jung === yeongVowel) return true;
+      if (jung === 'ㅕ') return false;
+    }
+    return vowelCoda.has(`${jung}|${jong}`);
+  }
+
   return {
     syllables,
     gaOnsets,
     vowelCoda,
+    vowelCodaKeys,
+    usesVowelCoda,
     applies(cho, jung, jong) {
       const syllable = composeSyllable(cho, jung, jong);
       if (syllable && syllables.has(syllable)) return true;
       if (jung === 'ㅏ' && gaOnsets.has(TENSE[cho] || cho)) return true;
-      if (jong && vowelCoda.has(`${jung}|${jong}`)) return true;
-      return false;
+      return usesVowelCoda(cho, jung, jong);
     }
   };
 }
@@ -349,20 +370,100 @@ function syllableCards(slice, data) {
   const maps = jamoMaps(ko);
   if (!maps.cho || !maps.jung || !maps.jong) return [];
   const abbreviation = abbreviationIndex(ko);
-  const ranges = slice.ranges || {};
   const cards = [];
+  const seen = new Set();
+  const push = (cho, jung, jong) => {
+    const syllable = composeSyllable(cho, jung, jong);
+    if (!syllable || seen.has(syllable) || abbreviation.applies(cho, jung, jong)) return;
+    const steps = spellSteps(cho, jung, jong, maps);
+    if (!steps) return;
+    seen.add(syllable);
+    const card = makeCard({ letter: syllable, steps, kind: 'syllable' });
+    card.line = `풀어 적은 ${syllable}(${steps.map((step) => step.label).join('+')})의 점형은 ${card.dotText}입니다.`;
+    cards.push(card);
+  };
+  // 낱말에 자주 나오는 음절을 골라 둔 목록. 약자가 걸리는 음절은 건너뛴다.
+  for (const syllable of slice.syllables || []) {
+    const parts = decomposeSyllable(syllable);
+    if (parts) push(parts[0], parts[1], parts[2]);
+  }
+  const ranges = slice.ranges || {};
   for (const cho of ranges.cho || []) {
     for (const jung of ranges.jung || []) {
-      for (const jong of ranges.jong || ['']) {
-        const syllable = composeSyllable(cho, jung, jong);
-        if (!syllable || abbreviation.applies(cho, jung, jong)) continue;
-        const steps = spellSteps(cho, jung, jong, maps);
-        if (!steps) continue;
-        const card = makeCard({ letter: syllable, steps, kind: 'syllable' });
-        card.line = `풀어 적은 ${syllable}(${steps.map((step) => step.label).join('+')})의 점형은 ${card.dotText}입니다.`;
-        cards.push(card);
-      }
+      for (const jong of ranges.jong || ['']) push(cho, jung, jong);
     }
+  }
+  return cards;
+}
+
+// ---------------------------------------------------------------------------
+// 약자가 들어간 음절: 된소리표, 첫소리, 약자, 뒤 받침을 차례로 잇는다.
+//   까 = 된소리표 + 가 약자, 값 = 가 약자 + 받침 ㅄ
+//   걱 = ㄱ + 억 약자, 성 = ㅅ + 영 약자
+// ---------------------------------------------------------------------------
+
+function abbrSyllableSteps(syllable, items, maps) {
+  const parts = decomposeSyllable(syllable);
+  if (!parts) return null;
+  const [cho, jung, jong] = parts;
+  const base = TENSE[cho] || cho;
+  const tenseItem = TENSE[cho] ? maps.cho?.[cho] : null;
+  const tense = tenseItem ? [makeStep('된소리표', [cellsOf(tenseItem.dots)[0] || [6]])] : [];
+  const abbr = (key) => makeStep(`${key} 약자`, items[key].dots, items[key].unicode);
+  const jongStep = (key) => {
+    const item = maps.jong?.[key];
+    return item ? makeStep(`받침 ${key}`, item.dots, item.unicode) : null;
+  };
+  const choSteps = () => {
+    if (base === 'ㅇ') return [];
+    const item = maps.cho?.[base];
+    return item ? [...tense, makeStep(base, item.dots, item.unicode)] : null;
+  };
+
+  if (items[syllable]?.type === 'complete_syllable') return { kind: 'eok', steps: [abbr(syllable)] };
+  for (const [key, item] of Object.entries(items)) {
+    if (item.type === 'complete_syllable' && (item.tensed_same_abbreviation || []).includes(syllable)) {
+      return { kind: 'eok', steps: [...tense, abbr(key)] };
+    }
+  }
+
+  const ga = composeSyllable(base, 'ㅏ', '');
+  if (jung === 'ㅏ' && items[ga]?.type === 'ga_series') {
+    const tail = jong ? jongStep(jong) : null;
+    if (jong && !tail) return null;
+    return { kind: 'ga', steps: [...tense, abbr(ga), ...(tail ? [tail] : [])] };
+  }
+
+  if (!jong) return null;
+  const override = items['영']?.initial_vowel_override;
+  if (override && (override.initials || []).includes(cho) && jong === 'ㅇ') {
+    if (jung === (override.surface_vowel || 'ㅓ') && items['영']) {
+      const head = choSteps();
+      return head ? { kind: 'eok', steps: [...head, abbr('영')] } : null;
+    }
+    if (jung === 'ㅕ') return null;
+  }
+  const whole = composeSyllable('ㅇ', jung, jong);
+  if (items[whole]?.type !== 'vowel_coda_series') return null;
+  const head = choSteps();
+  return head ? { kind: 'eok', steps: [...head, abbr(whole)] } : null;
+}
+
+function abbrCards(slice, data) {
+  const ko = resolveBundle(data, slice.bundle);
+  const items = ko?.abbreviation_syllable?.items;
+  const maps = jamoMaps(ko);
+  if (!items || !maps.cho || !maps.jong) return [];
+  const cards = [];
+  const seen = new Set();
+  for (const syllable of slice.syllables || []) {
+    if (seen.has(syllable)) continue;
+    const made = abbrSyllableSteps(syllable, items, maps);
+    if (!made) continue;
+    seen.add(syllable);
+    const card = makeCard({ letter: syllable, steps: made.steps, kind: made.kind });
+    card.line = `${syllable}(${made.steps.map((step) => step.label).join(' + ')})의 점형은 ${card.dotText}입니다.`;
+    cards.push(card);
   }
   return cards;
 }
