@@ -169,6 +169,14 @@ class BrailleRuleValidator:
         geot = syllable_items.get("것", {})
         self.geot_spell_out = self._geot_spell_out_syllables(geot)
 
+        keep_a = self.ko_data.get("abbreviation_syllable", {}).get("rule", {}).get("keep_a", {})
+        keep_vowel = keep_a.get("vowel_connection", {})
+        self.keep_a_onsets = {p[0] for p in map(self.decompose, keep_vowel.get("syllables", [])) if p}
+        if keep_vowel.get("include_tensed"):
+            tensers = self._load_tenser_map()
+            self.keep_a_onsets |= {t for t, base in tensers.items() if base in self.keep_a_onsets}
+        self.keep_a_spell_out = set(keep_a.get("spell_out", {}))
+
     def _load_tenser_map(self) -> Dict[str, str]:
         """초성 점형이 ⠠ + 기본 자음이면 된소리로 읽는다."""
         items = self.ko_data.get("chosung", {}).get("items", {})
@@ -460,6 +468,9 @@ class BrailleRuleValidator:
         for i, ch in enumerate(text):
             if ch == "사":
                 notes.extend(self._sa_notes(text, i))
+            keep_a = self._keep_a_note(text, i)
+            if keep_a:
+                notes.append(keep_a)
             spelled = self._yeong_spell_out_note(ch, i)
             if spelled:
                 notes.append(spelled)
@@ -520,6 +531,30 @@ class BrailleRuleValidator:
                     "message": f"'사' 뒤에 모음이 이어지면 약자를 쓰지 않고 '{self.sa_spell_out}'으로 풀어 적습니다."
                 })
         return notes
+
+    def _keep_a_note(self, text: str, index: int) -> Optional[Dict[str, Any]]:
+        ch = text[index]
+        if ch in self.keep_a_spell_out:
+            return {
+                "type": "ABBREVIATION_SPELL_OUT",
+                "index": index,
+                "token": ch,
+                "rule": "keep_a_spell_out",
+                "message": f"'{ch}'은 ㅏ를 생략하지 않고 적습니다."
+            }
+        parts = self.decompose(ch)
+        if not parts or parts[1] != "ㅏ" or parts[2] or parts[0] not in self.keep_a_onsets:
+            return None
+        nxt = self.decompose(text[index + 1]) if index + 1 < len(text) else None
+        if not nxt or nxt[0] != "ㅇ":
+            return None
+        return {
+            "type": "ABBREVIATION_SPELL_OUT",
+            "index": index,
+            "token": ch,
+            "rule": "keep_a_vowel_connection",
+            "message": f"'{ch}' 뒤에 모음이 이어지면 약자를 쓰지 않고 ㅏ를 적습니다."
+        }
 
     def _yeong_spell_out_note(self, ch: str, index: int) -> Optional[Dict[str, Any]]:
         if not self.yeong_initials:

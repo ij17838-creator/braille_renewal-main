@@ -173,5 +173,39 @@ class TestClosingQuoteBeforeNatpyo(unittest.TestCase):
         self.assertIsInstance(restored, str)
 
 
+
+class TestKeepA(unittest.TestCase):
+    """제17항 [붙임]·[다만]: 모음 앞 나·다·마·바·자·카·타·파·하와 '팠'은 ㅏ를 적는다."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.validator = BrailleRuleValidator(data_dir=ROOT)
+        cls.engine = load_engine()
+
+    def braille(self, text):
+        return self.engine.text_to_braille(text)["braille"]
+
+    def test_vowel_after_keeps_a(self):
+        self.assertEqual(self.braille("나이"), "⠉⠣⠕")
+        self.assertEqual(self.braille("하얀"), "⠚⠣⠜⠒")
+        self.assertEqual(self.braille("자연"), "⠨⠣⠡")
+        self.assertEqual(self.braille("따오기"), "⠠⠊⠣⠥⠈⠕")
+        self.assertEqual(self.engine.braille_to_text("⠉⠣⠕"), "나이")
+
+    def test_pat_keeps_a(self):
+        self.assertEqual(self.braille("팠다"), "⠙⠣⠌⠊")
+        self.assertEqual(self.engine.braille_to_text("⠙⠣⠌⠊"), "팠다")
+
+    def test_abbreviation_stays(self):
+        self.assertEqual(self.braille("가위"), "⠫⠍⠗")
+        self.assertEqual(self.braille("나무"), "⠉⠑⠍")
+        self.assertEqual(self.braille("난아"), "⠉⠒⠣")
+        self.assertEqual(self.braille("나 이"), "⠉ ⠕")
+
+    def test_validator_notes(self):
+        rules = [note["rule"] for note in self.validator.check_abbreviation_constraints("나이 팠다 가위")]
+        self.assertEqual(rules, ["keep_a_vowel_connection", "keep_a_spell_out"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
