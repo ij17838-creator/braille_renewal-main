@@ -79,6 +79,7 @@ function cardsFromSlice(slice, data) {
   if (slice.ranges || slice.syllables) return syllableCards(slice, data);
   if (slice.role === 'abbr') return abbrCards(slice, data);
   if (slice.role === 'exception') return exceptionCards(slice, data);
+  if (slice.role === 'keep_a') return keepACards(slice, data);
   const node = nodeAt(data, slice.bundle, slice.path || []);
   const prefix = prefixStep(slice, data);
   if (slice.role === 'contraction' && Array.isArray(node)) return contractionCards(node, slice);
@@ -653,6 +654,160 @@ function exceptionCards(slice, data) {
   return cards;
 }
 
+// ---------------------------------------------------------------------------
+// ㅏ를 생략하지 않는 경우 (제17항 [붙임]·[다만])
+// 나·다·마·바·자·카·타·파·하는 첫소리와 점형이 같아, 뒤에 모음이 오면 ㅏ를 적는다. 팠도 ㅏ를 적는다.
+// 첫소리와 점형이 다른 가, 뒤에 자음이 오는 나·바·하는 약자를 그대로 쓴다.
+// ---------------------------------------------------------------------------
+
+function keepACards(slice, data) {
+  const ko = resolveBundle(data, slice.bundle);
+  const items = ko?.abbreviation_syllable?.items;
+  const keepA = ko?.abbreviation_syllable?.rule?.keep_a;
+  if (!items || !keepA) return [];
+  const maps = jamoMaps(ko);
+  const abbreviation = abbreviationIndex(ko);
+  const keepOnsets = new Set();
+  for (const syllable of keepA.vowel_connection?.syllables || []) {
+    const parts = decomposeSyllable(syllable);
+    if (parts) keepOnsets.add(parts[0]);
+  }
+  if (keepA.vowel_connection?.include_tensed) {
+    for (const [tensed, base] of Object.entries(TENSE)) if (keepOnsets.has(base)) keepOnsets.add(tensed);
+  }
+  const spellOut = new Set(Object.keys(keepA.spell_out || {}));
+  const yeongInitials = new Set(items['영']?.initial_vowel_override?.initials || []);
+
+  const abbrStep = (syllable) => makeStep(`${syllable} 약자`, items[syllable].dots, items[syllable].unicode);
+
+  // 약자 규칙이 있는 그대로 걸리는 음절 점형. 이 단원 예시에 필요한 경우만 다루고, 나머지는 null.
+  const plainSteps = (syllable) => {
+    const parts = decomposeSyllable(syllable);
+    if (!parts) return null;
+    const [cho, jung, jong] = parts;
+    if (items[syllable] && !items[syllable].exception_rules) return [abbrStep(syllable)];
+    if (!abbreviation.applies(cho, jung, jong)) return spellSteps(cho, jung, jong, maps);
+    if (TENSE[cho] || yeongInitials.has(cho)) return null;
+    const ga = composeSyllable(cho, 'ㅏ', '');
+    if (jung === 'ㅏ' && items[ga]) {
+      const tail = jong ? maps.jong?.[jong] : null;
+      if (jong && !tail) return null;
+      return tail ? [abbrStep(ga), makeStep(jong, tail.dots, tail.unicode)] : [abbrStep(ga)];
+    }
+    const coda = composeSyllable('ㅇ', jung, jong);
+    if (jong && items[coda]) {
+      const head = maps.cho?.[cho];
+      if (cho === 'ㅇ') return [abbrStep(coda)];
+      return head ? [makeStep(cho, head.dots, head.unicode), abbrStep(coda)] : null;
+    }
+    return null;
+  };
+
+  const shortSteps = (syllable) => {
+    const [cho, , jong] = decomposeSyllable(syllable);
+    const ga = composeSyllable(TENSE[cho] || cho, 'ㅏ', '');
+    if (!items[ga]) return null;
+    const steps = [];
+    if (TENSE[cho]) {
+      const tensed = maps.cho?.[cho];
+      const cells = cellsOf(tensed?.dots);
+      if (cells.length < 2) return null;
+      steps.push(makeStep('된소리표', [cells[0]], cellGlyph(cells[0])));
+    }
+    steps.push(abbrStep(ga));
+    if (jong) {
+      const tail = maps.jong?.[jong];
+      if (!tail) return null;
+      steps.push(makeStep(jong, tail.dots, tail.unicode));
+    }
+    return steps;
+  };
+
+  const restSteps = (word) => {
+    const out = [];
+    for (const syllable of word) {
+      const steps = plainSteps(syllable);
+      if (!steps) return null;
+      out.push(...steps);
+    }
+    return out;
+  };
+
+  const cards = [];
+  const push = (letter, steps, wrongSteps, family, note, line) => {
+    if (!steps || !wrongSteps) return;
+    const card = makeCard({ letter, steps, kind: 'keep_a' });
+    const wrong = wrongSteps.map(stepPattern).join('');
+    if (wrong === card.pattern) return;
+    card.contrast = wrong;
+    card.family = family;
+    card.explain = `${card.explain}. ${note}`;
+    card.line = line(card.pattern, wrong);
+    cards.push(card);
+  };
+
+  for (const word of slice.words || []) {
+    const [head, next] = [word[0], word[1]];
+    const parts = decomposeSyllable(head);
+    const nextParts = decomposeSyllable(next);
+    if (!parts || parts[1] !== 'ㅏ' || parts[2] || !keepOnsets.has(parts[0])) continue;
+    if (!nextParts || nextParts[0] !== 'ㅇ') continue;
+    const rest = restSteps(word.slice(1));
+    const spelled = spellSteps(parts[0], 'ㅏ', '', maps);
+    const short = shortSteps(head);
+    if (!rest || !spelled || !short) continue;
+    push(
+      word,
+      [...spelled, ...rest],
+      [...short, ...rest],
+      'vowel',
+      `${head} 뒤에 모음이 바로 이어지므로 약자를 쓰지 않고 ㅏ를 적습니다.`,
+      (right, wrong) => `${word}: ㅏ를 빼면 ${wrong}(×), ㅏ를 적은 ${right}(○)`
+    );
+  }
+
+  for (const word of slice.spellOut || []) {
+    const head = word[0];
+    const parts = decomposeSyllable(head);
+    if (!parts || !spellOut.has(head)) continue;
+    const rest = restSteps(word.slice(1));
+    const spelled = spellSteps(parts[0], parts[1], parts[2], maps);
+    const short = shortSteps(head);
+    if (!rest || !spelled || !short) continue;
+    push(
+      word,
+      [...spelled, ...rest],
+      [...short, ...rest],
+      'spell-out',
+      `${head}은 약자 뒤에 받침을 붙이지 않고 ㅏ를 적습니다.`,
+      (right, wrong) => `${word}: 약자 ${wrong}(×), ㅏ를 적은 ${right}(○)`
+    );
+  }
+
+  for (const word of slice.keep || []) {
+    const steps = restSteps(word);
+    const head = word[0];
+    const parts = decomposeSyllable(head);
+    if (!steps || !parts || parts[1] !== 'ㅏ' || parts[2]) continue;
+    const spelled = spellSteps(parts[0], 'ㅏ', '', maps);
+    const headSteps = plainSteps(head);
+    if (!spelled || !headSteps) continue;
+    const wrong = [...spelled, ...steps.slice(headSteps.length)];
+    const why = keepOnsets.has(parts[0])
+      ? `${head} 뒤에 자음이 오므로 약자를 그대로 씁니다.`
+      : `${head} 약자는 첫소리와 점형이 달라 모음 앞에서도 그대로 씁니다.`;
+    push(
+      word,
+      steps,
+      wrong,
+      'keep',
+      why,
+      (right, bad) => `${word}: 풀어 쓴 ${bad}(×), 약자 그대로 ${right}(○)`
+    );
+  }
+  return cards;
+}
+
 async function demoIfMain() {
   if (typeof process === 'undefined' || !process.argv?.[1]) return;
   const { pathToFileURL } = await import('node:url');
@@ -667,7 +822,7 @@ async function demoIfMain() {
     console.log(`${unit.order}. ${unit.title}`);
   }
   console.log('');
-  for (const id of ['ko-initial', 'ko-syllable', 'ko-exception']) {
+  for (const id of ['ko-initial', 'ko-syllable', 'ko-exception', 'ko-keep-a']) {
     console.log(id);
     for (const card of cardsFor(unitById(id), bundles).slice(0, 6)) {
       console.log(`${card.letter} → ${card.pattern || '(없음)'}  ${card.explain}`);

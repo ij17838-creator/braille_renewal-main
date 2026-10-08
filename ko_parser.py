@@ -124,6 +124,18 @@ class KoreanBrailleEngine:
         self.sa_after_number = "after_number" in sa_rules
         self.sa_before_vowel = "vowel_connection" in sa_rules
 
+        # 제17항 [붙임]·[다만]: 첫소리와 점형이 같은 약자는 모음 앞에서 ㅏ를 적는다. '팠'도 ㅏ를 적는다.
+        keep_a = self.ko.get("abbreviation_syllable", {}).get("rule", {}).get("keep_a", {})
+        keep_vowel = keep_a.get("vowel_connection", {})
+        self.keep_a_onsets = set()
+        for syl in keep_vowel.get("syllables", []):
+            parts = self.decompose(syl)
+            if parts:
+                self.keep_a_onsets.add(parts[0])
+        if keep_vowel.get("include_tensed"):
+            self.keep_a_onsets |= {t for t, base in self.TENSER_MAP.items() if base in self.keep_a_onsets}
+        self.keep_a_spell_out = set(keep_a.get("spell_out", {}))
+
         word_pos = self.ko.get("abbreviation_word", {}).get("rule", {}).get("position", "standalone")
         self.word_abbr_standalone = word_pos == "standalone"
         self.omit_zero_consonant = bool(
@@ -558,10 +570,23 @@ class KoreanBrailleEngine:
                     if self._terminate_number("korean_letter"):
                         in_number_mode = False
 
+                keep_a = ""
+                if not is_sa_exception and jung == 'ㅏ':
+                    if ch in self.keep_a_spell_out:
+                        keep_a = f"제17항 [다만]: '{ch}'은 ㅏ를 생략하지 않고 적음"
+                    elif not jong and cho in self.keep_a_onsets and i + 1 < n and '가' <= text[i+1] <= '힣':
+                        next_decomp = self.decompose(text[i+1])
+                        if next_decomp and next_decomp[0] == 'ㅇ':
+                            keep_a = f"제17항 [붙임]: 모음 앞 '{ch}'은 약자를 쓰지 않고 ㅏ를 적음"
+
                 if is_sa_exception:
                     braille_syllable = self.sa_expanded
                     if jong:
                         braille_syllable += self.jongsung_map.get(jong, '')
+                elif keep_a:
+                    rules_applied.append(keep_a)
+                    braille_syllable = (self.chosung_map.get(cho, '') + self.jungsung_map.get(jung, '')
+                                        + (self.jongsung_map.get(jong, '') if jong else ''))
                 else:
                     braille_syllable, syl_rules = self._translate_hangul_syllable_with_trace(cho, jung, jong, ch)
                     rules_applied.extend(syl_rules)

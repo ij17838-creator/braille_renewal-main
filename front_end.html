@@ -602,7 +602,7 @@
 
     function unitLine(lang, unit) {
       if (!unit) return `${langLabel(lang)} 단원`;
-      return `${langLabel(lang)} ${unit.order}단원 · ${unit.title}`;
+      return `${langLabel(lang)} ${unit.label || unit.order}단원 · ${unit.title}`;
     }
 
     function dotLabel(dots) {
@@ -791,7 +791,7 @@
         const badge = passed ? '통과' : granted ? '해금' : open ? '' : '잠김';
         const label = [
           selected ? '현재' : '',
-          `${unit.order}단원 ${unit.title}`,
+          `${unit.label || unit.order}단원 ${unit.title}`,
           badge
         ].filter(Boolean).join(' ');
         const tone = selected
@@ -799,7 +799,7 @@
           : 'bg-white text-slate-700 border-slate-200';
         return `${part}
           <button type="button" role="option" class="unit-chip w-full px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 text-left ${tone}" data-unit="${escapeHtml(unit.id)}" ${open ? '' : 'disabled'} aria-selected="${selected ? 'true' : 'false'}" aria-label="${escapeHtml(label)}">
-            <span>${escapeHtml(`${unit.order}단원 · ${unit.title}`)}</span>
+            <span>${escapeHtml(`${unit.label || unit.order}단원 · ${unit.title}`)}</span>
             <span class="shrink-0 ${selected ? 'text-emerald-50' : badge === '통과' ? 'text-emerald-700' : badge === '해금' ? 'text-indigo-600' : 'text-slate-400'}">${escapeHtml(badge)}</span>
           </button>
         `;

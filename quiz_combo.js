@@ -215,6 +215,24 @@ function buildKorean(data) {
   const yeongVowel = yeong.initial_vowel_override?.surface_vowel || 'ㅓ';
   const yeongCell = yeong.unicode || '';
   const geotTensed = new Set(ko.abbreviation_syllable?.items?.['것']?.tensed_same_abbreviation || []);
+  // 제17항 [붙임]·[다만]: 첫소리와 점형이 같은 약자는 모음 앞에서 ㅏ를 적는다. '팠'도 ㅏ를 적는다.
+  const keepA = ko.abbreviation_syllable?.rule?.keep_a || {};
+  const keepAOnsets = new Set();
+  (keepA.vowel_connection?.syllables || []).forEach((syllable) => {
+    const parts = decompose(syllable);
+    if (parts) keepAOnsets.add(parts[0]);
+  });
+  if (keepA.vowel_connection?.include_tensed) {
+    Object.entries(TENSER).forEach(([tensed, base]) => { if (keepAOnsets.has(base)) keepAOnsets.add(tensed); });
+  }
+  const keepASpell = new Set(Object.keys(keepA.spell_out || {}));
+
+  function keepsA(ch, nextCh) {
+    const parts = decompose(ch);
+    if (!parts || parts[1] !== 'ㅏ') return false;
+    if (keepASpell.has(ch)) return true;
+    return !parts[2] && keepAOnsets.has(parts[0]) && !!nextCh && decompose(nextCh)?.[0] === 'ㅇ';
+  }
   const exempt = (rules.collision_resolutions?.trailing_letters?.exempt_units || ['년', '월', '일', '시', '분', '초', '개', '명', '원'])
     .slice()
     .sort((a, b) => b.length - a.length);
@@ -294,6 +312,15 @@ function buildKorean(data) {
       labels.push(affectedAbbr.has(ch)
         ? `수표 뒤 약자 '${ch}' 앞 띄어쓰기로 숫자 종료`
         : `수표 뒤 '${cho}' 앞 띄어쓰기로 숫자 종료`);
+    }
+
+    if (keepsA(ch, nextCh)) {
+      const jongB = jong ? (jongMap[jong] || '') : '';
+      return {
+        braille: head + (choMap[cho] || '') + (jungMap[jung] || '') + jongB,
+        label: keepASpell.has(ch) ? `'${ch}' ㅏ 적기` : `모음 앞 '${ch}' ㅏ 적기`,
+        keepA: true
+      };
     }
 
     if (complete[ch]) {
@@ -436,7 +463,9 @@ function buildKorean(data) {
         const piece = translateSyllable(ch, text[i + 1] || '', afterNumber, text.slice(i));
         if (!piece || !piece.braille) return null;
         braille += piece.braille;
-        parts.push({ text: ch, braille: piece.braille, label: piece.label });
+        parts.push(piece.keepA
+          ? { text: ch, braille: piece.braille, label: piece.label, keepA: true }
+          : { text: ch, braille: piece.braille, label: piece.label });
         i += 1;
         continue;
       }
@@ -458,7 +487,7 @@ function buildKorean(data) {
     if (hasDigit && hasHangul) rule = '수표 결합';
     else if (hasDigit) rule = '수표';
     else if (parts.length > 1) rule = '형태소 결합';
-    return { braille, parts, rule };
+    return { braille, parts, rule, keepA: parts.some(part => part.keepA) };
   }
 
   function randomSyllable() {
@@ -1436,14 +1465,30 @@ export function createEngine(data) {
     return true;
   }
 
-  function renderSeq(seq, lang) {
+  // 'ㅏ를 생략하지 않는 경우'는 그 단원(ko-keep-a)부터 낸다. 앞 단원에서는 이런 조합을 만들지 않는다.
+  const keepAUnit = unitById('ko-keep-a');
+
+  function allowsKeepA(unit) {
+    return !!keepAUnit && unit.lang === keepAUnit.lang && unit.order >= keepAUnit.order;
+  }
+
+  function koTranslateFor(unit) {
+    if (allowsKeepA(unit)) return ko.translate;
+    return (text) => {
+      const made = ko.translate(text);
+      return made && made.keepA ? null : made;
+    };
+  }
+
+  function renderSeq(seq, unit) {
+    const lang = unit.lang;
     let text = '';
     seq.forEach((card, index) => {
       if (index > 0 && printSpace(seq[index - 1], card)) text += ' ';
       text += card.letter;
     });
     if (lang !== 'en') text = ko.separateCollisions(text);
-    const made = lang === 'en' ? en.translateText(text) : ko.translate(text);
+    const made = lang === 'en' ? en.translateText(text) : koTranslateFor(unit)(text);
     if (!made || !made.braille) return null;
     return {
       text,
@@ -1514,11 +1559,11 @@ export function createEngine(data) {
       }
       if (!picked.length) break;
       const seq = arrangeTopic(card, picked, slot);
-      if (renderSeq(seq, unit.lang)) fillers = picked;
+      if (renderSeq(seq, unit)) fillers = picked;
     }
     if (!fillers) return null;
 
-    const made = renderSeq(arrangeTopic(card, fillers, slot), unit.lang);
+    const made = renderSeq(arrangeTopic(card, fillers, slot), unit);
     if (!made || !made.text || made.text === card.letter) return null;
 
     const distractBraille = [];
@@ -1526,7 +1571,7 @@ export function createEngine(data) {
     for (const alt of shuffle(alts)) {
       if (distractBraille.length >= 3) break;
       const seq = arrangeTopic(alt, fillers, slot);
-      const other = renderSeq(seq, unit.lang);
+      const other = renderSeq(seq, unit);
       if (!other || !other.braille || other.braille === made.braille || other.text === made.text) continue;
       distractBraille.push(other.braille);
       distractTexts.push(other.text);
@@ -1594,7 +1639,7 @@ export function createEngine(data) {
 
   function fromSentence(unit) {
     const cards = sentenceCards(unit);
-    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, ko.translate, koAbbr);
+    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, koTranslateFor(unit), koAbbr);
     if (!maker) return null;
     const recentList = recentSentences.get(unit.id) || [];
     let sentence = null;
