@@ -4,6 +4,7 @@
       "id": "ko-dots",
       "lang": "ko",
       "order": 1,
+      "part": "점자 기초",
       "title": "점의 자리",
       "teach": {
         "letter": "점",
@@ -31,78 +32,73 @@
       "id": "ko-initial",
       "lang": "ko",
       "order": 2,
-      "title": "초성",
+      "part": "정자 점자",
+      "title": "초성 자음",
       "teach": {
         "letter": "ㄱ",
         "pattern": "⠈",
         "dots": [4],
-        "line": "첫소리는 음절 앞에 적고, ㅇ은 적지 않습니다."
+        "line": "초성 자음 ㄱ부터 ㅎ까지의 이름과 점형을 익힙니다. ㅇ은 소리가 없어 첫소리에서는 적지 않습니다."
       },
       "source": {
         "kind": "slice",
         "slices": [
-          { "bundle": "ko.json", "path": ["chosung", "items"], "role": "chosung" }
+          {
+            "bundle": "ko.json",
+            "path": ["chosung", "items"],
+            "role": "chosung",
+            "filter": {
+              "keys": ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"]
+            }
+          }
         ]
       },
       "skill": {
-        "read": "점형을 보고 첫소리를 읽는다",
-        "write": "첫소리를 점형으로 적는다"
+        "read": "점형을 보고 초성 자음을 읽는다",
+        "write": "초성 자음을 점형으로 적는다"
       }
     },
     {
       "id": "ko-vowel",
       "lang": "ko",
       "order": 3,
-      "title": "모음",
+      "part": "정자 점자",
+      "title": "기본 모음",
       "teach": {
         "letter": "ㅏ",
         "pattern": "⠣",
         "dots": [1, 2, 6],
-        "line": "모음은 첫소리 뒤에 적습니다."
+        "line": "기본 모음 ㅏ부터 ㅣ까지 열 자를 익힙니다. ㅏ·ㅑ, ㅓ·ㅕ, ㅗ·ㅛ, ㅜ·ㅠ, ㅡ·ㅣ는 서로 대칭되는 점형입니다."
       },
       "source": {
         "kind": "slice",
         "slices": [
-          { "bundle": "ko.json", "path": ["jungsung", "items"], "role": "jungsung" }
+          {
+            "bundle": "ko.json",
+            "path": ["jungsung", "items"],
+            "role": "jungsung",
+            "filter": {
+              "keys": ["ㅏ", "ㅑ", "ㅓ", "ㅕ", "ㅗ", "ㅛ", "ㅜ", "ㅠ", "ㅡ", "ㅣ"]
+            }
+          }
         ]
       },
       "skill": {
-        "read": "점형을 보고 모음을 읽는다",
-        "write": "모음을 점형으로 적는다"
-      }
-    },
-    {
-      "id": "ko-final",
-      "lang": "ko",
-      "order": 4,
-      "title": "받침",
-      "teach": {
-        "letter": "ㄱ",
-        "pattern": "⠁",
-        "dots": [1],
-        "line": "받침은 모음 뒤에 적고, 첫소리와 점 자리가 다릅니다."
-      },
-      "source": {
-        "kind": "slice",
-        "slices": [
-          { "bundle": "ko.json", "path": ["jongsung", "items"], "role": "jongsung" }
-        ]
-      },
-      "skill": {
-        "read": "점형을 보고 받침을 읽는다",
-        "write": "받침을 점형으로 적는다"
+        "read": "점형을 보고 기본 모음을 읽는다",
+        "write": "기본 모음을 점형으로 적는다"
       }
     },
     {
       "id": "ko-syllable",
       "lang": "ko",
-      "order": 5,
-      "title": "풀어 적은 음절",
+      "order": 4,
+      "part": "정자 점자",
+      "title": "기본 음절표와 낱말",
       "teach": {
         "letter": "고",
         "pattern": "⠈⠥",
         "dots": [[4], [1, 3, 6]],
-        "line": "약자가 아닌 음절은 첫소리, 모음 순으로 풀어 적습니다. 약자는 아직 나오지 않습니다."
+        "line": "초성 자음과 기본 모음으로 된 받침 없는 음절을 읽고 씁니다. 가·나·다처럼 약자로 적는 음절은 약자 단원에서 배웁니다."
       },
       "source": {
         "kind": "slice",
@@ -111,8 +107,8 @@
             "bundle": "ko.json",
             "role": "syllable",
             "ranges": {
-              "cho": ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅎ"],
-              "jung": ["ㅏ", "ㅓ", "ㅗ", "ㅜ", "ㅡ", "ㅣ"],
+              "cho": ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ", "ㅇ"],
+              "jung": ["ㅏ", "ㅑ", "ㅓ", "ㅕ", "ㅗ", "ㅛ", "ㅜ", "ㅠ", "ㅡ", "ㅣ"],
               "jong": [""]
             }
           }
@@ -120,46 +116,274 @@
       },
       "skill": {
         "read": "이어진 점형을 한 음절로 읽는다",
-        "write": "음절을 첫소리와 모음으로 풀어 적는다"
+        "write": "음절을 초성과 모음으로 풀어 적는다"
       }
     },
     {
-      "id": "ko-ga",
+      "id": "ko-double-vowel",
       "lang": "ko",
-      "order": 6,
-      "title": "가·나·다 약자",
+      "order": 5,
+      "part": "정자 점자",
+      "title": "이중 모음",
       "teach": {
-        "letter": "가",
-        "pattern": "⠫",
-        "dots": [1, 2, 4, 6],
-        "line": "ㄱ·ㄴ·ㄷ·ㅁ·ㅂ·ㅅ·ㅈ·ㅋ·ㅌ·ㅍ·ㅎ에 ㅏ가 붙으면 한 칸 약자로 적습니다."
+        "letter": "ㅐ",
+        "pattern": "⠗",
+        "dots": [1, 2, 3, 5],
+        "line": "이중 모음은 한 칸으로 쓰는 것과 두 칸으로 쓰는 것(ㅒ·ㅙ·ㅞ·ㅟ)이 있습니다. 두 칸짜리는 앞 모음 뒤에 ㅐ(1·2·3·5점)를 붙입니다."
       },
       "source": {
         "kind": "slice",
         "slices": [
           {
             "bundle": "ko.json",
-            "path": ["abbreviation_syllable", "items"],
-            "role": "ga",
-            "filter": { "type": "ga_series" }
+            "path": ["jungsung", "items"],
+            "role": "jungsung",
+            "filter": {
+              "keys": ["ㅐ", "ㅔ", "ㅒ", "ㅖ", "ㅘ", "ㅙ", "ㅚ", "ㅝ", "ㅞ", "ㅟ", "ㅢ"]
+            }
+          },
+          {
+            "bundle": "ko.json",
+            "role": "syllable",
+            "ranges": {
+              "cho": ["ㄱ", "ㅁ", "ㅅ", "ㅇ", "ㅎ"],
+              "jung": ["ㅐ", "ㅔ", "ㅒ", "ㅖ", "ㅘ", "ㅙ", "ㅚ", "ㅝ", "ㅞ", "ㅟ", "ㅢ"],
+              "jong": [""]
+            }
           }
         ]
       },
       "skill": {
-        "read": "한 칸 약자를 가·나·다 계열 음절로 읽는다",
-        "write": "가·나·다 계열 음절을 약자 한 칸으로 적는다"
+        "read": "점형을 보고 이중 모음과 그 음절을 읽는다",
+        "write": "이중 모음이 든 음절을 점형으로 적는다"
+      }
+    },
+    {
+      "id": "ko-tense",
+      "lang": "ko",
+      "order": 6,
+      "part": "정자 점자",
+      "title": "쌍자음",
+      "teach": {
+        "letter": "ㄲ",
+        "pattern": "⠠⠈",
+        "dots": [[6], [4]],
+        "line": "쌍자음은 자음을 겹쳐 적지 않고 ㄱ·ㄷ·ㅂ·ㅅ·ㅈ 앞에 된소리표(6점)를 붙여 적습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko.json",
+            "path": ["chosung", "items"],
+            "role": "chosung",
+            "filter": {
+              "keys": ["ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ"]
+            }
+          },
+          {
+            "bundle": "ko.json",
+            "role": "syllable",
+            "ranges": {
+              "cho": ["ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ"],
+              "jung": ["ㅏ", "ㅑ", "ㅓ", "ㅕ", "ㅗ", "ㅛ", "ㅜ", "ㅠ", "ㅡ", "ㅣ"],
+              "jong": [""]
+            }
+          }
+        ]
+      },
+      "skill": {
+        "read": "된소리표가 붙은 점형을 쌍자음으로 읽는다",
+        "write": "쌍자음을 된소리표와 자음으로 적는다"
+      }
+    },
+    {
+      "id": "ko-final",
+      "lang": "ko",
+      "order": 7,
+      "part": "정자 점자",
+      "title": "홑받침",
+      "teach": {
+        "letter": "ㄱ",
+        "pattern": "⠁",
+        "dots": [1],
+        "line": "받침 ㄱ부터 ㅎ까지 열네 자를 익힙니다. 받침은 모음 뒤에 적고, 초성과 점 자리가 다릅니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko.json",
+            "path": ["jongsung", "items"],
+            "role": "jongsung",
+            "filter": {
+              "keys": ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"]
+            }
+          },
+          {
+            "bundle": "ko.json",
+            "role": "syllable",
+            "ranges": {
+              "cho": ["ㄱ", "ㅁ", "ㅇ"],
+              "jung": ["ㅏ", "ㅓ", "ㅗ", "ㅜ", "ㅡ", "ㅣ"],
+              "jong": ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"]
+            }
+          }
+        ]
+      },
+      "skill": {
+        "read": "점형을 보고 받침과 받침이 든 음절을 읽는다",
+        "write": "받침이 든 음절을 점형으로 적는다"
+      }
+    },
+    {
+      "id": "ko-double-final",
+      "lang": "ko",
+      "order": 8,
+      "part": "정자 점자",
+      "title": "쌍받침, 겹받침",
+      "teach": {
+        "letter": "ㄺ",
+        "pattern": "⠂⠁",
+        "dots": [[2], [1]],
+        "line": "쌍받침과 겹받침은 받침 두 개를 이어 적습니다. 받침 ㅆ은 약자 단원에서 배웁니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko.json",
+            "path": ["jongsung", "items"],
+            "role": "jongsung",
+            "filter": {
+              "keys": ["ㄲ", "ㄳ", "ㄵ", "ㄶ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅄ"]
+            }
+          },
+          {
+            "bundle": "ko.json",
+            "role": "syllable",
+            "syllables": ["묶", "겪", "앉", "않", "읽", "잃", "싫", "옳", "옮", "곬", "없", "칡"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "점형을 보고 쌍받침·겹받침과 그 음절을 읽는다",
+        "write": "쌍받침·겹받침이 든 음절을 점형으로 적는다"
+      }
+    },
+    {
+      "id": "ko-plain-sentence",
+      "lang": "ko",
+      "order": 9,
+      "part": "정자 점자",
+      "title": "정자 점자의 활용",
+      "teach": {
+        "letter": "문장",
+        "pattern": "",
+        "dots": [],
+        "line": "지금까지 배운 정자 점자로 낱말을 이어 짧은 문장을 읽고 씁니다."
+      },
+      "source": {
+        "kind": "compose",
+        "from": "passed_units",
+        "slices": []
+      },
+      "skill": {
+        "read": "정자 점자로 쓴 문장을 말로 읽는다",
+        "write": "정자 점자로 문장을 적는다"
+      }
+    },
+    {
+      "id": "ko-ga-sa",
+      "lang": "ko",
+      "order": 10,
+      "part": "약자와 약어",
+      "title": "'가'와 '사'의 약자",
+      "teach": {
+        "letter": "가",
+        "pattern": "⠫",
+        "dots": [1, 2, 4, 6],
+        "line": "가(1·2·4·6점)와 사(1·2·3점)는 한 칸 약자로 적습니다. 까·싸는 약자 앞에 된소리표를 붙입니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          { "bundle": "ko.json", "role": "abbr", "syllables": ["가", "사", "까", "싸"] }
+        ]
+      },
+      "skill": {
+        "read": "약자 칸을 가·사·까·싸로 읽는다",
+        "write": "가·사·까·싸를 약자로 적는다"
+      }
+    },
+    {
+      "id": "ko-ga",
+      "lang": "ko",
+      "order": 11,
+      "part": "약자와 약어",
+      "title": "'자음+ㅏ'에서 'ㅏ'를 생략한 약자",
+      "teach": {
+        "letter": "나",
+        "pattern": "⠉",
+        "dots": [1, 4],
+        "line": "나·다·마·바·자·카·타·파·하는 ㅏ를 생략하고 초성 자음만 적습니다. 따·빠·짜는 앞에 된소리표를 붙입니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko.json",
+            "role": "abbr",
+            "syllables": ["나", "다", "마", "바", "자", "카", "타", "파", "하", "따", "빠", "짜"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "초성만 적힌 약자를 '자음+ㅏ'로 읽는다",
+        "write": "'자음+ㅏ' 음절을 ㅏ를 생략한 약자로 적는다"
+      }
+    },
+    {
+      "id": "ko-geot",
+      "lang": "ko",
+      "order": 12,
+      "part": "약자와 약어",
+      "title": "'것'과 '받침 ㅆ' 약자",
+      "teach": {
+        "letter": "것",
+        "pattern": "⠸⠎",
+        "dots": [[4, 5, 6], [2, 3, 4]],
+        "line": "것은 두 칸 약자(4·5·6점, 2·3·4점)로 적고, 껏은 그 앞에 된소리표를 붙입니다. 받침 ㅆ은 3·4점 한 칸으로 적습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          { "bundle": "ko.json", "role": "abbr", "syllables": ["것", "껏"] },
+          { "bundle": "ko.json", "path": ["jongsung", "items"], "role": "jongsung", "filter": { "keys": ["ㅆ"] } },
+          { "bundle": "ko.json", "role": "abbr", "syllables": ["갔", "났", "샀", "잤", "했"] },
+          {
+            "bundle": "ko.json",
+            "role": "syllable",
+            "syllables": ["었", "았", "있", "겠", "였", "왔", "봤", "썼", "졌", "웠", "줬"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "것·껏과 받침 ㅆ이 든 음절을 읽는다",
+        "write": "것·껏과 받침 ㅆ을 약자로 적는다"
       }
     },
     {
       "id": "ko-eok",
       "lang": "ko",
-      "order": 7,
-      "title": "억·언·얼 약자",
+      "order": 13,
+      "part": "약자와 약어",
+      "title": "'모음+받침' 약자",
       "teach": {
         "letter": "억",
         "pattern": "⠹",
         "dots": [1, 4, 5, 6],
-        "line": "억·언·얼 계열과 것은 음절 약자로 적습니다."
+        "line": "억·언·얼·연·열·영·옥·온·옹·운·울·은·을·인은 한 칸 약자로 적고, 앞에 초성이 오면 초성 뒤에 약자를 붙입니다. ㅅ·ㅆ·ㅈ·ㅉ·ㅊ 뒤의 영 약자는 성·썽·정·쩡·청으로 읽습니다."
       },
       "source": {
         "kind": "slice",
@@ -168,25 +392,87 @@
             "bundle": "ko.json",
             "path": ["abbreviation_syllable", "items"],
             "role": "eok",
-            "filter": { "type": ["vowel_coda_series", "complete_syllable"] }
+            "filter": {
+              "type": "vowel_coda_series"
+            }
+          },
+          {
+            "bundle": "ko.json",
+            "role": "abbr",
+            "syllables": ["먹", "적", "건", "전", "걸", "설", "견", "면", "결", "멸", "경", "명", "성", "정", "청", "곡", "목", "곤", "손", "공", "동", "군", "문", "굴", "물", "근", "는", "글", "를", "긴", "신"]
           }
         ]
       },
       "skill": {
-        "read": "약자 칸을 억·언·얼 계열이나 것으로 읽는다",
-        "write": "그 음절을 약자로 적는다"
+        "read": "'모음+받침' 약자와 '자음+약자'를 읽는다",
+        "write": "'모음+받침' 음절을 약자로 적는다"
+      }
+    },
+    {
+      "id": "ko-vowel-double-final",
+      "lang": "ko",
+      "order": 14,
+      "part": "약자와 약어",
+      "title": "'모음+겹받침' 글자",
+      "teach": {
+        "letter": "얽",
+        "pattern": "⠞⠁",
+        "dots": [[2, 3, 4, 5], [1]],
+        "line": "겹받침의 앞 받침이 모음과 함께 억·언·얼·열 약자가 되면 약자로 적고 뒤 받침을 이어 적습니다. 예) 얽 = 얼 약자 + 받침 ㄱ"
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko.json",
+            "role": "abbr",
+            "syllables": ["얶", "섞", "꺾", "볶", "넋", "얹", "얽", "얾", "엷", "젊", "넓", "굵", "굶", "끓", "긁", "늙", "흙", "읊"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "'모음+겹받침' 글자를 약자와 받침으로 나누어 읽는다",
+        "write": "'모음+겹받침' 글자를 약자와 뒤 받침으로 적는다"
+      }
+    },
+    {
+      "id": "ko-abbr-double-final",
+      "lang": "ko",
+      "order": 15,
+      "part": "약자와 약어",
+      "title": "'약자+겹받침' 글자",
+      "teach": {
+        "letter": "값",
+        "pattern": "⠫⠃⠄",
+        "dots": [[1, 2, 4, 6], [1, 2], [3]],
+        "line": "가·나·다 계열 약자에 쌍받침이나 겹받침이 붙으면 약자 뒤에 받침을 이어 적습니다. 예) 값 = 가 약자 + 받침 ㅄ"
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko.json",
+            "role": "abbr",
+            "syllables": ["값", "깎", "낚", "낡", "닦", "닭", "닮", "닳", "많", "맑", "밖", "밝", "밟", "삯", "삶", "삵", "잖", "짧"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "'약자+겹받침' 글자를 읽는다",
+        "write": "'약자+겹받침' 글자를 약자와 받침으로 적는다"
       }
     },
     {
       "id": "ko-word",
       "lang": "ko",
-      "order": 8,
-      "title": "단어 약어",
+      "order": 16,
+      "part": "약자와 약어",
+      "title": "약어",
       "teach": {
         "letter": "그래서",
         "pattern": "⠁⠎",
         "dots": [[1], [2, 3, 4]],
-        "line": "그래서·그러나처럼 홀로 쓰이는 접속어는 약어로 적습니다."
+        "line": "그래서·그러나·그러면·그러므로·그런데·그리고·그리하여는 두 칸 약어로 적습니다."
       },
       "source": {
         "kind": "slice",
@@ -200,15 +486,162 @@
       }
     },
     {
+      "id": "ko-mark-end",
+      "lang": "ko",
+      "order": 17,
+      "part": "문장 부호",
+      "title": "마침표, 물음표, 느낌표",
+      "teach": {
+        "letter": ".",
+        "pattern": "⠲",
+        "dots": [2, 5, 6],
+        "line": "마침표는 서술·명령·청유문 끝에, 물음표는 의문문 끝에, 느낌표는 감탄문 끝에 적습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          { "bundle": "ko_marks.json", "path": ["terminal_punctuation", "items"], "role": "mark" }
+        ]
+      },
+      "skill": {
+        "read": "마침표·물음표·느낌표를 읽고 구분한다",
+        "write": "문장 끝에 알맞은 부호를 적는다"
+      }
+    },
+    {
+      "id": "ko-mark-pause",
+      "lang": "ko",
+      "order": 18,
+      "part": "문장 부호",
+      "title": "쉼표, 가운뎃점, 쌍점, 빗금",
+      "teach": {
+        "letter": ",",
+        "pattern": "⠐",
+        "dots": [5],
+        "line": "쉼표(5점), 가운뎃점(5점, 2·3점), 쌍점(2·5점), 빗금(4·5·6점, 3·4점)을 익힙니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko_marks.json",
+            "path": ["pausal_punctuation", "items"],
+            "role": "mark",
+            "filter": {
+              "keys": [",", "·", ":", "/"]
+            }
+          }
+        ]
+      },
+      "skill": {
+        "read": "쉼표·가운뎃점·쌍점·빗금을 읽는다",
+        "write": "낱말 사이에 알맞은 부호를 적는다"
+      }
+    },
+    {
+      "id": "ko-mark-pair",
+      "lang": "ko",
+      "order": 19,
+      "part": "문장 부호",
+      "title": "따옴표, 묶음표, 이음표",
+      "teach": {
+        "letter": "“",
+        "pattern": "⠦",
+        "dots": [2, 3, 6],
+        "line": "따옴표와 묶음표(괄호)는 여는 표와 닫는 표를 짝지어 적습니다. 이음표(붙임표·물결표·줄표)도 함께 익힙니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          { "bundle": "ko_marks.json", "path": ["opening_delimiters", "items"], "role": "mark" },
+          { "bundle": "ko_marks.json", "path": ["closing_delimiters", "items"], "role": "mark" },
+          {
+            "bundle": "ko_marks.json",
+            "path": ["connectors_and_symbols", "items"],
+            "role": "mark",
+            "filter": {
+              "keys": ["-", "~", "—"]
+            }
+          }
+        ]
+      },
+      "skill": {
+        "read": "따옴표·묶음표·이음표를 읽는다",
+        "write": "짝을 맞추어 따옴표와 묶음표를 적는다"
+      }
+    },
+    {
+      "id": "ko-mark-etc",
+      "lang": "ko",
+      "order": 20,
+      "part": "문장 부호",
+      "title": "드러냄표, 안드러냄표, 기타 부호",
+      "teach": {
+        "letter": "_",
+        "pattern": "⠠⠤",
+        "dots": [[6], [3, 6]],
+        "line": "드러냄표(밑줄)는 강조할 말의 앞뒤에, 안드러냄표(숨김표·빠짐표)는 숨기거나 빠진 글자 자리에 적습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "ko_marks.json",
+            "path": ["connectors_and_symbols", "items"],
+            "role": "mark",
+            "filter": {
+              "keys": ["_", "…", "*", "'", "〃"]
+            }
+          },
+          { "bundle": "ko_marks.json", "path": ["placeholder_marks", "items"], "role": "mark" },
+          {
+            "bundle": "ko_marks.json",
+            "path": ["pausal_punctuation", "items"],
+            "role": "mark",
+            "filter": {
+              "keys": [";"]
+            }
+          }
+        ]
+      },
+      "skill": {
+        "read": "드러냄표·안드러냄표·기타 부호를 읽는다",
+        "write": "그 부호를 점형으로 적는다"
+      }
+    },
+    {
+      "id": "ko-sentence",
+      "lang": "ko",
+      "order": 21,
+      "part": "문장 부호",
+      "title": "문장 부호가 들어 있는 문장 쓰기 연습",
+      "teach": {
+        "letter": "문장",
+        "pattern": "",
+        "dots": [],
+        "line": "지금까지 배운 글자와 문장 부호를 이어 짧은 문장을 읽고 씁니다."
+      },
+      "source": {
+        "kind": "compose",
+        "from": "passed_units",
+        "slices": []
+      },
+      "skill": {
+        "read": "문장 부호가 든 문장을 말로 읽는다",
+        "write": "문장 부호를 넣어 문장을 점자로 적는다"
+      }
+    },
+    {
       "id": "ko-number",
       "lang": "ko",
-      "order": 9,
-      "title": "숫자·문장부호",
+      "order": 22,
+      "part": "보충",
+      "title": "숫자",
       "teach": {
         "letter": "1",
         "pattern": "⠼⠁",
         "dots": [[3, 4, 5, 6], [1]],
-        "line": "숫자 앞에는 수표를 붙이고, 문장부호는 말의 자리에 적습니다."
+        "line": "숫자 앞에는 수표(3·4·5·6점)를 붙입니다. 교재 단원에는 없지만 예외 규정을 익히기 위해 함께 둡니다."
       },
       "source": {
         "kind": "slice",
@@ -218,25 +651,24 @@
             "bundle": "numbers.json",
             "path": ["digits"],
             "role": "digit",
-            "prefix": { "bundle": "numbers.json", "path": ["numeric_indicators", "num_prefix"] }
-          },
-          { "bundle": "ko_marks.json", "path": ["terminal_punctuation", "items"], "role": "mark" },
-          { "bundle": "ko_marks.json", "path": ["pausal_punctuation", "items"], "role": "mark" },
-          { "bundle": "ko_marks.json", "path": ["opening_delimiters", "items"], "role": "mark" },
-          { "bundle": "ko_marks.json", "path": ["closing_delimiters", "items"], "role": "mark" },
-          { "bundle": "ko_marks.json", "path": ["connectors_and_symbols", "items"], "role": "mark" }
+            "prefix": {
+              "bundle": "numbers.json",
+              "path": ["numeric_indicators", "num_prefix"]
+            }
+          }
         ]
       },
       "skill": {
-        "read": "수표·숫자·문장부호를 읽고 구분한다",
-        "write": "수표를 붙여 숫자를 적고 문장부호를 적는다"
+        "read": "수표와 숫자를 읽는다",
+        "write": "수표를 붙여 숫자를 적는다"
       }
     },
     {
       "id": "ko-exception",
       "lang": "ko",
-      "order": 10,
-      "title": "예외",
+      "order": 23,
+      "part": "보충",
+      "title": "숫자·약자 예외",
       "teach": {
         "letter": "사이",
         "pattern": "⠠⠣⠕",
@@ -260,27 +692,6 @@
       "skill": {
         "read": "약자를 쓰면 안 되는 자리를 알아본다",
         "write": "그 자리에서는 풀어 적거나 기호표를 넣는다"
-      }
-    },
-    {
-      "id": "ko-sentence",
-      "lang": "ko",
-      "order": 11,
-      "title": "짧은 문장",
-      "teach": {
-        "letter": "문장",
-        "pattern": "",
-        "dots": [],
-        "line": "앞 단원의 점형을 이어 짧은 문장을 읽고 씁니다."
-      },
-      "source": {
-        "kind": "compose",
-        "from": "passed_units",
-        "slices": []
-      },
-      "skill": {
-        "read": "짧은 문장의 점자를 말로 읽는다",
-        "write": "짧은 문장을 점자로 적는다"
       }
     },
     {
@@ -325,7 +736,10 @@
             "bundle": "numbers.json",
             "path": ["digits"],
             "role": "digit",
-            "prefix": { "bundle": "numbers.json", "path": ["numeric_indicators", "num_prefix"] }
+            "prefix": {
+              "bundle": "numbers.json",
+              "path": ["numeric_indicators", "num_prefix"]
+            }
           }
         ]
       },

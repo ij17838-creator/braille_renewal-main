@@ -17,7 +17,9 @@ import {
   isComposeUnit,
   assemblyText,
   makeStep,
-  stepsPattern
+  stepsPattern,
+  abbreviationIndex,
+  JONG_SPLIT
 } from './curriculum.js';
 import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed, loadStudyMode } from './shell.js';
 
@@ -332,6 +334,16 @@ function buildKorean(data) {
       }
       labels.push(`초성 ${baseCho} + 모음·받침 약자`);
       return { braille: head + tenser + (choMap[baseCho] || '') + vc[`${jung}|${jong}`], label: labels.join(', ') };
+    }
+
+    // 쌍받침·겹받침의 앞 받침이 억·언·얼 계열 약자가 되면 약자 뒤에 뒤 받침만 적는다. 예) 얹 = 언 + ㅈ
+    const split = JONG_SPLIT[jong];
+    if (split && vc[`${jung}|${split[0]}`] && jongMap[split[1]]) {
+      const choB = baseCho === 'ㅇ' ? '' : (choMap[baseCho] || '');
+      labels.push(baseCho === 'ㅇ'
+        ? `모음·받침 약자 + 받침 ${split[1]}`
+        : `초성 ${baseCho} + 모음·받침 약자 + 받침 ${split[1]}`);
+      return { braille: head + tenser + choB + vc[`${jung}|${split[0]}`] + jongMap[split[1]], label: labels.join(', ') };
     }
 
     const choB = baseCho === 'ㅇ' ? '' : (choMap[baseCho] || '');
@@ -1240,7 +1252,8 @@ function sentenceMaker(generators, marks, lang) {
 
 // 음절을 이은 뒤 ko_parser와 같은 규칙으로 다시 점역한다.
 // '사' 뒤 모음은 풀어 쓰고, 받침이 붙으면 약자(억·언·얼, 가 계열)를 그대로 쓴다.
-function koreanWord(pieces, jongs, translate) {
+// 억·언·얼 계열 약자를 아직 배우지 않았으면, 받침을 붙여 그 약자가 생기는 음절은 만들지 않는다.
+function koreanWord(pieces, jongs, translate, jongOk = () => true) {
   const count = 1 + Math.floor(Math.random() * 3);
   let text = '';
   for (let i = 0; i < count; i++) {
@@ -1251,7 +1264,7 @@ function koreanWord(pieces, jongs, translate) {
     if (jongs.length && parts && !parts[2] && (piece.kind === 'syllable' || piece.kind === 'ga') && Math.random() < 0.35) {
       const jong = pick(jongs);
       const composed = compose(parts[0], parts[1], jong.letter);
-      if (composed) syllable = composed;
+      if (composed && jongOk(parts[0], parts[1], jong.letter)) syllable = composed;
     }
     text += syllable;
   }
@@ -1261,12 +1274,14 @@ function koreanWord(pieces, jongs, translate) {
   return tokenOf('word', text, made.braille, partsToSteps(made.parts), '낱말');
 }
 
-function koreanTokens(cards, translate) {
+function koreanTokens(cards, translate, abbr) {
   const by = groupByKind(cards);
   const pieces = [].concat(by.syllable || [], by.ga || [], by.eok || []);
   const jongs = (by.jongsung || []).filter((card) => JONGSUNG.includes(card.letter));
+  const knowsVowelCoda = !abbr || (by.eok || []).some((card) => abbr.vowelCodaKeys.has(card.letter));
+  const jongOk = (cho, jung, jong) => knowsVowelCoda || !abbr.usesVowelCoda(cho, jung, jong);
   const generators = {};
-  if (pieces.length) generators.word = () => koreanWord(pieces, jongs, translate);
+  if (pieces.length) generators.word = () => koreanWord(pieces, jongs, translate, jongOk);
   if (by.word && by.word.length) {
     generators.wordsign = () => {
       const card = pick(by.word);
@@ -1295,6 +1310,7 @@ function englishTokens(cards) {
 export function createEngine(data) {
   const ko = buildKorean(data);
   const en = buildEnglish(data);
+  const koAbbr = abbreviationIndex(data.ko);
   const bundles = {
     'ko.json': data.ko,
     'ko_marks.json': data.marks,
@@ -1589,7 +1605,7 @@ export function createEngine(data) {
 
   function fromSentence(unit) {
     const cards = sentenceCards(unit);
-    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, ko.translate);
+    const maker = unit.lang === 'en' ? englishTokens(cards) : koreanTokens(cards, ko.translate, koAbbr);
     if (!maker) return null;
     const recentList = recentSentences.get(unit.id) || [];
     let sentence = null;
