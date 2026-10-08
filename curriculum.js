@@ -11,26 +11,6 @@ const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', '�
 const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 const TENSE = { 'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ' };
 
-/**
- * 쌍받침·겹받침을 앞 받침과 뒤 받침으로 나눈다.
- * 앞 받침이 모음과 함께 억·언·얼 계열 약자가 되면 약자 뒤에 뒤 받침을 적는다.
- * 예) 얹 = 언 약자 + 받침 ㅈ, 넓 = ㄴ + 얼 약자 + 받침 ㅂ
- */
-export const JONG_SPLIT = {
-  'ㄲ': ['ㄱ', 'ㄱ'],
-  'ㄳ': ['ㄱ', 'ㅅ'],
-  'ㄵ': ['ㄴ', 'ㅈ'],
-  'ㄶ': ['ㄴ', 'ㅎ'],
-  'ㄺ': ['ㄹ', 'ㄱ'],
-  'ㄻ': ['ㄹ', 'ㅁ'],
-  'ㄼ': ['ㄹ', 'ㅂ'],
-  'ㄽ': ['ㄹ', 'ㅅ'],
-  'ㄾ': ['ㄹ', 'ㅌ'],
-  'ㄿ': ['ㄹ', 'ㅍ'],
-  'ㅀ': ['ㄹ', 'ㅎ'],
-  'ㅄ': ['ㅂ', 'ㅅ']
-};
-
 const BUNDLE_NAMES = new Set([
   'ko.json',
   'ko_marks.json',
@@ -313,7 +293,7 @@ export function decomposeSyllable(ch) {
  * 풀어 쓴 음절 카드에는 여기에 걸리는 조합이 들어가지 않는다.
  *   - abbreviation_syllable에 있는 음절
  *   - 가·나·다 계열 첫소리 + ㅏ (된소리 포함, 받침이 붙어도 약자 + 받침)
- *   - 모음 + 받침이 억·언·얼 계열인 경우 (겹받침의 앞 받침 포함, ㅅ·ㅈ·ㅊ 뒤 성·정·청 포함)
+ *   - 모음 + 받침이 억·언·얼 계열인 경우 (ㅅ·ㅈ·ㅊ 뒤 성·정·청 포함)
  */
 export function abbreviationIndex(ko) {
   const items = ko?.abbreviation_syllable?.items || {};
@@ -342,9 +322,7 @@ export function abbreviationIndex(ko) {
       if (jung === yeongVowel) return true;
       if (jung === 'ㅕ') return false;
     }
-    if (vowelCoda.has(`${jung}|${jong}`)) return true;
-    const split = JONG_SPLIT[jong];
-    return !!(split && vowelCoda.has(`${jung}|${split[0]}`));
+    return vowelCoda.has(`${jung}|${jong}`);
   }
 
   return {
@@ -420,7 +398,7 @@ function syllableCards(slice, data) {
 // ---------------------------------------------------------------------------
 // 약자가 들어간 음절: 된소리표, 첫소리, 약자, 뒤 받침을 차례로 잇는다.
 //   까 = 된소리표 + 가 약자, 값 = 가 약자 + 받침 ㅄ
-//   걱 = ㄱ + 억 약자, 넓 = ㄴ + 얼 약자 + 받침 ㅂ, 성 = ㅅ + 영 약자
+//   걱 = ㄱ + 억 약자, 성 = ㅅ + 영 약자
 // ---------------------------------------------------------------------------
 
 function abbrSyllableSteps(syllable, items, maps) {
@@ -464,19 +442,10 @@ function abbrSyllableSteps(syllable, items, maps) {
     }
     if (jung === 'ㅕ') return null;
   }
-  const split = JONG_SPLIT[jong];
   const whole = composeSyllable('ㅇ', jung, jong);
-  const lead = split ? composeSyllable('ㅇ', jung, split[0]) : '';
-  let steps = null;
-  if (items[whole]?.type === 'vowel_coda_series') {
-    steps = [abbr(whole)];
-  } else if (lead && items[lead]?.type === 'vowel_coda_series') {
-    const tail = jongStep(split[1]);
-    if (tail) steps = [abbr(lead), tail];
-  }
-  if (!steps) return null;
+  if (items[whole]?.type !== 'vowel_coda_series') return null;
   const head = choSteps();
-  return head ? { kind: 'eok', steps: [...head, ...steps] } : null;
+  return head ? { kind: 'eok', steps: [...head, abbr(whole)] } : null;
 }
 
 function abbrCards(slice, data) {

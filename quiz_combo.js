@@ -18,8 +18,7 @@ import {
   assemblyText,
   makeStep,
   stepsPattern,
-  abbreviationIndex,
-  JONG_SPLIT
+  abbreviationIndex
 } from './curriculum.js';
 import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed, loadStudyMode } from './shell.js';
 
@@ -334,16 +333,6 @@ function buildKorean(data) {
       }
       labels.push(`초성 ${baseCho} + 모음·받침 약자`);
       return { braille: head + tenser + (choMap[baseCho] || '') + vc[`${jung}|${jong}`], label: labels.join(', ') };
-    }
-
-    // 쌍받침·겹받침의 앞 받침이 억·언·얼 계열 약자가 되면 약자 뒤에 뒤 받침만 적는다. 예) 얹 = 언 + ㅈ
-    const split = JONG_SPLIT[jong];
-    if (split && vc[`${jung}|${split[0]}`] && jongMap[split[1]]) {
-      const choB = baseCho === 'ㅇ' ? '' : (choMap[baseCho] || '');
-      labels.push(baseCho === 'ㅇ'
-        ? `모음·받침 약자 + 받침 ${split[1]}`
-        : `초성 ${baseCho} + 모음·받침 약자 + 받침 ${split[1]}`);
-      return { braille: head + tenser + choB + vc[`${jung}|${split[0]}`] + jongMap[split[1]], label: labels.join(', ') };
     }
 
     const choB = baseCho === 'ㅇ' ? '' : (choMap[baseCho] || '');
