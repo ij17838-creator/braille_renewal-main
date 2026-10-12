@@ -218,7 +218,7 @@
       text-align: left;
     }
   </style>
-  <link rel="stylesheet" href="./mobile.css">
+  <link rel="stylesheet" href="./css/mobile.css">
 </head>
 <body class="bg-slate-900 text-slate-800 min-h-[100dvh] w-screen relative dot-scale-1x text-scale-normal focus-ring-enhanced flex items-center justify-center p-3 sm:p-6">
 
@@ -547,8 +547,9 @@
       loadStudyMode,
       saveStudyMode,
       UNIT_GAMES
-    } from './shell.js';
-    import { unitsFor, cardsFor } from './curriculum.js';
+    } from './js/shell.js';
+    import { unitsFor, cardsFor } from './js/curriculum.js';
+    import { dataUrl } from './js/data_paths.js';
 
     const stored = loadSettings();
     const globalSettings = {
@@ -660,7 +661,7 @@
 
     async function readBundle(name) {
       if (bundleCache.has(name)) return bundleCache.get(name);
-      const res = await fetch(new URL(name, import.meta.url));
+      const res = await fetch(dataUrl(name));
       if (!res.ok) throw new Error(name);
       const json = await res.json();
       bundleCache.set(name, json);

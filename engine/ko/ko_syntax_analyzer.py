@@ -10,7 +10,7 @@ import json
 import re
 from typing import List, Dict, Any, Optional, Tuple, TypedDict, Union
 
-from data_paths import find_data_file, resolve_data_root
+from engine.data_paths import find_data_file, resolve_data_root
 
 
 class LexicalStemEntry(TypedDict):

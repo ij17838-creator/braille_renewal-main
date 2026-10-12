@@ -3,7 +3,7 @@ import os
 import re
 from typing import Dict, List, Any, Optional
 
-from data_paths import find_data_file, resolve_data_root
+from engine.data_paths import find_data_file, resolve_data_root
 
 # =====================================================================
 # 영어 점자 문장요소 검증 및 결합 규칙 판별기 (Braille Rule Validator)

@@ -2,10 +2,14 @@ import json
 import os
 import sys
 
-from ko_parser import KoreanBrailleEngine
-from en_parser import BrailleEngine
-from ko_syntax_analyzer import BrailleRuleValidator as KoValidator
-from en_syntax_analyzer import BrailleRuleValidator as EnValidator
+# 저장소 루트를 import 경로에 넣어 어디서 실행해도 engine 패키지를 찾게 한다.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from engine.data_paths import find_data_file
+from engine.ko.ko_parser import KoreanBrailleEngine
+from engine.en.en_parser import BrailleEngine
+from engine.ko.ko_syntax_analyzer import BrailleRuleValidator as KoValidator
+from engine.en.en_syntax_analyzer import BrailleRuleValidator as EnValidator
 
 
 def test_homograph_conjugation():
@@ -64,17 +68,17 @@ def test_homograph_conjugation():
 
 def test_korean():
     print("=== Korean Loader & Converter Test ===")
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
-    with open(os.path.join(base_dir, "ko.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("ko.json"), "r", encoding="utf-8") as f:
         ko_data = json.load(f)
-    with open(os.path.join(base_dir, "ko_marks.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("ko_marks.json"), "r", encoding="utf-8") as f:
         marks_data = json.load(f)
-    with open(os.path.join(base_dir, "numbers.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("numbers.json"), "r", encoding="utf-8") as f:
         numbers_data = json.load(f)
-    with open(os.path.join(base_dir, "ko_number_rules.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("ko_number_rules.json"), "r", encoding="utf-8") as f:
         number_rules = json.load(f)
-    with open(os.path.join(base_dir, "lexicon_ko.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("lexicon_ko.json"), "r", encoding="utf-8") as f:
         lexicon_data = json.load(f)
 
     ko_engine = KoreanBrailleEngine(
@@ -111,7 +115,7 @@ def test_korean():
 
 def test_english():
     print("\n=== English Loader & Converter Test ===")
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     en_engine = BrailleEngine(base_data_dir=base_dir)
 
     # 1. Text -> Braille
@@ -133,16 +137,16 @@ def test_english():
 
 def test_canonical_roundtrip():
     print("\n=== Canonical cell and round-trip check ===")
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(base_dir, "ko.json"), "r", encoding="utf-8") as f:
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(find_data_file("ko.json"), "r", encoding="utf-8") as f:
         ko_data = json.load(f)
-    with open(os.path.join(base_dir, "ko_marks.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("ko_marks.json"), "r", encoding="utf-8") as f:
         marks_data = json.load(f)
-    with open(os.path.join(base_dir, "numbers.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("numbers.json"), "r", encoding="utf-8") as f:
         numbers_data = json.load(f)
-    with open(os.path.join(base_dir, "ko_number_rules.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("ko_number_rules.json"), "r", encoding="utf-8") as f:
         number_rules = json.load(f)
-    with open(os.path.join(base_dir, "lexicon_ko.json"), "r", encoding="utf-8") as f:
+    with open(find_data_file("lexicon_ko.json"), "r", encoding="utf-8") as f:
         lexicon_data = json.load(f)
 
     assert "connectors" not in numbers_data, "numbers.json must not carry language-specific connectors"
@@ -157,7 +161,7 @@ def test_canonical_roundtrip():
     assert bang == "⠖" and period == "⠲"
 
     for path in ("quiz_bank.json",):
-        with open(os.path.join(base_dir, path), "r", encoding="utf-8") as f:
+        with open(find_data_file(path), "r", encoding="utf-8") as f:
             quiz = json.load(f)
         for item in quiz.get("KO", []):
             text = item.get("target_text", "")

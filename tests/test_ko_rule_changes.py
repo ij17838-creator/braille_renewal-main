@@ -3,25 +3,30 @@
 
 import json
 import os
+import sys
 import unittest
 
-from ko_parser import KoreanBrailleEngine
-from ko_syntax_analyzer import BrailleRuleValidator
+# 저장소 루트를 import 경로에 넣어 어디서 실행해도 engine 패키지를 찾게 한다.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from engine.data_paths import find_data_file
+from engine.ko.ko_parser import KoreanBrailleEngine
+from engine.ko.ko_syntax_analyzer import BrailleRuleValidator
 
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load_engine():
-    with open(os.path.join(ROOT, "ko.json"), encoding="utf-8") as handle:
+    with open(find_data_file("ko.json"), encoding="utf-8") as handle:
         ko_data = json.load(handle)
-    with open(os.path.join(ROOT, "ko_marks.json"), encoding="utf-8") as handle:
+    with open(find_data_file("ko_marks.json"), encoding="utf-8") as handle:
         marks_data = json.load(handle)
-    with open(os.path.join(ROOT, "numbers.json"), encoding="utf-8") as handle:
+    with open(find_data_file("numbers.json"), encoding="utf-8") as handle:
         numbers_data = json.load(handle)
-    with open(os.path.join(ROOT, "ko_number_rules.json"), encoding="utf-8") as handle:
+    with open(find_data_file("ko_number_rules.json"), encoding="utf-8") as handle:
         number_rules = json.load(handle)
-    with open(os.path.join(ROOT, "lexicon_ko.json"), encoding="utf-8") as handle:
+    with open(find_data_file("lexicon_ko.json"), encoding="utf-8") as handle:
         lexicon_data = json.load(handle)
     return KoreanBrailleEngine(ko_data, marks_data, numbers_data, number_rules, lexicon_data)
 
