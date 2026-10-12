@@ -536,10 +536,17 @@
       document.getElementById('label-mode-info').textContent = `형태소 단독 · ${appState.lang}`;
       document.getElementById('prompt-category').textContent = q.category || '낱말 퀴즈';
       document.getElementById('prompt-type-label').textContent = q.type_label || '약자/약어';
-      document.getElementById('target-prompt-text').textContent = q.target_text;
-      document.getElementById('target-prompt-hint').textContent = appState.unitId === 'ko-dots'
+      // 점의 자리 단원: 숫자만 두면 헷갈리므로 "3점"처럼 점 번호로 보이고, 안내 문장은 숫자 위에 둔다.
+      const isDotUnit = appState.unitId === 'ko-dots';
+      const promptText = isDotUnit ? `${q.target_text}점` : q.target_text;
+      q.prompt_text = promptText;
+      const textEl = document.getElementById('target-prompt-text');
+      textEl.textContent = promptText;
+      const hintEl = document.getElementById('target-prompt-hint');
+      hintEl.textContent = isDotUnit
         ? '이 점의 자리를 고르세요'
         : (q.hint || `${q.target_text}에 해당하는 올바른 점자 카드를 선택하세요.`);
+      if (isDotUnit) textEl.before(hintEl); else textEl.after(hintEl);
 
       let options = [{ braille: q.target_braille, isCorrect: true }];
       if (Array.isArray(q.distractors_braille)) {
@@ -553,7 +560,7 @@
       appState.currentQuiz.options = options;
 
       renderCards(options);
-      speak(describeForSpeech(q.target_text, appState.lang));
+      speak(describeForSpeech(promptText, appState.lang));
     }
 
     function renderCards(options) {
@@ -685,7 +692,7 @@
     });
 
     document.getElementById('btn-hint').onclick = () => {
-      if (appState.currentQuiz) speak(describeForSpeech(appState.currentQuiz.target_text, appState.lang));
+      if (appState.currentQuiz) speak(describeForSpeech(appState.currentQuiz.prompt_text || appState.currentQuiz.target_text, appState.lang));
     };
 
     document.getElementById('btn-go-hub').onclick = () => {
