@@ -9,7 +9,6 @@ const KEYS = {
   scale: 'braille_text_scale',
   tts: 'braille_tts',
   pitch: 'braille_pitch',
-  doubleClickAnswer: 'braille_double_click_answer',
   sfx: 'braille_sfx',
   emboss: 'braille_emboss_mode',
   ruleStats: 'braille_rule_stats',
@@ -47,7 +46,6 @@ export function loadSettings() {
     scale: localStorage.getItem(KEYS.scale) || 'normal',
     tts: localStorage.getItem(KEYS.tts) !== 'false',
     pitch: localStorage.getItem(KEYS.pitch) !== 'false',
-    doubleClickAnswer: localStorage.getItem(KEYS.doubleClickAnswer) === 'true',
     sfx: localStorage.getItem(KEYS.sfx) !== 'false',
     emboss: localStorage.getItem(KEYS.emboss) || 'embossed'
   };
@@ -64,7 +62,6 @@ export function saveSettings(partial = {}) {
   if (scale != null) next.scale = scale;
   if (typeof partial.tts === 'boolean') next.tts = partial.tts;
   if (typeof partial.pitch === 'boolean') next.pitch = partial.pitch;
-  if (typeof partial.doubleClickAnswer === 'boolean') next.doubleClickAnswer = partial.doubleClickAnswer;
   if (typeof partial.sfx === 'boolean') next.sfx = partial.sfx;
   if (partial.emboss) next.emboss = partial.emboss;
 
@@ -75,7 +72,6 @@ export function saveSettings(partial = {}) {
   localStorage.setItem(KEYS.scale, next.scale);
   localStorage.setItem(KEYS.tts, String(next.tts));
   localStorage.setItem(KEYS.pitch, String(next.pitch));
-  localStorage.setItem(KEYS.doubleClickAnswer, String(next.doubleClickAnswer));
   localStorage.setItem(KEYS.sfx, String(next.sfx));
   localStorage.setItem(KEYS.emboss, next.emboss);
   applyVisualSettings(next);
@@ -149,22 +145,9 @@ export function describeForSpeech(text, lang) {
   return parts.join(', ');
 }
 
-// 꺼져 있으면 한 번 클릭이 그 선택지다.
-// 켜져 있으면 한 번 클릭은 선택지를 읽어 주고, 두 번 클릭은 누른 항목 대신 정답을 고른다.
-export function bindChoiceClick(element, onSingle, onDoubleCorrect, onPreview) {
-  element.addEventListener('click', (event) => {
-    if (!loadSettings().doubleClickAnswer) {
-      onSingle();
-      return;
-    }
-    if (event.detail > 1) return;
-    if (typeof onPreview === 'function') onPreview();
-  });
-  element.addEventListener('dblclick', (event) => {
-    if (!loadSettings().doubleClickAnswer) return;
-    event.preventDefault();
-    onDoubleCorrect();
-  });
+// 한 번 클릭이 그 선택지다. 정답을 대신 골라 주는 기능은 없다.
+export function bindChoiceClick(element, onSingle) {
+  element.addEventListener('click', () => onSingle());
 }
 
 export function applyVisualSettings(settings = loadSettings()) {
@@ -469,7 +452,7 @@ function speakStage(text) {
   window.speechSynthesis.speak(utter);
 }
 
-export function createStageSession({ game, trackCombo = true, getMeta, onContinue, onHome }) {
+export function createStageSession({ game, trackCombo = true, getMeta, onContinue, onNext, onHome }) {
   const size = STAGE_SIZE;
   let stage = 1;
   let correct = 0;
@@ -478,6 +461,9 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
   let bestCombo = 0;
   let accepting = false;
   let showing = false;
+  // 한 문제는 맞힐 때까지 다시 고른다. 점수는 첫 시도로만 매긴다.
+  let scored = false;
+  let solved = false;
 
   const overlay = document.createElement('div');
   overlay.id = 'stage-result-overlay';
@@ -500,6 +486,42 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     </div>
   `;
   document.body.appendChild(overlay);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.id = 'stage-btn-next';
+  nextBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-3.5 rounded-2xl text-base shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-300';
+  Object.assign(nextBtn.style, {
+    position: 'fixed',
+    left: '50%',
+    bottom: '1.25rem',
+    transform: 'translateX(-50%)',
+    zIndex: '80',
+    display: 'none'
+  });
+  nextBtn.textContent = '다음 문제 →';
+  document.body.appendChild(nextBtn);
+
+  function hideNext() {
+    nextBtn.style.display = 'none';
+  }
+
+  function showNext() {
+    nextBtn.textContent = answered >= size ? '결과 보기 →' : '다음 문제 →';
+    nextBtn.style.display = '';
+    nextBtn.focus();
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (!solved || showing) return;
+    hideNext();
+    if (answered >= size) {
+      showResult();
+      return;
+    }
+    const go = typeof onNext === 'function' ? onNext : onContinue;
+    if (typeof go === 'function') go();
+  });
 
   overlay.querySelector('#stage-btn-continue').addEventListener('click', () => {
     overlay.classList.add('hidden');
@@ -524,38 +546,52 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     const el = document.getElementById('stage-progress');
     if (!el) return;
     let current = answered;
-    if (!showing && accepting) current += 1;
+    if (!showing && accepting && !scored) current += 1;
     if (current < 1) current = 1;
     if (current > size) current = size;
     el.textContent = `스테이지 ${stage} · ${current}/${size}`;
   }
 
   function canAnswer() {
-    return accepting && !showing;
+    return accepting && !showing && !solved;
   }
 
+  // 아직 이 문제에 답하지 않았으면 true. 다시 고르는 중이면 false.
+  function isFirstTry() {
+    return !scored;
+  }
+
+  // 틀리면 같은 문제를 계속 풀고, 맞히면 다음 문제 버튼을 보인다. 넘어가는 건 그 버튼으로만 한다.
   function onAnswer(isCorrect, combo) {
-    if (!canAnswer()) return { consumed: false, stageDone: false };
-    accepting = false;
-    answered += 1;
-    if (isCorrect) {
-      correct += 1;
-      if (trackCombo && typeof combo === 'number' && combo > bestCombo) bestCombo = combo;
-    } else {
-      wrong += 1;
+    if (!canAnswer()) return { consumed: false, firstTry: false, stageDone: false };
+    const firstTry = !scored;
+    if (firstTry) {
+      scored = true;
+      answered += 1;
+      if (isCorrect) {
+        correct += 1;
+        if (trackCombo && typeof combo === 'number' && combo > bestCombo) bestCombo = combo;
+      } else {
+        wrong += 1;
+      }
+      const meta = currentMeta();
+      if (meta.unitId && meta.itemId) {
+        recordItem({
+          lang: meta.lang,
+          unitId: meta.unitId,
+          itemId: meta.itemId,
+          skill: normalizeSkill(meta.skill, game),
+          correct: !!isCorrect
+        });
+      }
     }
-    const meta = currentMeta();
-    if (meta.unitId && meta.itemId) {
-      recordItem({
-        lang: meta.lang,
-        unitId: meta.unitId,
-        itemId: meta.itemId,
-        skill: normalizeSkill(meta.skill, game),
-        correct: !!isCorrect
-      });
+    if (isCorrect) {
+      solved = true;
+      accepting = false;
+      showNext();
     }
     paint();
-    return { consumed: true, stageDone: answered >= size };
+    return { consumed: true, firstTry, stageDone: isCorrect && answered >= size };
   }
 
   function currentMeta() {
@@ -565,6 +601,9 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
   function allowNext() {
     if (showing) return;
     accepting = true;
+    scored = false;
+    solved = false;
+    hideNext();
     paint();
   }
 
@@ -572,6 +611,7 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     if (showing) return;
     showing = true;
     accepting = false;
+    hideNext();
     const meta = currentMeta();
     const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
     const unitId = meta.unitId || '';
@@ -656,7 +696,7 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
   }
 
   paint();
-  return { onAnswer, allowNext, showResult, canAnswer, paint, size };
+  return { onAnswer, allowNext, showResult, canAnswer, isFirstTry, paint, size };
 }
 
 export async function loadQuizBank() {

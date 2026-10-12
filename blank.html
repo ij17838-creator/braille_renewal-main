@@ -131,6 +131,10 @@
       background-color: #d1fae5 !important;
       border-color: #10b981 !important;
     }
+    #sentence-card.answer-wrong {
+      background-color: #ffe4e6 !important;
+      border-color: #f43f5e !important;
+    }
 
         /* 고대비 색상 팔레트 모듈 */
     :root[data-theme="hc-yellow"] {
@@ -392,32 +396,6 @@
     </div>
   </div>
 
-    <!-- 진단 리포트 모달 -->
-  <div id="validator-report-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden" role="dialog" aria-modal="true">
-    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl m-4 border-2 border-rose-500/80">
-      <div class="flex items-center justify-between pb-3 border-b border-rose-200">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          </div>
-          <h3 class="text-base font-black text-rose-900">정답 점형</h3>
-        </div>
-      </div>
-
-      <div class="py-4 flex flex-col gap-3 text-left">
-        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
-          <span class="font-bold text-slate-600">올바른 표준 점형:</span>
-          <div id="report-correct-braille" class="flex items-center"></div>
-        </div>
-      </div>
-
-      <div class="pt-2">
-        <button id="btn-close-report" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-sm">
-          단서 재확인 및 다시 수사하기
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- 공통 환경 및 접근성 설정 모달 -->
   <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true">
@@ -458,13 +436,6 @@
           <label class="flex items-center justify-between font-bold text-slate-700">
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
-          </label>
-          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
-            <span class="flex flex-col items-start gap-0.5">
-              <span>더블 클릭 시 정답 선택</span>
-              <span class="text-[10px] font-medium text-slate-500">이 게임에는 적용되지 않습니다.</span>
-            </span>
-            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
           </label>
         </div>
       </div>
@@ -512,7 +483,6 @@
       onHome: () => { navigateBack(); }
     });
 
-    let blankStageDone = false;
 
     if (appState.embossMode === 'engraved') document.body.classList.add('mode-engraved');
     else document.body.classList.add('mode-embossed');
@@ -728,7 +698,7 @@
       currentInputBraille = "";
       assembledBlocks = [];
       resetEntryState();
-      document.getElementById('sentence-card').classList.remove('answer-correct');
+      document.getElementById('sentence-card').classList.remove('answer-correct', 'answer-wrong');
 
       document.getElementById('case-type-badge').textContent = q.category || '점형 입력';
       const dotUnit = appState.unitId === 'ko-dots';
@@ -1027,34 +997,31 @@
       const outcome = stage.onAnswer(isCorrect, 0);
       if (!outcome.consumed) return;
 
-      const ruleName = (q.rule_analysis && q.rule_analysis.rule_name) || q.category || '구문 결합 규정';
-      recordResult({ game: 'blank', rule: ruleName, correct: isCorrect });
+      if (outcome.firstTry) {
+        const ruleName = (q.rule_analysis && q.rule_analysis.rule_name) || q.category || '구문 결합 규정';
+        recordResult({ game: 'blank', rule: ruleName, correct: isCorrect });
+      }
 
       const card = document.getElementById('game-card');
+      const sentence = document.getElementById('sentence-card');
 
       if (isCorrect) {
         if (appState.pitch && sfxCorrect) sfxCorrect.triggerAttackRelease("C5", "8n");
-        speak(outcome.stageDone ? "정답입니다. 스테이지 학습 결과를 확인하세요." : "정답입니다! 올바른 규칙을 준수한 단서입니다.");
-        document.getElementById('sentence-card').classList.add('answer-correct');
-
-        setTimeout(() => {
-          if (outcome.stageDone) stage.showResult();
-          else advanceQuiz();
-        }, 1200);
+        speak(outcome.stageDone ? "정답입니다. 결과 보기 버튼을 누르세요." : "정답입니다! 다음 문제 버튼을 누르세요.");
+        sentence.classList.remove('answer-wrong');
+        sentence.classList.add('answer-correct');
+        showHint('정답입니다.');
       } else {
+        // 정답은 보여 주지 않는다. 오답만 알리고 입력을 비워 다시 입력하게 한다.
         if (appState.pitch && sfxWrong) sfxWrong.triggerAttackRelease("A1", "8n");
         card.classList.add('animate-shake');
         setTimeout(() => card.classList.remove('animate-shake'), 400);
-        showRuleReport(q, outcome.stageDone);
+        sentence.classList.add('answer-wrong');
+        currentInputBraille = "";
+        resetEntryState();
+        showHint('오답입니다. 다시 입력하세요.', true);
+        speak("오답입니다. 다시 입력하세요.");
       }
-    }
-
-    function showRuleReport(q, stageDone) {
-      blankStageDone = !!stageDone;
-      document.getElementById('report-correct-braille').innerHTML = renderBrailleHTML(q.target_braille || "");
-      document.getElementById('btn-close-report').textContent = stageDone ? '학습 결과 보기' : '다음 단서';
-      document.getElementById('validator-report-modal').classList.remove('hidden');
-      speak("오답입니다.");
     }
 
     function navigateBack() {
@@ -1072,13 +1039,6 @@
 
         document.getElementById('btn-verify-investigation').onclick = verifyAnswer;
     document.getElementById('btn-verify-block').onclick = verifyAnswer;
-    document.getElementById('btn-close-report').onclick = () => {
-      document.getElementById('validator-report-modal').classList.add('hidden');
-      const done = blankStageDone;
-      blankStageDone = false;
-      if (done) stage.showResult();
-      else advanceQuiz();
-    };
     document.getElementById('btn-replay-clue').onclick = () => {
       const q = quizList[currentQuizIndex];
       if (q) speak(describeForSpeech(q.target_text || '', appState.lang));
@@ -1103,8 +1063,7 @@
       theme: storedModal.theme,
       scale: storedModal.scale,
       tts: storedModal.tts,
-      pitch: storedModal.pitch,
-      doubleClickAnswer: storedModal.doubleClickAnswer
+      pitch: storedModal.pitch
     };
 
         function normalizeTheme(theme) {
@@ -1128,10 +1087,8 @@
 
       const ttsChk = document.getElementById('chk-modal-tts');
       const pitchChk = document.getElementById('chk-modal-pitch');
-      const dblChk = document.getElementById('chk-dbl-answer');
       if (ttsChk) ttsChk.checked = globalSettings.tts;
       if (pitchChk) pitchChk.checked = globalSettings.pitch;
-      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
     }
 
     if (openSettingsBtn) {
@@ -1149,7 +1106,6 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
-        const dblChk = document.getElementById('chk-dbl-answer');
         if (ttsChk) {
           globalSettings.tts = ttsChk.checked;
           appState.tts = ttsChk.checked;
@@ -1158,15 +1114,13 @@
           globalSettings.pitch = pitchChk.checked;
           appState.pitch = pitchChk.checked;
         }
-        if (dblChk) globalSettings.doubleClickAnswer = dblChk.checked;
         if (!appState.tts && window.speechSynthesis) window.speechSynthesis.cancel();
 
         persistSettings({
           theme: globalSettings.theme,
           scale: globalSettings.scale,
           tts: globalSettings.tts,
-          pitch: globalSettings.pitch,
-          doubleClickAnswer: globalSettings.doubleClickAnswer
+          pitch: globalSettings.pitch
         });
 
         applyVisualSettings();

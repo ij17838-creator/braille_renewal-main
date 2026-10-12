@@ -368,13 +368,6 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
-          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
-            <span class="flex flex-col items-start gap-0.5">
-              <span>더블 클릭 시 정답 선택</span>
-              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
-            </span>
-            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
-          </label>
         </div>
       </div>
 
@@ -404,7 +397,6 @@
       scale: stored.scale,
       tts: stored.tts,
       pitch: stored.pitch,
-      doubleClickAnswer: stored.doubleClickAnswer,
       unitId: urlParams.get('unit') || ''
     };
 
@@ -587,73 +579,57 @@
         `;
 
         cardBtn.addEventListener('mouseenter', () => playSound('hover'));
-        bindChoiceClick(
-          cardBtn,
-          () => handleSelectOption(opt, cardBtn),
-          () => chooseCorrectCard(),
-          () => speak(describeForSpeech(opt.braille, appState.lang))
-        );
+        bindChoiceClick(cardBtn, () => handleSelectOption(opt, cardBtn));
 
         grid.appendChild(cardBtn);
       });
     }
 
     // 6. 판정 및 통계 기록
-    function chooseCorrectCard() {
-      const options = appState.currentQuiz && appState.currentQuiz.options;
-      if (!options) return;
-      const correctIndex = options.findIndex((item) => item.isCorrect);
-      const cards = document.querySelectorAll('#card-grid button');
-      if (correctIndex >= 0 && cards[correctIndex]) {
-        handleSelectOption(options[correctIndex], cards[correctIndex]);
-      }
-    }
-
+    // 틀린 카드는 오답으로 표시하고 그 카드만 막는다. 맞힐 때까지 다시 고르고, 다음 문제 버튼으로 넘어간다.
     function handleSelectOption(option, cardElement) {
-      if (!stage.canAnswer() || appState.isAnsweringLocked) return;
-      appState.isAnsweringLocked = true;
+      if (!stage.canAnswer() || appState.isAnsweringLocked || cardElement.disabled) return;
       initAudio();
 
-      const allCards = document.querySelectorAll('#card-grid button');
+      const firstTry = stage.isFirstTry();
 
       if (option.isCorrect) {
-        playSound('correct');
-        appState.combo++;
-        updateTitleBadge();
+        if (firstTry) appState.combo++;
         const outcome = stage.onAnswer(true, appState.combo);
-        if (!outcome.consumed) return;
-        speak(`정답입니다! 연속 ${appState.combo}콤보 달성.`);
+        if (!outcome.consumed) {
+          if (firstTry) appState.combo--;
+          return;
+        }
+        appState.isAnsweringLocked = true;
+        playSound('correct');
+        updateTitleBadge();
+        speak(firstTry ? `정답입니다! 연속 ${appState.combo}콤보 달성.` : '정답입니다.');
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
-        allCards.forEach(c => c.disabled = true);
-
-        recordStat(true);
-        setTimeout(() => {
-          if (outcome.stageDone) stage.showResult();
-          else renderNextQuiz();
-        }, 1100);
-      } else {
-        playSound('wrong');
-        appState.combo = 0;
-        updateTitleBadge();
-        const outcome = stage.onAnswer(false, 0);
-        if (!outcome.consumed) return;
-        speak("오답입니다. 올바른 점형을 확인하세요.");
-
-        cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90');
-        allCards.forEach((c, i) => {
-          c.disabled = true;
-          if (appState.currentQuiz.options[i] && appState.currentQuiz.options[i].isCorrect) {
-            c.classList.add('border-emerald-500', 'bg-emerald-50/50');
-          }
-        });
-
-        recordStat(false);
-        setTimeout(() => {
-          if (outcome.stageDone) stage.showResult();
-          else renderNextQuiz();
-        }, 1200);
+        document.querySelectorAll('#card-grid button').forEach(c => c.disabled = true);
+        if (firstTry) recordStat(true);
+        return;
       }
+
+      const outcome = stage.onAnswer(false, 0);
+      if (!outcome.consumed) return;
+      playSound('wrong');
+      appState.combo = 0;
+      updateTitleBadge();
+      speak("오답입니다. 다른 카드를 고르세요.");
+      markWrongCard(cardElement);
+      if (outcome.firstTry) recordStat(false);
+    }
+
+    function markWrongCard(cardElement) {
+      cardElement.disabled = true;
+      cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90', 'opacity-60', 'cursor-not-allowed');
+      const base = cardElement.getAttribute('aria-label') || '';
+      cardElement.setAttribute('aria-label', `${base}, 오답`);
+      const badge = document.createElement('span');
+      badge.className = 'absolute top-2 right-2 px-2 py-0.5 rounded-md bg-rose-600 text-white text-xs font-black';
+      badge.textContent = '오답';
+      cardElement.appendChild(badge);
     }
 
     function recordStat(isCorrect) {
@@ -712,15 +688,13 @@
     document.getElementById('btn-settings').onclick = () => {
       document.getElementById('chk-tts').checked = appState.tts;
       document.getElementById('chk-pitch').checked = appState.pitch;
-      document.getElementById('chk-dbl-answer').checked = appState.doubleClickAnswer;
       settingsModal.classList.remove('hidden');
     };
     document.getElementById('btn-settings-close').onclick = () => settingsModal.classList.add('hidden');
     document.getElementById('btn-save-settings').onclick = () => {
       appState.tts = document.getElementById('chk-tts').checked;
       appState.pitch = document.getElementById('chk-pitch').checked;
-      appState.doubleClickAnswer = document.getElementById('chk-dbl-answer').checked;
-      persistSettings({ tts: appState.tts, pitch: appState.pitch, doubleClickAnswer: appState.doubleClickAnswer, theme: appState.theme, scale: appState.scale });
+      persistSettings({ tts: appState.tts, pitch: appState.pitch, theme: appState.theme, scale: appState.scale });
       if (!appState.tts && window.speechSynthesis) window.speechSynthesis.cancel();
       settingsModal.classList.add('hidden');
       applyVisualSettings();
