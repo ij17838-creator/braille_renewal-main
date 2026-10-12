@@ -362,7 +362,6 @@
             <li><span class="font-bold text-slate-800">텍스트 크기</span> — 1.0x, 1.25x, 1.5x. 버튼과 안내 글자가 커집니다.</li>
             <li><span class="font-bold text-slate-800">TTS 음성 안내</span> — 안내 문구 대신 제시된 문제의 글이나 점형을 읽어 줍니다. 한 칸의 점은 1,2,4점처럼 이어서 읽고, 점이 없는 칸은 빈칸, 점자 띄어쓰기는 띄어쓰기라고 읽습니다. 정답, 오답, 스테이지 결과도 읽어 줍니다. 한글은 한국어, 영어는 영어로 읽습니다.</li>
             <li><span class="font-bold text-slate-800">도·레·미 음계 비프음</span> — 정답·오답 효과음과, 빈칸 수사대에서 점을 누를 때의 음이 납니다. 1점은 도, 2점은 레, 3점은 미, 4점은 파, 5점은 솔, 6점은 라입니다.</li>
-            <li><span class="font-bold text-slate-800">더블 클릭 시 정답 선택</span> — 켜면 형태소 퀴즈, 카드 셀렉트, 점자 빌더즈에서 선택지를 한 번 누르면 그 글이나 점형을 읽어 줍니다. 두 번 누르면 그 항목 대신 정답이 선택됩니다. 점형을 입력하는 점자 빈칸 수사대에는 적용되지 않습니다.</li>
             <li><span class="font-bold text-slate-800">설정 저장 및 닫기</span> — 고른 값을 저장하고 창을 닫습니다.</li>
           </ul>
         </section>
@@ -375,7 +374,7 @@
             <li><span class="font-bold text-slate-800">집 아이콘</span> — 허브로 돌아갑니다. 빈칸 수사대의 왼쪽 화살표도 같습니다.</li>
             <li><span class="font-bold text-slate-800">스테이지 표시</span> — 지금 스테이지와 10문제 중 몇 번째인지를 보여 줍니다. 연속으로 맞히면 콤보가 오르고, 틀리면 0이 됩니다.</li>
           </ul>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">맞히면 다음 문제로 넘어갑니다. 틀리면 정답이 표시됩니다. 10문제가 끝나면 계속하기로 같은 단원을 더 풀거나, 홈으로 돌아갈 수 있습니다. 단원을 통과하거나 해금한 뒤에도 두 선택지는 같습니다.</p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">틀린 선택지는 오답으로 표시되고 다시 고를 수 없습니다. 맞힐 때까지 다른 선택지를 고르고, 맞히면 다음 문제 버튼을 눌러 넘어갑니다. 점수는 첫 번째 답으로 매깁니다. 점자 빌더즈에서는 틀린 자리의 블록이 빨갛게 표시되고, 맞게 놓인 블록은 고정됩니다. 10문제가 끝나면 계속하기로 같은 단원을 더 풀거나, 홈으로 돌아갈 수 있습니다. 단원을 통과하거나 해금한 뒤에도 두 선택지는 같습니다.</p>
         </section>
 
         <section class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2" aria-labelledby="manual-morpheme-title">
@@ -523,13 +522,6 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
-          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
-            <span class="flex flex-col items-start gap-0.5">
-              <span>더블 클릭 시 정답 선택</span>
-              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
-            </span>
-            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
-          </label>
         </div>
       </div>
 
@@ -565,7 +557,6 @@
       textScale: stored.scale,
       tts: stored.tts,
       pitch: stored.pitch,
-      doubleClickAnswer: stored.doubleClickAnswer,
       study: loadStudyMode()
     };
 
@@ -575,8 +566,7 @@
         theme: globalSettings.contrastTheme,
         scale: globalSettings.textScale,
         tts: globalSettings.tts,
-        pitch: globalSettings.pitch,
-        doubleClickAnswer: globalSettings.doubleClickAnswer
+        pitch: globalSettings.pitch
       });
       globalSettings.contrastTheme = saved.theme;
       globalSettings.textScale = saved.scale;
@@ -1036,8 +1026,6 @@
 
     // 설정 모달 열기/닫기
     document.getElementById('btn-quick-settings').addEventListener('click', () => {
-      const dblChk = document.getElementById('chk-dbl-answer');
-      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
       settingsModal.classList.remove('hidden');
     });
     document.getElementById('btn-settings-close').addEventListener('click', () => settingsModal.classList.add('hidden'));
@@ -1071,7 +1059,6 @@
     // 사운드 토글
     document.getElementById('chk-tts').addEventListener('change', (e) => globalSettings.tts = e.target.checked);
     document.getElementById('chk-pitch').addEventListener('change', (e) => globalSettings.pitch = e.target.checked);
-    document.getElementById('chk-dbl-answer').addEventListener('change', (e) => globalSettings.doubleClickAnswer = e.target.checked);
 
     function bootHub() {
       applyVisualSettings();

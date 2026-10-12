@@ -519,13 +519,6 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
-          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
-            <span class="flex flex-col items-start gap-0.5">
-              <span>더블 클릭 시 정답 선택</span>
-              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
-            </span>
-            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
-          </label>
         </div>
       </div>
 
@@ -555,15 +548,12 @@
       answerPieces: [],
       isVerifying: false,
       locked: false,
-      holding: false,
-      submitFromKey: false,
-      releaseHold: null,
+      solved: false,
       weaknessStats: errorCounts(),
       unitId: bootParams.get('unit') || ''
     };
 
     let quizEngine = null;
-    let advanceTimer = 0;
 
     const stage = createStageSession({
       game: 'builders',
@@ -677,15 +667,13 @@
      * py 프로그램(ko_generator.py, en_generator.py)의 퀴즈 객체를 100% 수용
      */
     function applyNewQuiz(quizData) {
-      clearTimeout(advanceTimer);
-      if (state.releaseHold) state.releaseHold();
       stage.allowNext();
       state.currentQuiz = quizData;
       state.assembledBlocks = [];
       state.answerPieces = answerPiecesOf(quizData);
       state.isVerifying = false;
       state.locked = false;
-      state.holding = false;
+      state.solved = false;
       setSubmitLabel('배치 확인');
       const bench = document.getElementById('workbench-container');
       if (bench) {
@@ -838,66 +826,6 @@
       if (label) label.textContent = text;
     }
 
-    function isChromeControl(event) {
-      const target = event.target;
-      if (!target || !target.closest) return false;
-      return !!target.closest('#weakness-modal, #settings-modal, header');
-    }
-
-    function swallowNextClick() {
-      const swallow = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      };
-      window.addEventListener('click', swallow, true);
-      setTimeout(() => window.removeEventListener('click', swallow, true), 0);
-    }
-
-    // 제출에 쓴 터치나 Enter가 끝난 뒤의 다음 입력에서만 넘어간다.
-    function armContinue(done) {
-      let ready = false;
-      let finished = false;
-      const markReady = () => { ready = true; };
-      const backup = setTimeout(markReady, 450);
-      let onSubmitKeyUp = null;
-      const cleanup = () => {
-        clearTimeout(backup);
-        window.removeEventListener('pointerdown', onPointerDown, true);
-        window.removeEventListener('keydown', onKeyDown, true);
-        if (onSubmitKeyUp) window.removeEventListener('keyup', onSubmitKeyUp, true);
-        if (state.releaseHold === cleanup) state.releaseHold = null;
-      };
-      const go = (event) => {
-        if (!ready || finished) return;
-        if (event && isChromeControl(event)) return;
-        finished = true;
-        cleanup();
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
-          swallowNextClick();
-        }
-        done();
-      };
-      const onPointerDown = (event) => { go(event); };
-      const onKeyDown = (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        go(event);
-      };
-      if (state.submitFromKey) {
-        onSubmitKeyUp = (event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          markReady();
-        };
-        window.addEventListener('keyup', onSubmitKeyUp, true);
-      } else {
-        setTimeout(markReady, 0);
-      }
-      window.addEventListener('pointerdown', onPointerDown, true);
-      window.addEventListener('keydown', onKeyDown, true);
-      state.releaseHold = cleanup;
-    }
-
     function renderPool() {
       const container = document.getElementById('block-pool-container');
       container.innerHTML = '';
@@ -918,30 +846,16 @@
         label.textContent = blockLabel(text);
         btn.append(index, label);
         btn.setAttribute('aria-label', `블록 ${idx + 1}번, ${describeForSpeech(blockLabel(text), state.lang)}`);
-        if (state.holding) btn.classList.add('opacity-30', 'pointer-events-none');
-
-        bindChoiceClick(
-          btn,
-          () => pickBlock(text, idx, btn),
-          () => chooseCorrectBlock(),
-          () => speak(describeForSpeech(blockLabel(text), state.lang))
-        );
+        bindChoiceClick(btn, () => pickBlock(text, idx, btn));
         container.appendChild(btn);
       });
     }
 
-    function chooseCorrectBlock() {
-      if (!stage.canAnswer() || state.locked || !state.answerPieces.length) return;
-      state.assembledBlocks = state.answerPieces.map(text => ({ text, poolIdx: -1, elem: null }));
-      renderWorkbench();
-      handleVerifyClick();
-    }
-
     function pickBlock(blockText, poolIdx, btnElem) {
-      if (state.locked || state.holding) return;
+      if (state.locked || state.solved) return;
       initAudio();
       playSound('click');
-      state.assembledBlocks.push({ text: blockText, poolIdx, elem: btnElem });
+      state.assembledBlocks.push({ text: blockText, poolIdx, elem: btnElem, fixed: false, wrong: false });
       btnElem.classList.add('opacity-30', 'pointer-events-none');
       renderWorkbench();
     }
@@ -959,22 +873,34 @@
       slots.innerHTML = '';
       revParsedSpan.textContent = previewText(state.assembledBlocks.map(block => block.text));
 
+      // 맞게 놓인 블록은 고정(초록)되어 뺄 수 없고, 틀린 자리의 블록은 빨갛게 표시한다.
       state.assembledBlocks.forEach((item, slotIdx) => {
-        const chip = document.createElement(state.holding ? 'div' : 'button');
-        chip.className = state.holding
-          ? 'px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-sm font-black shadow-md flex items-center gap-1.5'
-          : 'px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-sm font-black shadow-md flex items-center gap-1.5 hover:bg-rose-500 transition-colors';
+        const locked = state.solved || item.fixed;
+        const chip = document.createElement(locked ? 'div' : 'button');
+        const base = 'px-3 py-1.5 text-white rounded-xl text-sm font-black shadow-md flex items-center gap-1.5';
+        if (locked) chip.className = `${base} bg-emerald-600`;
+        else if (item.wrong) chip.className = `${base} bg-rose-600 ring-2 ring-rose-300 hover:bg-rose-700 transition-colors`;
+        else chip.className = `${base} bg-indigo-600 hover:bg-rose-500 transition-colors`;
         const name = document.createElement('span');
         name.textContent = blockLabel(item.text);
         chip.appendChild(name);
-        if (!state.holding) {
+        if (locked) {
+          chip.setAttribute('aria-label', `${blockLabel(item.text)}, 맞게 놓인 블록`);
+          if (!state.solved) {
+            const mark = document.createElement('span');
+            mark.className = 'text-[10px] opacity-75';
+            mark.textContent = '✓';
+            chip.appendChild(mark);
+          }
+        } else {
           const mark = document.createElement('span');
           mark.className = 'text-[10px] opacity-75';
           mark.textContent = '✕';
           chip.appendChild(mark);
           chip.title = '클릭하여 작업대에서 제거';
+          if (item.wrong) chip.setAttribute('aria-label', `${blockLabel(item.text)}, 오답 블록, 눌러서 제거`);
           chip.addEventListener('click', () => {
-            if (state.locked || !item.elem) return;
+            if (state.locked || state.solved || item.fixed || !item.elem) return;
             item.elem.classList.remove('opacity-30', 'pointer-events-none');
             state.assembledBlocks.splice(slotIdx, 1);
             playSound('click');
@@ -989,9 +915,8 @@
     // =========================================================================
     // 4. 블록 조립 검증 요청 및 결과 피드백 (Front-end/Python 엔진 위임)
     // =========================================================================
-    function handleVerifyClick(viaKey) {
-      if (!stage.canAnswer() || state.locked || state.holding || !state.currentQuiz) return;
-      state.submitFromKey = viaKey === true;
+    function handleVerifyClick() {
+      if (!stage.canAnswer() || state.locked || state.solved || !state.currentQuiz) return;
       initAudio();
 
       if (!state.assembledBlocks.length) {
@@ -1033,66 +958,75 @@
     function applyVerificationResult(resultData) {
       state.isVerifying = false;
       const workbench = document.getElementById('workbench-container');
+      const firstTry = stage.isFirstTry();
 
       if (resultData.isCorrect) {
-        playSound('correct');
-        state.combo++;
-        updateTitleAndBadges();
-        const ruleName = state.currentQuiz.rule_type || state.currentQuiz.category || "점자 조립";
-        recordResult({ game: 'builders', rule: ruleName, correct: true });
+        if (firstTry) state.combo++;
         const outcome = stage.onAnswer(true, state.combo);
         if (!outcome.consumed) {
+          if (firstTry) state.combo--;
           state.locked = false;
           return;
         }
-        speak(`정답입니다! 연속 ${state.combo}콤보 달성.`);
+        state.solved = true;
+        playSound('correct');
+        updateTitleAndBadges();
+        if (firstTry) {
+          const ruleName = state.currentQuiz.rule_type || state.currentQuiz.category || "점자 조립";
+          recordResult({ game: 'builders', rule: ruleName, correct: true });
+        }
+        speak(firstTry ? `정답입니다! 연속 ${state.combo}콤보 달성.` : '정답입니다.');
 
         document.getElementById('workbench-status-desc').textContent = outcome.stageDone
-          ? '스테이지를 모두 풀었습니다. 학습 결과를 확인하세요.'
-          : '순서가 맞습니다. 다음 문제를 준비합니다.';
+          ? '순서가 맞습니다. 결과 보기 버튼을 누르세요.'
+          : '순서가 맞습니다. 다음 문제 버튼을 누르세요.';
+        workbench.classList.remove('bg-rose-50', 'border-rose-400');
         workbench.classList.add('animate-pop', 'bg-emerald-50', 'border-emerald-400');
-
-        advanceTimer = setTimeout(() => {
-          workbench.classList.remove('animate-pop', 'bg-emerald-50', 'border-emerald-400');
-          if (outcome.stageDone) stage.showResult();
-          else showNextQuiz();
-        }, 750);
+        state.assembledBlocks.forEach(block => { block.wrong = false; });
+        renderWorkbench();
+        document.querySelectorAll('#block-pool-container button').forEach(btn => {
+          btn.disabled = true;
+          btn.classList.add('opacity-30', 'pointer-events-none');
+        });
         return;
       }
 
-      playSound('wrong');
-      const failRule = resultData.ruleViolated || state.currentQuiz.meta?.type || "점자 규칙 오인";
-      recordResult({ game: 'builders', rule: failRule, correct: false });
-      state.weaknessStats = errorCounts();
-
-      state.combo = 0;
-      updateTitleAndBadges();
       const outcome = stage.onAnswer(false, 0);
       if (!outcome.consumed) {
         state.locked = false;
         return;
       }
+      playSound('wrong');
+      if (outcome.firstTry) {
+        const failRule = resultData.ruleViolated || state.currentQuiz.meta?.type || "점자 규칙 오인";
+        recordResult({ game: 'builders', rule: failRule, correct: false });
+        state.weaknessStats = errorCounts();
+      }
+      state.combo = 0;
+      updateTitleAndBadges();
 
-      state.holding = true;
-      state.assembledBlocks = state.answerPieces.map(text => ({ text, poolIdx: -1, elem: null }));
-      renderWorkbench();
-      renderPool();
-      setSubmitLabel('화면을 눌러 계속');
-      const answerText = previewText(state.answerPieces);
-      const holdText = outcome.stageDone
-        ? `오답입니다. 알맞은 순서는 ${answerText} 입니다. 화면을 누르면 결과를 봅니다.`
-        : `오답입니다. 알맞은 순서는 ${answerText} 입니다. 화면을 누르면 넘어갑니다.`;
-      speak(holdText);
-      document.getElementById('workbench-status-desc').textContent = holdText;
-      workbench.classList.add('animate-shake', 'bg-rose-50', 'border-rose-400');
-      setTimeout(() => {
-        workbench.classList.remove('animate-shake', 'bg-rose-50', 'border-rose-400');
-        workbench.classList.add('bg-emerald-50', 'border-emerald-400');
-      }, 420);
-      armContinue(() => {
-        if (outcome.stageDone) stage.showResult();
-        else showNextQuiz();
+      // 앞에서부터 맞게 놓인 블록은 고정하고, 자리가 틀린 블록은 빨갛게 표시한다.
+      const answer = state.answerPieces;
+      let prefix = 0;
+      while (prefix < state.assembledBlocks.length && prefix < answer.length
+        && state.assembledBlocks[prefix].text === answer[prefix]) prefix += 1;
+      let wrongCount = 0;
+      state.assembledBlocks.forEach((block, i) => {
+        block.fixed = i < prefix;
+        block.wrong = i >= prefix && block.text !== answer[i];
+        if (block.wrong) wrongCount += 1;
       });
+      state.locked = false;
+      renderWorkbench();
+
+      const missing = wrongCount === 0 && state.assembledBlocks.length < answer.length;
+      const msg = missing
+        ? '오답입니다. 놓은 블록은 맞지만 블록이 모자랍니다. 블록을 더 놓으세요.'
+        : '오답입니다. 빨간 블록을 빼고 다시 놓으세요.';
+      speak(msg);
+      document.getElementById('workbench-status-desc').textContent = msg;
+      workbench.classList.add('animate-shake', 'bg-rose-50', 'border-rose-400');
+      setTimeout(() => workbench.classList.remove('animate-shake'), 420);
     }
 
     function updateTitleAndBadges() {
@@ -1150,7 +1084,7 @@
 
     // 키보드 인터랙션 (1~9, Enter, Backspace)
     window.addEventListener('keydown', (e) => {
-      if (!stage.canAnswer() || state.locked || state.holding) return;
+      if (!stage.canAnswer() || state.locked || state.solved) return;
       const num = parseInt(e.key);
       const poolLength = state.currentQuiz?.available_blocks?.length || 0;
       if (num >= 1 && num <= poolLength) {
@@ -1162,10 +1096,11 @@
           e.preventDefault();
         }
       } else if (e.key === 'Enter') {
-        handleVerifyClick(true);
+        handleVerifyClick();
         e.preventDefault();
       } else if (e.key === 'Backspace' && state.assembledBlocks.length > 0) {
         const last = state.assembledBlocks[state.assembledBlocks.length - 1];
+        if (last.fixed) return;
         if (last.elem) last.elem.classList.remove('opacity-30', 'pointer-events-none');
         state.assembledBlocks.pop();
         renderWorkbench();
@@ -1173,13 +1108,13 @@
       }
     });
 
-    document.getElementById('btn-submit-build').addEventListener('click', handleVerifyClick);
+    document.getElementById('btn-submit-build').addEventListener('click', () => handleVerifyClick());
     document.getElementById('btn-clear-workbench').addEventListener('click', () => {
-      if (state.locked || state.holding) return;
+      if (state.locked || state.solved) return;
       state.assembledBlocks.forEach(block => {
-        if (block.elem) block.elem.classList.remove('opacity-30', 'pointer-events-none');
+        if (!block.fixed && block.elem) block.elem.classList.remove('opacity-30', 'pointer-events-none');
       });
-      state.assembledBlocks = [];
+      state.assembledBlocks = state.assembledBlocks.filter(block => block.fixed);
       renderWorkbench();
       speak("작업대를 비웠습니다.");
     });
@@ -1243,8 +1178,7 @@
       theme: storedModal.theme,
       scale: storedModal.scale,
       tts: storedModal.tts,
-      pitch: storedModal.pitch,
-      doubleClickAnswer: storedModal.doubleClickAnswer
+      pitch: storedModal.pitch
     };
 
         function normalizeTheme(theme) {
@@ -1268,10 +1202,8 @@
 
       const ttsChk = document.getElementById('chk-modal-tts');
       const pitchChk = document.getElementById('chk-modal-pitch');
-      const dblChk = document.getElementById('chk-dbl-answer');
       if (ttsChk) ttsChk.checked = globalSettings.tts;
       if (pitchChk) pitchChk.checked = globalSettings.pitch;
-      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
     }
 
     if (openSettingsBtn) {
@@ -1289,17 +1221,14 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
-        const dblChk = document.getElementById('chk-dbl-answer');
         if (ttsChk) globalSettings.tts = ttsChk.checked;
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
-        if (dblChk) globalSettings.doubleClickAnswer = dblChk.checked;
 
         persistSettings({
           theme: globalSettings.theme,
           scale: globalSettings.scale,
           tts: globalSettings.tts,
-          pitch: globalSettings.pitch,
-          doubleClickAnswer: globalSettings.doubleClickAnswer
+          pitch: globalSettings.pitch
         });
 
         applyVisualSettings();

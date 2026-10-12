@@ -383,13 +383,6 @@
             <span>도·레·미 음계 비프음</span>
             <input type="checkbox" id="chk-modal-pitch" class="w-4 h-4 accent-emerald-500" checked>
           </label>
-          <label class="flex items-center justify-between gap-3 font-bold text-slate-700">
-            <span class="flex flex-col items-start gap-0.5">
-              <span>더블 클릭 시 정답 선택</span>
-              <span class="text-[10px] font-medium text-slate-500">점자 빈칸 수사대에는 적용되지 않습니다.</span>
-            </span>
-            <input type="checkbox" id="chk-dbl-answer" class="w-4 h-4 shrink-0 accent-emerald-500">
-          </label>
         </div>
       </div>
 
@@ -717,83 +710,65 @@
         `;
 
         cardBtn.addEventListener('mouseenter', () => playSound('hover'));
-        bindChoiceClick(
-          cardBtn,
-          () => handleOptionSelect(opt, cardBtn),
-          () => chooseCorrectCard(),
-          () => speak(describeForSpeech(opt.braille, state.lang))
-        );
+        bindChoiceClick(cardBtn, () => handleOptionSelect(opt, cardBtn));
 
         grid.appendChild(cardBtn);
       });
     }
 
     // 7. 정답 판정 및 허브 통신
-    function chooseCorrectCard() {
-      const options = state.currentQuiz && state.currentQuiz.options;
-      if (!options) return;
-      const correctIndex = options.findIndex((item) => item.isCorrect);
-      const cards = document.querySelectorAll('#card-selection-grid button');
-      if (correctIndex >= 0 && cards[correctIndex]) {
-        handleOptionSelect(options[correctIndex], cards[correctIndex]);
-      }
-    }
-
+    // 틀린 카드는 오답으로 표시하고 그 카드만 막는다. 맞힐 때까지 다시 고르고, 다음 문제 버튼으로 넘어간다.
     function handleOptionSelect(option, cardElement) {
-      if (!stage.canAnswer() || state.isAnsweringLocked) return;
-      state.isAnsweringLocked = true;
+      if (!stage.canAnswer() || state.isAnsweringLocked || cardElement.disabled) return;
       initAudio();
 
-      const allCards = document.querySelectorAll('#card-selection-grid button');
+      const firstTry = stage.isFirstTry();
+      const rawRule = state.currentQuiz ? (state.currentQuiz.rule_type || "기본 점역") : "기본 점역";
+      const ruleLabel = getReadableRule(rawRule);
 
       if (option.isCorrect) {
-        playSound('correct');
-        state.combo++;
-        updateTitleAndBadges();
+        if (firstTry) state.combo++;
         const outcome = stage.onAnswer(true, state.combo);
-        if (!outcome.consumed) return;
-        speak(state.lang === "KO" ? `정답입니다! 연속 ${state.combo}콤보 달성.` : `Correct! ${state.combo} in a row.`);
+        if (!outcome.consumed) {
+          if (firstTry) state.combo--;
+          return;
+        }
+        state.isAnsweringLocked = true;
+        playSound('correct');
+        updateTitleAndBadges();
+        if (firstTry) recordResult({ game: 'select', rule: ruleLabel, correct: true });
+        speak(state.lang === "KO"
+          ? (firstTry ? `정답입니다! 연속 ${state.combo}콤보 달성.` : "정답입니다.")
+          : (firstTry ? `Correct! ${state.combo} in a row.` : "Correct."));
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
-        allCards.forEach(c => c.disabled = true);
-
-        recordResult({
-          game: 'select',
-          rule: getReadableRule(state.currentQuiz ? state.currentQuiz.rule_type : '기본 점역'),
-          correct: true
-        });
-        setTimeout(() => {
-          if (outcome.stageDone) stage.showResult();
-          else generateNextQuiz();
-        }, 1100);
-      } else {
-        playSound('wrong');
-
-        const rawRule = state.currentQuiz ? (state.currentQuiz.rule_type || "기본 점역") : "기본 점역";
-        const failRuleLabel = getReadableRule(rawRule);
-        recordResult({ game: 'select', rule: failRuleLabel, correct: false });
-        state.weaknessStats = errorCounts();
-
-        state.combo = 0;
-        updateTitleAndBadges();
-        const outcome = stage.onAnswer(false, 0);
-        if (!outcome.consumed) return;
-        speak(state.lang === "KO" ? "오답입니다. 올바른 점형을 확인하세요." : "Incorrect. Check the correct braille pattern.");
-
-        cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90');
-
-        allCards.forEach((c, i) => {
-          c.disabled = true;
-          if (state.currentQuiz && state.currentQuiz.options && state.currentQuiz.options[i] && state.currentQuiz.options[i].isCorrect) {
-            c.classList.add('border-emerald-500', 'bg-emerald-50/50');
-          }
-        });
-
-        setTimeout(() => {
-          if (outcome.stageDone) stage.showResult();
-          else generateNextQuiz();
-        }, 1200);
+        document.querySelectorAll('#card-selection-grid button').forEach(c => c.disabled = true);
+        return;
       }
+
+      const outcome = stage.onAnswer(false, 0);
+      if (!outcome.consumed) return;
+      playSound('wrong');
+      if (outcome.firstTry) {
+        recordResult({ game: 'select', rule: ruleLabel, correct: false });
+        state.weaknessStats = errorCounts();
+      }
+      state.combo = 0;
+      updateTitleAndBadges();
+      speak(state.lang === "KO" ? "오답입니다. 다른 카드를 고르세요." : "Incorrect. Try another card.");
+
+      markWrongCard(cardElement);
+    }
+
+    function markWrongCard(cardElement) {
+      cardElement.disabled = true;
+      cardElement.classList.add('animate-card-shake', 'border-rose-500', 'bg-rose-50/90', 'opacity-60', 'cursor-not-allowed');
+      const base = cardElement.getAttribute('aria-label') || '';
+      cardElement.setAttribute('aria-label', `${base}, 오답`);
+      const badge = document.createElement('span');
+      badge.className = 'absolute top-2 right-2 px-2 py-0.5 rounded-md bg-rose-600 text-white text-xs font-black';
+      badge.textContent = '오답';
+      cardElement.appendChild(badge);
     }
 
     function generateNextQuiz() {
@@ -943,8 +918,7 @@
       theme: storedModal.theme,
       scale: storedModal.scale,
       tts: storedModal.tts,
-      pitch: storedModal.pitch,
-      doubleClickAnswer: storedModal.doubleClickAnswer
+      pitch: storedModal.pitch
     };
 
         function applyVisualSettings() {
@@ -962,10 +936,8 @@
 
       const ttsChk = document.getElementById('chk-modal-tts');
       const pitchChk = document.getElementById('chk-modal-pitch');
-      const dblChk = document.getElementById('chk-dbl-answer');
       if (ttsChk) ttsChk.checked = globalSettings.tts;
       if (pitchChk) pitchChk.checked = globalSettings.pitch;
-      if (dblChk) dblChk.checked = globalSettings.doubleClickAnswer;
     }
 
     if (openSettingsBtn) {
@@ -983,17 +955,14 @@
       saveSettingsBtn.addEventListener('click', () => {
         const ttsChk = document.getElementById('chk-modal-tts');
         const pitchChk = document.getElementById('chk-modal-pitch');
-        const dblChk = document.getElementById('chk-dbl-answer');
         if (ttsChk) globalSettings.tts = ttsChk.checked;
         if (pitchChk) globalSettings.pitch = pitchChk.checked;
-        if (dblChk) globalSettings.doubleClickAnswer = dblChk.checked;
 
         persistSettings({
           theme: globalSettings.theme,
           scale: globalSettings.scale,
           tts: globalSettings.tts,
-          pitch: globalSettings.pitch,
-          doubleClickAnswer: globalSettings.doubleClickAnswer
+          pitch: globalSettings.pitch
         });
 
         applyVisualSettings();
