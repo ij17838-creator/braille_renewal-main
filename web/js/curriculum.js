@@ -11,6 +11,8 @@ const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', '�
 const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 const TENSE = { 'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ' };
 
+import { dataUrl } from './data_paths.js';
+
 const BUNDLE_NAMES = new Set([
   'ko.json',
   'ko_marks.json',
@@ -21,7 +23,7 @@ const BUNDLE_NAMES = new Set([
 ]);
 
 async function readJson(name) {
-  const url = new URL(name, import.meta.url);
+  const url = dataUrl(name);
   try {
     const { readFileSync } = await import('node:fs');
     const { fileURLToPath } = await import('node:url');

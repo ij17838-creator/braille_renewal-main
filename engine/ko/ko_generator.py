@@ -3,8 +3,8 @@ import random
 import re
 from typing import Dict, Any, List, Optional, Tuple, Set
 
-from data_paths import find_data_file
-from ko_syntax_analyzer import BrailleRuleValidator
+from engine.data_paths import find_data_file
+from engine.ko.ko_syntax_analyzer import BrailleRuleValidator
 
 try:
     from ko_parser import KoreanBrailleEngine
@@ -1060,13 +1060,7 @@ class KoreanBrailleQuizGenerator:
 # 실행 및 검증 예시
 # =====================================================================
 if __name__ == "__main__":
-    generator = KoreanBrailleQuizGenerator(
-        ko_path="ko.json",
-        lexicon_path="lexicon_ko.json",
-        marks_path="ko_marks.json",
-        num_rules_path="ko_number_rules.json",
-        numbers_path="numbers.json",
-    )
+    generator = KoreanBrailleQuizGenerator()
 
     print("--- [TEST 1] Level 1: 블록 모드 (인지과학 오답 추출) ---")
     quiz1 = generator.generate_quiz(input_mode="BLOCK", level=1, distractor_count=3, block_granularity="SYLLABLE")

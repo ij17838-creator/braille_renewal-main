@@ -270,7 +270,7 @@
     }
     .animate-shake { animation: shake 0.35s ease-in-out; }
   </style>
-  <link rel="stylesheet" href="./mobile.css">
+  <link rel="stylesheet" href="./css/mobile.css">
 </head>
 <body class="bg-slate-900 text-slate-800 h-[100dvh] w-screen relative">
   <div class="absolute top-0 left-0 w-full h-full z-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900"></div>
@@ -447,8 +447,8 @@
   </div>
 
   <script type="module">
-    import { loadQuizEngine, canOpenUnit } from './quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems, createStageSession, describeForSpeech } from './shell.js';
+    import { loadQuizEngine, canOpenUnit } from './js/quiz_combo.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems, createStageSession, describeForSpeech } from './js/shell.js';
 
     // 1. 상태 관리
     const urlParams = new URLSearchParams(window.location.search);

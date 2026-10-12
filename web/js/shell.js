@@ -1,4 +1,5 @@
 import { unitsFor } from './curriculum.js';
+import { dataUrl } from './data_paths.js';
 
 const KEYS = {
   lang: 'braille_lang',
@@ -700,7 +701,7 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
 }
 
 export async function loadQuizBank() {
-  const res = await fetch(new URL('quiz_bank.json', import.meta.url));
+  const res = await fetch(dataUrl('quiz_bank.json'));
   if (!res.ok) throw new Error('quiz_bank.json');
   return res.json();
 }

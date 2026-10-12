@@ -1,7 +1,11 @@
 """JSON 규칙 파일 경로 해석.
 
-예전 VS Code 워크스페이스는 core/ + data/en_data + data/common 구조였고,
-현재 배포본은 모든 JSON이 프로젝트 루트에 있다. 둘 다 찾는다.
+JSON은 data/ 아래에 과목별로 나뉘어 있다.
+  data/ko          한글 점자 규칙·어휘
+  data/en          영어(UEB) 점자 규칙·어휘
+  data/common      한/영 공통(숫자)
+  data/curriculum  단원표·퀴즈 문제은행
+예전 구조(루트, data/en_data 등)도 함께 찾는다.
 """
 
 from __future__ import annotations
@@ -10,8 +14,12 @@ import os
 from typing import Iterable, List, Optional
 
 
+DATA_SUBDIRS = ("ko", "en", "common", "curriculum")
+
+
 def project_dir() -> str:
-    return os.path.dirname(os.path.abspath(__file__))
+    """저장소 루트 (engine/ 의 상위 폴더)."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _unique(paths: Iterable[str]) -> List[str]:
@@ -39,6 +47,7 @@ def candidate_dirs(base_dir: Optional[str] = None) -> List[str]:
                 os.path.join(base_dir, "data", "common"),
             ]
         )
+    extras.extend(os.path.join(root, "data", sub) for sub in DATA_SUBDIRS)
     extras.extend(
         [
             root,

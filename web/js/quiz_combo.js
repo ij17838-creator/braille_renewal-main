@@ -20,6 +20,7 @@ import {
   stepsPattern,
   abbreviationIndex
 } from './curriculum.js';
+import { dataUrl } from './data_paths.js';
 import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed, loadStudyMode } from './shell.js';
 
 const SPACE_STEP = makeStep('띄어쓰기', [], ' ', '단어 사이');
@@ -166,7 +167,7 @@ function mirrorBraille(braille, map) {
 }
 
 function loadJson(name) {
-  return fetch(new URL(name, import.meta.url)).then(res => {
+  return fetch(dataUrl(name)).then(res => {
     if (!res.ok) throw new Error(name);
     return res.json();
   });
