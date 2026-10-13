@@ -1391,7 +1391,8 @@ export function createEngine(data) {
     'numbers.json': data.numbers,
     'en_spell.json': data.spell,
     'en_shortform.json': data.shortforms,
-    'en_contractions.json': data.contractions
+    'en_contractions.json': data.contractions,
+    'ueb_number_rules.json': data.uebRules
   };
   const recent = new Set();
   const rounds = new Map();
@@ -1777,7 +1778,7 @@ export function createEngine(data) {
 }
 
 export async function loadQuizEngine() {
-  const [ko, marks, numberRules, numbers, spell, shortforms, contractions, lexicon] = await Promise.all([
+  const [ko, marks, numberRules, numbers, spell, shortforms, contractions, lexicon, uebRules] = await Promise.all([
     loadJson('ko.json'),
     loadJson('ko_marks.json'),
     loadJson('ko_number_rules.json'),
@@ -1785,7 +1786,8 @@ export async function loadQuizEngine() {
     loadJson('en_spell.json'),
     loadJson('en_shortform.json'),
     loadJson('en_contractions.json'),
-    loadJson('lexicon_en.json')
+    loadJson('lexicon_en.json'),
+    loadJson('ueb_number_rules.json')
   ]);
-  return createEngine({ ko, marks, numberRules, numbers, spell, shortforms, contractions, lexicon });
+  return createEngine({ ko, marks, numberRules, numbers, spell, shortforms, contractions, lexicon, uebRules });
 }

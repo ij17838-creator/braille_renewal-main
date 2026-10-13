@@ -19,7 +19,8 @@ const BUNDLE_NAMES = new Set([
   'numbers.json',
   'en_spell.json',
   'en_shortform.json',
-  'en_contractions.json'
+  'en_contractions.json',
+  'ueb_number_rules.json'
 ]);
 
 async function readJson(name) {
@@ -85,6 +86,7 @@ function cardsFromSlice(slice, data) {
   const node = nodeAt(data, slice.bundle, slice.path || []);
   const prefix = prefixStep(slice, data);
   if (slice.role === 'contraction' && Array.isArray(node)) return contractionCards(node, slice);
+  if (slice.role === 'symbol') return symbolCards(node, slice);
   return glyphEntries(node)
     .filter(([key, item]) => acceptItem(item, slice.filter, key))
     .map(([key, item]) => glyphCard(key, item, slice.role, prefix));
@@ -261,6 +263,7 @@ function contractionCards(groups, slice) {
   const cards = [];
   for (const group of groups) {
     if (!group || !group.items) continue;
+    if (Array.isArray(slice.groups) && !slice.groups.includes(group.type)) continue;
     const rule = group.rule || {};
     const standalone = !!(rule.canStandAlone || rule.standingAloneOnly) && !rule.requiresFollowingLetters;
     for (const [key, item] of glyphEntries(group.items)) {
@@ -271,6 +274,33 @@ function contractionCards(groups, slice) {
     }
   }
   return cards;
+}
+
+// 점형을 점자 글자(⠂)로만 적은 부호 목록. 예) { name: 'comma', char: ',', braille: '⠂' }
+function brailleDots(braille) {
+  return [...String(braille || '')].map((ch) => {
+    const bits = ch.charCodeAt(0) - 0x2800;
+    return [1, 2, 3, 4, 5, 6].filter((dot) => bits & DOT_BIT[dot]);
+  });
+}
+
+function symbolEntries(node) {
+  if (Array.isArray(node)) return node.filter((item) => item && typeof item.braille === 'string');
+  if (!node || typeof node !== 'object') return [];
+  return Object.values(node).flatMap((value) => symbolEntries(value?.symbols || value));
+}
+
+function symbolCards(node, slice) {
+  const names = slice.names || {};
+  return symbolEntries(node)
+    .filter((item) => acceptItem(item, slice.filter, item.name))
+    .map((item) => {
+      const word = names[item.name] || item.name;
+      const step = makeStep(item.char, brailleDots(item.braille), item.braille);
+      const card = makeCard({ letter: item.char, steps: [step], kind: 'mark' });
+      card.line = `${word}(${item.char})의 점형은 ${card.dotText}입니다.`;
+      return card;
+    });
 }
 
 // ---------------------------------------------------------------------------

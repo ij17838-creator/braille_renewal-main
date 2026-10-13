@@ -29,9 +29,41 @@
       }
     },
     {
-      "id": "ko-initial",
+      "id": "ko-number",
       "lang": "ko",
       "order": 2,
+      "part": "점자 기초",
+      "title": "숫자",
+      "teach": {
+        "letter": "1",
+        "pattern": "⠼⠁",
+        "dots": [[3, 4, 5, 6], [1]],
+        "line": "숫자 앞에는 수표(3·4·5·6점)를 붙입니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          { "bundle": "numbers.json", "path": ["numeric_indicators"], "role": "indicator" },
+          {
+            "bundle": "numbers.json",
+            "path": ["digits"],
+            "role": "digit",
+            "prefix": {
+              "bundle": "numbers.json",
+              "path": ["numeric_indicators", "num_prefix"]
+            }
+          }
+        ]
+      },
+      "skill": {
+        "read": "수표와 숫자를 읽는다",
+        "write": "수표를 붙여 숫자를 적는다"
+      }
+    },
+    {
+      "id": "ko-initial",
+      "lang": "ko",
+      "order": 3,
       "part": "정자 점자",
       "title": "초성 자음",
       "teach": {
@@ -61,7 +93,7 @@
     {
       "id": "ko-vowel",
       "lang": "ko",
-      "order": 3,
+      "order": 4,
       "part": "정자 점자",
       "title": "기본 모음",
       "teach": {
@@ -91,7 +123,7 @@
     {
       "id": "ko-syllable",
       "lang": "ko",
-      "order": 4,
+      "order": 5,
       "part": "정자 점자",
       "title": "기본 음절표와 낱말",
       "teach": {
@@ -122,7 +154,7 @@
     {
       "id": "ko-double-vowel",
       "lang": "ko",
-      "order": 5,
+      "order": 6,
       "part": "정자 점자",
       "title": "이중 모음",
       "teach": {
@@ -161,7 +193,7 @@
     {
       "id": "ko-tense",
       "lang": "ko",
-      "order": 6,
+      "order": 7,
       "part": "정자 점자",
       "title": "쌍자음",
       "teach": {
@@ -200,7 +232,7 @@
     {
       "id": "ko-final",
       "lang": "ko",
-      "order": 7,
+      "order": 8,
       "part": "정자 점자",
       "title": "홑받침",
       "teach": {
@@ -239,7 +271,7 @@
     {
       "id": "ko-double-final",
       "lang": "ko",
-      "order": 8,
+      "order": 9,
       "part": "정자 점자",
       "title": "쌍받침, 겹받침",
       "teach": {
@@ -274,7 +306,7 @@
     {
       "id": "ko-plain-sentence",
       "lang": "ko",
-      "order": 9,
+      "order": 10,
       "part": "정자 점자",
       "title": "정자 점자의 활용",
       "teach": {
@@ -296,7 +328,7 @@
     {
       "id": "ko-ga-sa",
       "lang": "ko",
-      "order": 10,
+      "order": 11,
       "part": "약자와 약어",
       "title": "'가'와 '사'의 약자",
       "teach": {
@@ -319,7 +351,7 @@
     {
       "id": "ko-ga",
       "lang": "ko",
-      "order": 11,
+      "order": 12,
       "part": "약자와 약어",
       "title": "'자음+ㅏ'에서 'ㅏ'를 생략한 약자",
       "teach": {
@@ -346,8 +378,8 @@
     {
       "id": "ko-keep-a",
       "lang": "ko",
-      "order": 11.1,
-      "label": "11-1",
+      "order": 12.1,
+      "label": "12-1",
       "title": "ㅏ를 생략하지 않는 경우",
       "teach": {
         "letter": "나이",
@@ -375,7 +407,7 @@
     {
       "id": "ko-geot",
       "lang": "ko",
-      "order": 12,
+      "order": 13,
       "part": "약자와 약어",
       "title": "'것'과 '받침 ㅆ' 약자",
       "teach": {
@@ -405,7 +437,7 @@
     {
       "id": "ko-eok",
       "lang": "ko",
-      "order": 13,
+      "order": 14,
       "part": "약자와 약어",
       "title": "'모음+받침' 약자",
       "teach": {
@@ -440,7 +472,7 @@
     {
       "id": "ko-vowel-double-final",
       "lang": "ko",
-      "order": 14,
+      "order": 15,
       "part": "약자와 약어",
       "title": "'모음+겹받침' 글자",
       "teach": {
@@ -467,7 +499,7 @@
     {
       "id": "ko-abbr-double-final",
       "lang": "ko",
-      "order": 15,
+      "order": 16,
       "part": "약자와 약어",
       "title": "'약자+겹받침' 글자",
       "teach": {
@@ -494,7 +526,7 @@
     {
       "id": "ko-word",
       "lang": "ko",
-      "order": 16,
+      "order": 17,
       "part": "약자와 약어",
       "title": "약어",
       "teach": {
@@ -517,7 +549,7 @@
     {
       "id": "ko-mark-end",
       "lang": "ko",
-      "order": 17,
+      "order": 18,
       "part": "문장 부호",
       "title": "마침표, 물음표, 느낌표",
       "teach": {
@@ -540,7 +572,7 @@
     {
       "id": "ko-mark-pause",
       "lang": "ko",
-      "order": 18,
+      "order": 19,
       "part": "문장 부호",
       "title": "쉼표, 가운뎃점, 쌍점, 빗금",
       "teach": {
@@ -570,7 +602,7 @@
     {
       "id": "ko-mark-pair",
       "lang": "ko",
-      "order": 19,
+      "order": 20,
       "part": "문장 부호",
       "title": "따옴표, 묶음표, 이음표",
       "teach": {
@@ -602,7 +634,7 @@
     {
       "id": "ko-mark-etc",
       "lang": "ko",
-      "order": 20,
+      "order": 21,
       "part": "문장 부호",
       "title": "드러냄표, 안드러냄표, 기타 부호",
       "teach": {
@@ -641,7 +673,7 @@
     {
       "id": "ko-sentence",
       "lang": "ko",
-      "order": 21,
+      "order": 22,
       "part": "문장 부호",
       "title": "문장 부호가 들어 있는 문장 쓰기 연습",
       "teach": {
@@ -661,42 +693,32 @@
       }
     },
     {
-      "id": "ko-number",
+      "id": "ko-use",
       "lang": "ko",
-      "order": 22,
-      "part": "보충",
-      "title": "숫자",
+      "order": 23,
+      "part": "점자의 활용",
+      "title": "점자의 활용",
       "teach": {
-        "letter": "1",
-        "pattern": "⠼⠁",
-        "dots": [[3, 4, 5, 6], [1]],
-        "line": "숫자 앞에는 수표(3·4·5·6점)를 붙입니다. 교재 단원에는 없지만 예외 규정을 익히기 위해 함께 둡니다."
+        "letter": "문장",
+        "pattern": "",
+        "dots": [],
+        "line": "숫자, 정자, 약자와 약어, 문장 부호를 모두 섞어 문장을 읽고 씁니다."
       },
       "source": {
-        "kind": "slice",
-        "slices": [
-          { "bundle": "numbers.json", "path": ["numeric_indicators"], "role": "indicator" },
-          {
-            "bundle": "numbers.json",
-            "path": ["digits"],
-            "role": "digit",
-            "prefix": {
-              "bundle": "numbers.json",
-              "path": ["numeric_indicators", "num_prefix"]
-            }
-          }
-        ]
+        "kind": "compose",
+        "from": "passed_units",
+        "slices": []
       },
       "skill": {
-        "read": "수표와 숫자를 읽는다",
-        "write": "수표를 붙여 숫자를 적는다"
+        "read": "배운 점자를 모두 섞은 문장을 말로 읽는다",
+        "write": "배운 점자를 모두 섞어 문장을 점자로 적는다"
       }
     },
     {
       "id": "ko-exception",
       "lang": "ko",
-      "order": 23,
-      "part": "보충",
+      "order": 24,
+      "part": "점자의 활용",
       "title": "숫자 뒤 띄어쓰기",
       "teach": {
         "letter": "1년",
@@ -727,6 +749,7 @@
       "id": "en-letter",
       "lang": "en",
       "order": 1,
+      "part": "알파벳 점자",
       "title": "알파벳",
       "teach": {
         "letter": "a",
@@ -749,12 +772,13 @@
       "id": "en-sign",
       "lang": "en",
       "order": 2,
-      "title": "대문자·숫자·문장부호",
+      "part": "점자 부호와 문장 부호",
+      "title": "점자 부호와 문장 부호",
       "teach": {
         "letter": "1",
         "pattern": "⠼⠁",
         "dots": [[3, 4, 5, 6], [1]],
-        "line": "숫자 앞에는 수표를 붙입니다. 1급 점자표(2·3점)는 약어가 아닌 글자를 가릴 때 씁니다."
+        "line": "숫자 앞에는 수표를 붙입니다. 1급 점자표(2·3점)는 약어가 아닌 글자를 가릴 때 씁니다. 쉼표, 마침표 같은 문장 부호도 함께 익힙니다."
       },
       "source": {
         "kind": "slice",
@@ -769,19 +793,61 @@
               "bundle": "numbers.json",
               "path": ["numeric_indicators", "num_prefix"]
             }
+          },
+          {
+            "bundle": "ueb_number_rules.json",
+            "path": ["standing_alone_rules", "adjacent_delimiters"],
+            "role": "symbol",
+            "filter": {
+              "keys": [
+                "comma",
+                "semicolon",
+                "colon",
+                "period",
+                "question_mark",
+                "exclamation_mark",
+                "neutral_single_quote_open",
+                "single_quote_open",
+                "single_quote_close",
+                "parenthesis_open",
+                "parenthesis_close",
+                "bracket_open",
+                "bracket_close",
+                "hyphen",
+                "solidus_slash"
+              ]
+            },
+            "names": {
+              "comma": "쉼표",
+              "semicolon": "쌍반점",
+              "colon": "쌍점",
+              "period": "마침표",
+              "question_mark": "물음표",
+              "exclamation_mark": "느낌표",
+              "neutral_single_quote_open": "아포스트로피",
+              "single_quote_open": "여는 작은따옴표",
+              "single_quote_close": "닫는 작은따옴표",
+              "parenthesis_open": "여는 소괄호",
+              "parenthesis_close": "닫는 소괄호",
+              "bracket_open": "여는 대괄호",
+              "bracket_close": "닫는 대괄호",
+              "hyphen": "붙임표",
+              "solidus_slash": "빗금"
+            }
           }
         ]
       },
       "skill": {
-        "read": "수표, 숫자, 1급 점자표를 구분한다",
-        "write": "숫자 앞에 수표를 붙여 적는다"
+        "read": "수표, 숫자, 1급 점자표, 문장 부호를 구분한다",
+        "write": "숫자 앞에 수표를 붙이고 문장 부호를 적는다"
       }
     },
     {
       "id": "en-word",
       "lang": "en",
       "order": 3,
-      "title": "단어 약어",
+      "part": "온칸 약자",
+      "title": "알파벳 단어 약자",
       "teach": {
         "letter": "but",
         "pattern": "⠃",
@@ -800,10 +866,123 @@
       }
     },
     {
-      "id": "en-shortform",
+      "id": "en-strong-word",
       "lang": "en",
       "order": 4,
-      "title": "shortform",
+      "part": "온칸 약자",
+      "title": "온칸 약자",
+      "teach": {
+        "letter": "and",
+        "pattern": "⠯",
+        "dots": [1, 2, 3, 4, 6],
+        "line": "and, for, of, the, with와 child, shall, this, which, out, still은 홀로 쓰일 때 한 칸으로 단어를 대신합니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "en_contractions.json",
+            "path": ["groups"],
+            "role": "contraction",
+            "groups": ["strong_wordsign", "strong_wordsign_only"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "온칸 약자 점형을 단어로 읽는다",
+        "write": "그 단어를 온칸 약자로 적는다"
+      }
+    },
+    {
+      "id": "en-strong-group",
+      "lang": "en",
+      "order": 5,
+      "part": "온칸 약자",
+      "title": "온칸 묶음 약자",
+      "teach": {
+        "letter": "ch",
+        "pattern": "⠡",
+        "dots": [1, 6],
+        "line": "ch, sh, th, ing처럼 자주 쓰는 철자 묶음을 한 칸으로 줄여 적습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "en_contractions.json",
+            "path": ["groups"],
+            "role": "contraction",
+            "groups": ["strong_groupsign"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "온칸 묶음 약자 점형을 철자 묶음으로 읽는다",
+        "write": "그 철자 묶음을 온칸 묶음 약자로 적는다"
+      }
+    },
+    {
+      "id": "en-lower",
+      "lang": "en",
+      "order": 6,
+      "part": "하위 약자",
+      "title": "하위 약자",
+      "teach": {
+        "letter": "in",
+        "pattern": "⠔",
+        "dots": [3, 5],
+        "line": "칸의 아래쪽 점만 쓰는 약자입니다. 단어를 대신하는 하위 단어 약자와 철자 묶음을 줄이는 하위 묶음 약자가 있습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "en_contractions.json",
+            "path": ["groups"],
+            "role": "contraction",
+            "groups": ["lower_wordsign", "in_groupsign", "en_groupsign", "prefix_groupsign", "medial_double_letters"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "하위 약자 점형을 단어나 철자 묶음으로 읽는다",
+        "write": "그 단어나 철자 묶음을 하위 약자로 적는다"
+      }
+    },
+    {
+      "id": "en-initial-final",
+      "lang": "en",
+      "order": 7,
+      "part": "어두·어미 묶음 약자",
+      "title": "어두·어미 묶음 약자",
+      "teach": {
+        "letter": "day",
+        "pattern": "⠐⠙",
+        "dots": [[5], [1, 4, 5]],
+        "line": "5점, 4·5점, 4·5·6점을 앞에 둔 어두 약자와 4·6점, 5·6점을 앞에 둔 어미 묶음 약자로 두 칸에 줄여 적습니다."
+      },
+      "source": {
+        "kind": "slice",
+        "slices": [
+          {
+            "bundle": "en_contractions.json",
+            "path": ["groups"],
+            "role": "contraction",
+            "groups": ["initial_contractions", "final_contractions"]
+          }
+        ]
+      },
+      "skill": {
+        "read": "어두·어미 묶음 약자 점형을 읽는다",
+        "write": "그 단어나 철자를 어두·어미 묶음 약자로 적는다"
+      }
+    },
+    {
+      "id": "en-shortform",
+      "lang": "en",
+      "order": 8,
+      "part": "축어와 약어",
+      "title": "축어",
       "teach": {
         "letter": "about",
         "pattern": "⠁⠃",
@@ -819,36 +998,15 @@
         ]
       },
       "skill": {
-        "read": "shortform 점형을 단어로 읽는다",
-        "write": "그 단어를 shortform으로 적는다"
-      }
-    },
-    {
-      "id": "en-contraction",
-      "lang": "en",
-      "order": 5,
-      "title": "축약",
-      "teach": {
-        "letter": "and",
-        "pattern": "⠯",
-        "dots": [1, 2, 3, 4, 6],
-        "line": "묶음자와 강세 약어로 철자의 일부를 줄여 적습니다."
-      },
-      "source": {
-        "kind": "slice",
-        "slices": [
-          { "bundle": "en_contractions.json", "path": ["groups"], "role": "contraction" }
-        ]
-      },
-      "skill": {
-        "read": "축약 점형을 철자 묶음이나 단어로 읽는다",
-        "write": "그 철자를 축약으로 적는다"
+        "read": "축어 점형을 단어로 읽는다",
+        "write": "그 단어를 축어로 적는다"
       }
     },
     {
       "id": "en-sentence",
       "lang": "en",
-      "order": 6,
+      "order": 9,
+      "part": "문장",
       "title": "짧은 문장",
       "teach": {
         "letter": "문장",
