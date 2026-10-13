@@ -172,7 +172,9 @@ def render(doc):
         for si, sec in enumerate(part['sections']):
             blocks = [block_html(b) for b in sec['blocks']]
             # 제목이 쪽 끝에 홀로 남지 않게 첫 블록과 붙여 둔다 (큰 카드 묶음은 붙이지 않아 빈 공간이 덜 생긴다)
-            lead = 1
+            bl = sec['blocks']
+            small = len(bl) > 1 and bl[0]['t'] == 'p' and bl[1]['t'] in ('cards', 'read_ex', 'write_ex') and len(bl[1]['items']) <= 4
+            lead = 2 if small else 1
             h.append(f'<section><div class="keep"><h3>{HANGUL_NUM[si]}. {escape(sec["title"])}</h3>{"".join(blocks[:lead])}</div>')
             h.extend(blocks[lead:])
             h.append('</section>')

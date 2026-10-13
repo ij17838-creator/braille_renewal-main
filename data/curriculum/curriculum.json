@@ -572,6 +572,10 @@
       "skill": {
         "read": "약어를 접속어로 읽는다",
         "write": "접속어를 약어로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-word.hwpx",
+        "pdf": "materials/ko/ko-word.pdf"
       }
     },
     {
