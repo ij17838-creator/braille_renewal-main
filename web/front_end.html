@@ -285,6 +285,14 @@
           <div id="unit-list" class="flex flex-col gap-1"></div>
         </div>
       </div>
+      <!-- 게임 전에 이 단원의 학습자료(한글 파일·PDF)를 받는다.
+           자료는 차차 추가하므로 버튼은 단원·언어가 바뀌어도 늘 이 자리에 둔다.
+           자료가 없는 단원에서는 '준비 중'으로 두고(aria-disabled), 눌러도 창을 열지 않는다. -->
+      <button type="button" id="btn-materials" class="btn-scalable w-full px-4 py-2.5 rounded-2xl glass-button text-sm font-black text-slate-700 hover:text-emerald-700 shadow-sm flex items-center justify-center gap-2" aria-haspopup="dialog" aria-controls="materials-modal">
+        <span aria-hidden="true">📥</span>
+        <span>학습자료 받기</span>
+        <span id="materials-soon" class="hidden text-xs font-bold text-slate-500">(준비 중)</span>
+      </button>
     </section>
 
         <!-- 4종 학습 프로그램 진입 카드 -->
@@ -322,6 +330,24 @@
       GitHub Pages 환경에 최적화되어 서버 없이 모든 학습 데이터와 오디오 피드백이 실행됩니다.
     </footer>
   </main>
+
+  <!-- 학습자료 받기.
+       화면낭독기가 한글 파일 제목을 가장 먼저 읽도록, 창 이름을 한글 파일 제목으로 잡고
+       한글 파일 → PDF → 닫기 순서로 놓는다. 창이 열리면 한글 파일 링크로 바로 옮겨 간다. -->
+  <div id="materials-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="mat-hwpx-title">
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl relative z-10 m-4 flex flex-col gap-3 text-left">
+      <p id="materials-unit" class="text-xs font-bold text-slate-500" aria-hidden="true">학습자료 받기</p>
+      <a id="mat-hwpx" class="mat-link block bg-white/80 border border-white rounded-2xl p-4 shadow-sm hover:border-emerald-500" href="#" download>
+        <span id="mat-hwpx-title" class="block text-base font-black text-slate-800">한글 파일</span>
+        <span class="block text-xs text-slate-500 mt-0.5">.hwpx 파일 · 한글 2014 이후 버전에서 열립니다</span>
+      </a>
+      <a id="mat-pdf" class="mat-link block bg-white/80 border border-white rounded-2xl p-4 shadow-sm hover:border-emerald-500" href="#" download>
+        <span id="mat-pdf-title" class="block text-base font-black text-slate-800">PDF 파일</span>
+        <span class="block text-xs text-slate-500 mt-0.5">.pdf 파일 · 화면낭독기로 제목 이동이 됩니다</span>
+      </a>
+      <button type="button" id="btn-materials-close" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm">닫기</button>
+    </div>
+  </div>
 
   <!-- 점자·점형 설명서 -->
   <div id="manual-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="manual-title">
@@ -808,6 +834,51 @@
       });
     }
 
+    function materialTitle(lang, unit) {
+      return `${langLabel(lang)} 점자 ${unit.label || unit.order}단원 ${unit.title} 학습자료`;
+    }
+
+    function materialFileName(lang, unit, ext) {
+      return `${langLabel(lang)}점자_${unit.label || unit.order}단원_${String(unit.title).replace(/\s+/g, '')}.${ext}`;
+    }
+
+    function paintMaterials(unit, lang) {
+      const btn = document.getElementById('btn-materials');
+      const files = unit?.materials || {};
+      const has = Boolean(files.hwpx || files.pdf);
+      if (btn) {
+        btn.setAttribute('aria-disabled', has ? 'false' : 'true');
+        btn.classList.toggle('opacity-60', !has);
+        btn.setAttribute('aria-label', has
+          ? `${unitLine(lang, unit)} 학습자료 받기`
+          : `${unitLine(lang, unit)} 학습자료 받기, 준비 중`);
+      }
+      const soon = document.getElementById('materials-soon');
+      if (soon) soon.classList.toggle('hidden', has);
+      if (!has) return;
+      const head = document.getElementById('materials-unit');
+      if (head) head.textContent = `${unitLine(lang, unit)} 학습자료`;
+      const kinds = [
+        ['hwpx', '한글 파일'],
+        ['pdf', 'PDF 파일']
+      ];
+      let firstTitle = '';
+      kinds.forEach(([ext, kind]) => {
+        const link = document.getElementById(`mat-${ext}`);
+        const title = document.getElementById(`mat-${ext}-title`);
+        if (!link || !title) return;
+        const path = files[ext];
+        link.classList.toggle('hidden', !path);
+        if (!path) return;
+        link.href = path;
+        link.setAttribute('download', materialFileName(lang, unit, ext));
+        title.textContent = `${kind}: ${materialTitle(lang, unit)}`;
+        if (!firstTitle) firstTitle = title.id;
+      });
+      const modal = document.getElementById('materials-modal');
+      if (modal && firstTitle) modal.setAttribute('aria-labelledby', firstTitle);
+    }
+
     async function renderHub(opts = {}) {
       const token = ++renderToken;
       const lang = globalSettings.lang;
@@ -823,6 +894,7 @@
       paintMode();
       paintUnitList(units, lang, id);
       paintTeach(unit, lang);
+      paintMaterials(unit, lang);
       paintGameFlags(lang, id);
       if (opts.focusToggle) {
         const toggle = document.getElementById('unit-toggle');
@@ -935,6 +1007,49 @@
     const statsModal = document.getElementById('stats-modal');
     const settingsModal = document.getElementById('settings-modal');
     const manualModal = document.getElementById('manual-modal');
+    const materialsModal = document.getElementById('materials-modal');
+    const materialsBtn = document.getElementById('btn-materials');
+
+    function materialStops() {
+      return [...materialsModal.querySelectorAll('a.mat-link, button')]
+        .filter((el) => !el.classList.contains('hidden'));
+    }
+
+    function openMaterials() {
+      closeUnitMenu();
+      if (materialsBtn && materialsBtn.getAttribute('aria-disabled') === 'true') {
+        const live = document.getElementById('a11y-live-region');
+        if (live) live.textContent = '이 단원의 학습자료는 준비 중입니다.';
+        return;
+      }
+      materialsModal.classList.remove('hidden');
+      const first = materialStops()[0];
+      if (first) first.focus();
+    }
+
+    function closeMaterials() {
+      if (materialsModal.classList.contains('hidden')) return;
+      materialsModal.classList.add('hidden');
+      if (materialsBtn) materialsBtn.focus();
+    }
+
+    if (materialsBtn) materialsBtn.addEventListener('click', openMaterials);
+    document.getElementById('btn-materials-close').addEventListener('click', closeMaterials);
+    // 창 안에서만 Tab으로 돈다.
+    materialsModal.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const stops = materialStops();
+      if (!stops.length) return;
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
 
     const openStatsBtn = document.getElementById('btn-open-stats');
     if (openStatsBtn) {
@@ -968,6 +1083,7 @@
       if (e.target === settingsModal) settingsModal.classList.add('hidden');
       if (e.target === statsModal) statsModal.classList.add('hidden');
       if (e.target === manualModal) manualModal.classList.add('hidden');
+      if (e.target === materialsModal) closeMaterials();
       const picker = document.getElementById('unit-picker');
       if (picker && !picker.contains(e.target)) closeUnitMenu();
     });
@@ -976,6 +1092,7 @@
       if (e.key !== 'Escape') return;
       closeUnitMenu();
       if (manualModal && !manualModal.classList.contains('hidden')) manualModal.classList.add('hidden');
+      closeMaterials();
     });
 
     document.querySelectorAll('.mode-btn').forEach((btn) => {
