@@ -14,7 +14,8 @@ def escape(text):
 
 def span(cells):
     """여러 칸 점형은 칸 수에 맞춰 격자 칸을 더 차지한다."""
-    return ' style="grid-column: span 2"' if len(cells) > 2 else ''
+    n = len(cells)
+    return ' style="grid-column: span 4"' if n > 5 else ' style="grid-column: span 2"' if n > 2 else ''
 
 
 def cell_svg(dots, size=1.0, labels=False, dashed=False):
@@ -170,8 +171,8 @@ def render(doc):
         h.append(f'<section class="{cls}"><h2>{pi + 1}. {escape(part["title"])}</h2>')
         for si, sec in enumerate(part['sections']):
             blocks = [block_html(b) for b in sec['blocks']]
-            # 제목이 쪽 끝에 홀로 남지 않게 첫 블록과 붙여 둔다
-            lead = 2 if sec['blocks'] and sec['blocks'][0]['t'] == 'p' else 1
+            # 제목이 쪽 끝에 홀로 남지 않게 첫 블록과 붙여 둔다 (큰 카드 묶음은 붙이지 않아 빈 공간이 덜 생긴다)
+            lead = 1
             h.append(f'<section><div class="keep"><h3>{HANGUL_NUM[si]}. {escape(sec["title"])}</h3>{"".join(blocks[:lead])}</div>')
             h.extend(blocks[lead:])
             h.append('</section>')

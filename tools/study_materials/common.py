@@ -158,3 +158,18 @@ def standard_doc(unit, *, rules, rule_src, key, intro_bullets, learn, practice, 
             {'title': PART_TITLES[3], 'sections': closing},
         ],
     }
+
+
+TENSE_BASE = {'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ'}
+
+
+def cell_labels(card):
+    """앱 카드의 조립 순서(steps)로 칸마다 이름을 붙인다. 쌍자음 첫소리는 「된소리표, ㄱ」처럼 나눈다."""
+    out = []
+    for s in card['steps']:
+        n = len(s['cells'])
+        if n == 2 and s['label'] in TENSE_BASE and card['kind'] in ('chosung', 'syllable'):
+            out += ['된소리표', TENSE_BASE[s['label']]]
+        else:
+            out += [s['label']] * n
+    return out

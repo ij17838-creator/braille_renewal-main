@@ -247,6 +247,10 @@
       "skill": {
         "read": "된소리표가 붙은 점형을 쌍자음으로 읽는다",
         "write": "쌍자음을 된소리표와 자음으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-tense.hwpx",
+        "pdf": "materials/ko/ko-tense.pdf"
       }
     },
     {
