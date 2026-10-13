@@ -249,3 +249,19 @@ def jamo_spell(text):
             cells += c
             labels += [f'받침 {jong}'] * len(c)
     return cells, labels
+
+
+PENDING_JAMO = set('ㅚㅋㅌㅍㄲㄳㄵㄶㄺㄻㄼㄽㄾㄿㅀㅄ')
+
+
+def pending_jamo(text):
+    """허락 대기 중인 점형(모음 ㅚ, 받침 ㅋ·ㅌ·ㅍ, 쌍받침·겹받침)이 글에 있으면 그 자모를 돌려준다."""
+    out = set()
+    for ch in text:
+        code = ord(ch) - 0xAC00
+        if not 0 <= code < 11172:
+            continue
+        jung = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'[code % 588 // 28]
+        jong = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'][code % 28]
+        out |= {jung, jong} & PENDING_JAMO
+    return out

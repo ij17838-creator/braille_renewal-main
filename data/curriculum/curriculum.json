@@ -742,6 +742,10 @@
       "skill": {
         "read": "문장 부호가 든 문장을 말로 읽는다",
         "write": "문장 부호를 넣어 문장을 점자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-sentence.hwpx",
+        "pdf": "materials/ko/ko-sentence.pdf"
       }
     },
     {
