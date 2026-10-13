@@ -347,6 +347,10 @@
       "skill": {
         "read": "정자 점자로 쓴 문장을 말로 읽는다",
         "write": "정자 점자로 문장을 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-plain-sentence.hwpx",
+        "pdf": "materials/ko/ko-plain-sentence.pdf"
       }
     },
     {

@@ -212,3 +212,40 @@ def ko_cells(text):
 def reg_cells(ascii_line):
     """규정집 보기 한 줄(점자 ASCII, `는 빈칸) → 점칸 목록."""
     return [[] if ch == '`' else [int(d) for d in BRAILLE_ASCII[ch]] for ch in ascii_line.strip('`')]
+
+
+def ko_uses_abbr(text):
+    """엔진이 이 글에 약자·약어를 썼으면 그 글자들을 돌려준다 (정자 단원에서 피하려고)."""
+    ko_braille('')
+    tr = _ENGINE.text_to_braille(text)['traces']
+    return [x['token'] for x in tr if '약자' in (x.get('explanation') or '') or x.get('rule') == 'Word Abbreviation']
+
+
+def jamo_spell(text):
+    """약자 없이 자모를 풀어 적은 점칸과 칸 이름. 첫소리 ㅇ은 적지 않는다 (제1항 [다만 1])."""
+    ko = load_json('data', 'ko', 'ko.json')
+
+    def one(item):
+        d = item['dots']
+        return [d] if isinstance(d[0], int) else d
+    cells, labels = [], []
+    for ch in text:
+        if ch == ' ':
+            cells.append([])
+            labels.append('빈칸')
+            continue
+        code = ord(ch) - 0xAC00
+        cho, jung, jong = ('ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'[code // 588], 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'[code % 588 // 28],
+                           ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'][code % 28])
+        if cho != 'ㅇ':
+            c = one(ko['chosung']['items'][cho])
+            cells += c
+            labels += ['된소리표', TENSE_BASE[cho]] if cho in TENSE_BASE else [cho]
+        c = one(ko['jungsung']['items'][jung])
+        cells += c
+        labels += [jung] * len(c)
+        if jong:
+            c = one(ko['jongsung']['items'][jong])
+            cells += c
+            labels += [f'받침 {jong}'] * len(c)
+    return cells, labels
