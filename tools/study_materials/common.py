@@ -92,7 +92,8 @@ def asc(text):
 
 
 def braille(cells):
-    return ''.join(chr(0x2800 + sum(1 << (d - 1) for d in c)) for c in cells)
+    """점칸 → 점자 문자. 빈 점칸 [](띄어쓰기)은 보통 띄어쓰기로 둔다."""
+    return ''.join(chr(0x2800 + sum(1 << (d - 1) for d in c)) if c else ' ' for c in cells)
 
 
 def dots_of(ch):
@@ -187,3 +188,27 @@ def cell_labels(card):
         else:
             out += [s['label']] * n
     return out
+
+
+_ENGINE = None
+
+
+def ko_braille(text):
+    """저장소 번역 엔진(engine/ko)으로 한글 문장을 점자로 바꾼다. 띄어쓰기는 빈칸(⠀ 없이 ' ')으로 둔다."""
+    global _ENGINE
+    if _ENGINE is None:
+        import sys
+        sys.path.insert(0, str(REPO))
+        from tests.test_ko_rule_changes import load_engine
+        _ENGINE = load_engine()
+    return _ENGINE.text_to_braille(text)['braille'].strip()
+
+
+def ko_cells(text):
+    """문장 → 점칸 목록. 띄어쓴 자리는 빈칸 []."""
+    return [[] if ch == ' ' else dots_of(ch) for ch in ko_braille(text)]
+
+
+def reg_cells(ascii_line):
+    """규정집 보기 한 줄(점자 ASCII, `는 빈칸) → 점칸 목록."""
+    return [[] if ch == '`' else [int(d) for d in BRAILLE_ASCII[ch]] for ch in ascii_line.strip('`')]

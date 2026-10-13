@@ -98,9 +98,10 @@ class Section:
                         f'<hp:run charPrIDRef="0">{tbl}</hp:run><hp:run charPrIDRef="0"><hp:t/></hp:run></hp:p>')
 
 
-def dot_lines(cells):
-    """●○ 그림 3줄. 칸 사이는 넓게 띄운다."""
-    return ['  '.join(f'{"●" if a else "○"} {"●" if b else "○"}' for a, b in [rows(c)[r] for c in cells]) for r in range(3)]
+def dot_lines(cells, blank=False):
+    """●○ 그림 3줄. 칸 사이는 넓게 띄운다. 빈 점칸 []은 띄어쓰기 자리로 비워 두고, blank=True(쓰기 연습)면 ○로 그린다."""
+    return ['  '.join(f'{"●" if a else "○"} {"●" if b else "○"}' if c or blank else '   ' for c, (a, b) in [(c, rows(c)[r]) for c in cells])
+            for r in range(3)]
 
 
 def dot_cp(cells):
@@ -168,7 +169,7 @@ def write_block(s, b):
         items = list(enumerate(b['items'], 1))
         for row in chunk(items, k):
             cells = [[(C, CP_SMALL, f'({i})'), (C, CP_PART, w['ask']), (C, CP_SMALL, f'빈 점칸 {w["cells"]}칸')]
-                     + [(C, dot_cp([[]] * w['cells']), l) for l in dot_lines([[]] * w['cells'])]
+                     + [(C, dot_cp([[]] * w['cells']), l) for l in dot_lines([[]] * w['cells'], blank=True)]
                      for i, w in row]
             cells += [[]] * (k - len(row))
             s.table([cells], even(k), [6000])

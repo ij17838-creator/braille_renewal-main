@@ -599,6 +599,10 @@
       "skill": {
         "read": "마침표·물음표·느낌표를 읽고 구분한다",
         "write": "문장 끝에 알맞은 부호를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-end.hwpx",
+        "pdf": "materials/ko/ko-mark-end.pdf"
       }
     },
     {

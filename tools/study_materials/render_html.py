@@ -44,6 +44,9 @@ def cell_svg(dots, size=1.0, labels=False, dashed=False):
 def cell_row(cells, labels=None, size=0.62, dashed=False):
     parts = []
     for i, c in enumerate(cells):
+        if not c and not dashed:  # 띄어쓰기 자리
+            parts.append(f'<span class="cw sp" style="width:{18 * size / 0.62:.0f}px"></span>')
+            continue
         lab = f'<span class="cl">{escape(labels[i])}</span>' if labels and len(cells) > 1 else ''
         parts.append(f'<span class="cw">{cell_svg(c, size, dashed=dashed)}{lab}</span>')
     return f'<span class="cells" aria-hidden="true">{"".join(parts)}</span>'
@@ -74,7 +77,7 @@ blockquote.reg { background:#f6f8fb; border:1px solid #dbe3ec; border-radius: 8p
 .cards li { border:1px solid #dbe3ec; border-radius: 10px; padding: 4px 8px; break-inside: avoid; }
 .cards .nm { font-weight:700; font-size: 12pt; line-height:1.3; margin:0; }
 .cards .ln { font-size: 9pt; color:#3c4a60; margin:0; }
-.cells { display:flex; gap:4px; align-items:flex-start; margin: 2px 0; }
+.cells { display:flex; flex-wrap: wrap; row-gap: 6px; gap:4px; align-items:flex-start; margin: 2px 0; }
 .cw { display:flex; flex-direction:column; align-items:center; }
 .cl { font-size: 8pt; color:#4a586c; line-height:1.2; }
 .br { font-family: 'DejaVu Sans', sans-serif; font-size: 14pt; letter-spacing: 1px; }

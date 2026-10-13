@@ -80,11 +80,12 @@ def review(uid, skill, png=None):
     segs = dict((int(n), t.strip(' ,')) for n, t in re.findall(r'\((\d+)\) ([^(]*)', answers.get('쓰기 연습', '')))
     for i, w in enumerate(writes, 1):
         seg = segs.get(i, '')
-        br = ''.join(re.findall(r'[\u2800-\u28ff]+', seg))
+        m = re.search(r'[\u2800-\u28ff](?:[\u2800-\u28ff ]*[\u2800-\u28ff])?', seg)
+        br = m.group(0) if m else ''
         if not seg:
             bad(f'쓰기 ({i}) 「{w["ask"]}」의 정답이 없음')
         elif br:  # 점자로 답하는 문제: 칸 수와 점 번호 확인
-            cells = [[d + 1 for d in range(6) if (ord(ch) - 0x2800) >> d & 1] for ch in br]
+            cells = [[d + 1 for d in range(6) if (ord(ch) - 0x2800) >> d & 1] if ch != ' ' else [] for ch in br]
             if len(cells) != w['cells']:
                 bad(f'쓰기 ({i}) 「{w["ask"]}」: 빈 칸 {w["cells"]}칸인데 정답은 {len(cells)}칸')
             if dots_text(cells) not in seg:
@@ -143,7 +144,7 @@ def review(uid, skill, png=None):
     # 4. 한글 파일 카드 칸 안 순서: 이름 → 점 번호 → 점자 → 그림
     for b in blocks(doc, 'cards'):
         for c in b['items']:
-            name, line, br = flat(c['name']), flat(c.get('line') or dots_text(c['cells'])), braille(c['cells'])
+            name, line, br = flat(c['name']), flat(c.get('line') or dots_text(c['cells'])), flat(braille(c['cells']))
             m = re.search(re.escape(name) + re.escape(line) + re.escape(br) + '[●○]', fh)
             if not m:
                 bad(f'한글 파일 카드 「{c["name"]}」: 칸 안 순서가 이름 → 설명 → 점자 → 그림이 아님')
