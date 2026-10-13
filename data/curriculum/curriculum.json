@@ -633,6 +633,10 @@
       "skill": {
         "read": "쉼표·가운뎃점·쌍점·빗금을 읽는다",
         "write": "낱말 사이에 알맞은 부호를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-pause.hwpx",
+        "pdf": "materials/ko/ko-mark-pause.pdf"
       }
     },
     {
