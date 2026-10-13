@@ -184,6 +184,10 @@ function buildKorean(data) {
     if (item.unicode) wordAbbr[word] = item.unicode;
   });
   const wordAbbrSorted = Object.entries(wordAbbr).sort((a, b) => b[0].length - a[0].length);
+  // 제18항 [다만]: 앞에 글자가 붙으면 풀어 적는다. [붙임]: 뒤에 글자가 붙어도 약어를 쓴다.
+  const wordRule = ko.abbreviation_word?.rule || {};
+  const wordBlockBefore = (wordRule.letters_before || 'spell_out') !== 'abbreviate';
+  const wordBlockAfter = (wordRule.letters_after || 'spell_out') !== 'abbreviate';
 
   const gaByOnset = {};
   const vc = {};
@@ -281,6 +285,22 @@ function buildKorean(data) {
     });
   });
   punct.sort((a, b) => b.ch.length - a.ch.length);
+
+  // 제11·12항: 받침 없는 글자 뒤 '예', ㅑ·ㅘ·ㅜ·ㅝ 뒤 '애' 앞에 구분표를 적는다. 점형은 ko_marks.json에서 읽는다.
+  const sepRule = ko.special_rules?.vowel_separator_rule || {};
+  const separator = punct.find(item => item.ch === sepRule.separator_mark)?.unicode || '';
+  const sepYe = sepRule.before_ye?.vowel || '';
+  const sepAe = sepRule.before_ae?.vowel || '';
+  const sepAeAfter = new Set(sepRule.before_ae?.after_vowels || []);
+
+  function needsSeparator(prevCh, ch) {
+    if (!separator || !prevCh) return false;
+    const prev = decompose(prevCh);
+    const cur = decompose(ch);
+    if (!prev || !cur || prev[2] || cur[0] !== 'ㅇ') return false;
+    if (cur[1] === sepYe) return true;
+    return cur[1] === sepAe && sepAeAfter.has(prev[1]);
+  }
 
   const connectors = {};
   Object.values(rules.symbols || {}).forEach((item) => {
@@ -410,7 +430,7 @@ function buildKorean(data) {
         if (!text.startsWith(word, i)) continue;
         const prev = i ? text[i - 1] : '';
         const next = text[i + word.length] || '';
-        if (hangulChar(prev) || hangulChar(next)) break;
+        if ((wordBlockBefore && hangulChar(prev)) || (wordBlockAfter && hangulChar(next))) break;
         matchedWord = { word, cells };
         break;
       }
@@ -463,6 +483,10 @@ function buildKorean(data) {
       if (ch >= '가' && ch <= '힣') {
         const piece = translateSyllable(ch, text[i + 1] || '', afterNumber, text.slice(i));
         if (!piece || !piece.braille) return null;
+        if (needsSeparator(i ? text[i - 1] : '', ch)) {
+          piece.braille = separator + piece.braille;
+          piece.label = `구분표 + ${piece.label}`;
+        }
         braille += piece.braille;
         parts.push(piece.keepA
           ? { text: ch, braille: piece.braille, label: piece.label, keepA: true }

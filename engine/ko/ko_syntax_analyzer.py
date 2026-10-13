@@ -150,7 +150,11 @@ class BrailleRuleValidator:
         word_block = self.ko_data.get("abbreviation_word", {})
         self.word_abbrs = list(word_block.get("items", {}).keys())
         self.word_abbrs.sort(key=len, reverse=True)
-        self.word_abbr_standalone = word_block.get("rule", {}).get("position") == "standalone"
+        word_rule = word_block.get("rule", {})
+        self.word_abbr_standalone = word_rule.get("position") == "standalone"
+        # 제18항 [다만]: 앞에 글자가 붙으면 풀어 적는다. [붙임]: 뒤에 글자가 붙어도 약어를 쓴다.
+        self.word_abbr_block_before = word_rule.get("letters_before", "spell_out") != "abbreviate"
+        self.word_abbr_block_after = word_rule.get("letters_after", "spell_out") != "abbreviate"
 
         sa = syllable_items.get("사", {})
         sa_rules = sa.get("exception_rules", {})
@@ -496,14 +500,16 @@ class BrailleRuleValidator:
             prev_c = text[i - 1] if i else ""
             next_i = i + len(matched)
             next_c = text[next_i] if next_i < n else ""
-            attached = ("가" <= prev_c <= "힣") or ("가" <= next_c <= "힣")
-            if attached:
+            before = self.word_abbr_block_before and "가" <= prev_c <= "힣"
+            after = self.word_abbr_block_after and "가" <= next_c <= "힣"
+            if before or after:
+                where = "앞" if before else "뒤"
                 notes.append({
                     "type": "ABBREVIATION_STANDALONE",
                     "index": i,
                     "token": matched,
                     "rule": "standalone",
-                    "message": f"단어 약어 '{matched}'은 앞뒤에 한글이 있으면 풀어 적습니다."
+                    "message": f"단어 약어 '{matched}'은 {where}에 한글이 붙으면 풀어 적습니다."
                 })
             i += len(matched)
         return notes

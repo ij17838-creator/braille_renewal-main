@@ -224,7 +224,8 @@ def test_canonical_roundtrip():
     assert ko_engine.TENSER_SIGN + ko_engine.geot_unicode not in ko_engine.text_to_braille("껐")["braille"]
     so_abbr = ko_data["abbreviation_word"]["items"]["그래서"]["unicode"]
     assert ko_engine.text_to_braille("그래서")["braille"] == so_abbr
-    assert so_abbr not in ko_engine.text_to_braille("그래서는")["braille"]
+    # 제18항 [붙임]: 약어 뒤에 글자가 붙어도 약어를 쓴다. [다만]: 앞에 붙으면 풀어 적는다.
+    assert ko_engine.text_to_braille("그래서는")["braille"].startswith(so_abbr)
     assert so_abbr not in ko_engine.text_to_braille("아그래서")["braille"]
     assert " " in ko_engine.text_to_braille("7운")["braille"]
     assert {"7", "운", "g"} <= {sense["text"] for sense in ko_engine.rev_uses["⠛"]}

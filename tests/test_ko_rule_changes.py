@@ -212,5 +212,98 @@ class TestKeepA(unittest.TestCase):
         self.assertEqual(rules, ["keep_a_vowel_connection", "keep_a_spell_out"])
 
 
+class TestVowelSeparator(unittest.TestCase):
+    """제11·12항과 [다만]: 모음 뒤 '예', ㅑ·ㅘ·ㅜ·ㅝ 뒤 '애' 앞에 구분표를 적고, 줄이 바뀌면 적지 않는다."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.engine = load_engine()
+
+    def braille(self, text):
+        return self.engine.text_to_braille(text)["braille"]
+
+    def test_before_ye(self):
+        self.assertEqual(self.braille("아예"), "⠣⠤⠌")
+        self.assertEqual(self.braille("도예"), "⠊⠥⠤⠌")
+        self.assertEqual(self.braille("뭐예요"), "⠑⠏⠤⠌⠬")
+
+    def test_before_ae(self):
+        self.assertEqual(self.braille("야애"), "⠜⠤⠗")
+        self.assertEqual(self.braille("소화액"), "⠠⠥⠚⠧⠤⠗⠁")
+        self.assertEqual(self.braille("파워앰프"), "⠙⠣⠏⠤⠗⠢⠙⠪")
+
+    def test_no_separator(self):
+        self.assertEqual(self.braille("예의"), "⠌⠺")
+        self.assertNotIn("⠤", self.braille("귀애"))
+        self.assertNotIn("⠤", self.braille("서\n예"))
+
+    def test_roundtrip(self):
+        for word in ("아예", "서예가", "소화액", "수액", "파워앰프", "가예"):
+            self.assertEqual(self.engine.braille_to_text(self.braille(word)), word)
+
+
+class TestWordAbbreviationAttach(unittest.TestCase):
+    """제18항 [붙임]: 약어 뒤에 글자가 붙어도 약어를 쓴다. [다만]: 앞에 붙으면 약어를 쓰지 않는다."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.validator = BrailleRuleValidator(data_dir=ROOT)
+        cls.engine = load_engine()
+
+    def braille(self, text):
+        return self.engine.text_to_braille(text)["braille"]
+
+    def test_letters_after(self):
+        self.assertEqual(self.braille("그래서인지"), "⠁⠎⠟⠨⠕")
+        self.assertEqual(self.braille("그러나저러나"), "⠁⠉⠨⠎⠐⠎⠉")
+        self.assertEqual(self.braille("그러면서"), "⠁⠒⠠⠎")
+        self.assertEqual(self.braille("그런데도"), "⠁⠝⠊⠥")
+        self.assertEqual(self.braille("그리하여도"), "⠁⠱⠊⠥")
+        self.assertEqual(self.engine.braille_to_text("⠁⠎⠟⠨⠕"), "그래서인지")
+
+    def test_letters_before(self):
+        self.assertEqual(self.braille("오그리고"), "⠥⠈⠪⠐⠕⠈⠥")
+        notes = self.validator.check_abbreviation_constraints("오그리고 그래서인지")
+        self.assertEqual([note["token"] for note in notes if note["rule"] == "standalone"], ["그리고"])
+
+
+class TestKeepALineBreak(unittest.TestCase):
+    """제14항 [다만]: 그 사이에서 줄이 바뀌면 약자를 쓴다."""
+
+    def test_line_break_uses_abbreviation(self):
+        engine = load_engine()
+        self.assertEqual(engine.text_to_braille("바\n위")["braille"], "⠘\n⠍⠗")
+
+
+class TestRuleCatalog(unittest.TestCase):
+    """ko_rules.json: 한글 점자 제1~74항의 본항·[붙임]·[다만] 목록."""
+
+    @classmethod
+    def setUpClass(cls):
+        with open(find_data_file("ko_rules.json"), encoding="utf-8") as handle:
+            cls.catalog = json.load(handle)
+
+    def test_all_articles_present(self):
+        rules = self.catalog["rules"]
+        self.assertEqual(sorted({rule["article"] for rule in rules}), list(range(1, 75)))
+        self.assertEqual(len({rule["id"] for rule in rules}), len(rules))
+        clauses = {}
+        for rule in rules:
+            clauses[rule["clause"]] = clauses.get(rule["clause"], 0) + 1
+        self.assertEqual(clauses, {"rule": 74, "supplement": 26, "exception": 20})
+
+    def test_fields_known(self):
+        for rule in self.catalog["rules"]:
+            self.assertIn(rule["category"], self.catalog["categories"])
+            self.assertIn(rule["status"], self.catalog["statuses"])
+            self.assertTrue(rule["text"])
+
+    def test_code_paths_exist(self):
+        for rule in self.catalog["rules"]:
+            for ref in rule.get("code", []):
+                path = ref.split("#")[0].split(":")[0].split(" ")[0]
+                self.assertTrue(os.path.exists(os.path.join(ROOT, path)), (rule["id"], ref))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

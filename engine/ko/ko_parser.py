@@ -136,8 +136,11 @@ class KoreanBrailleEngine:
             self.keep_a_onsets |= {t for t, base in self.TENSER_MAP.items() if base in self.keep_a_onsets}
         self.keep_a_spell_out = set(keep_a.get("spell_out", {}))
 
-        word_pos = self.ko.get("abbreviation_word", {}).get("rule", {}).get("position", "standalone")
-        self.word_abbr_standalone = word_pos == "standalone"
+        word_rule = self.ko.get("abbreviation_word", {}).get("rule", {})
+        self.word_abbr_standalone = word_rule.get("position", "standalone") == "standalone"
+        # 제18항 [다만]: 앞에 글자가 붙으면 풀어 적는다. [붙임]: 뒤에 글자가 붙어도 약어를 쓴다.
+        self.word_abbr_block_before = word_rule.get("letters_before", "spell_out") != "abbreviate"
+        self.word_abbr_block_after = word_rule.get("letters_after", "spell_out") != "abbreviate"
         self.omit_zero_consonant = bool(
             self.ko.get("chosung", {}).get("rule", {}).get("omitZeroConsonant", True)
         )
@@ -186,8 +189,43 @@ class KoreanBrailleEngine:
 
         # 5. 문장부호
         self._init_punctuation()
+        self._load_vowel_separator()
         # 단위어 점형은 음절 규칙이 준비된 뒤에 만든다.
         self._build_exempt_unit_braille()
+
+    def _load_vowel_separator(self):
+        """제11·12항 구분표. 점형은 separator_mark가 가리키는 ko_marks.json 항목에서 읽는다."""
+        rule = self.ko.get("special_rules", {}).get("vowel_separator_rule", {})
+        self.vowel_separator = ""
+        mark = rule.get("separator_mark")
+        for block in self.marks.values():
+            item = (block.get("items") or {}).get(mark) if isinstance(block, dict) and mark else None
+            if item and item.get("unicode"):
+                self.vowel_separator = item["unicode"]
+                break
+        self.separator_ye_vowel = rule.get("before_ye", {}).get("vowel", "")
+        self.separator_ae_vowel = rule.get("before_ae", {}).get("vowel", "")
+        self.separator_ae_after = set(rule.get("before_ae", {}).get("after_vowels", []))
+        self.separator_skip_line_break = rule.get("skip_across_line_break", True)
+
+    def _needs_vowel_separator(self, prev_ch: str, cho: str, jung: str) -> bool:
+        """받침 없는 글자 뒤 '예'(제11항), ㅑ·ㅘ·ㅜ·ㅝ 뒤 '애'(제12항)에는 구분표를 적는다."""
+        if not self.vowel_separator or cho != "ㅇ" or not prev_ch:
+            return False
+        prev = self.decompose(prev_ch)
+        if not prev or prev[2]:
+            return False
+        if jung == self.separator_ye_vowel:
+            return True
+        return jung == self.separator_ae_vowel and prev[1] in self.separator_ae_after
+
+    def _previous_letter(self, text: str, index: int) -> str:
+        """[다만] 줄이 바뀌면 앞 글자로 보지 않는다."""
+        j = index - 1
+        if not self.separator_skip_line_break:
+            while j >= 0 and text[j] in "\r\n":
+                j -= 1
+        return text[j] if j >= 0 else ""
 
     def _load_tensers(self):
         """초성 항목의 점형이 ⠠ + 기본 자음이면 된소리로 읽는다."""
@@ -452,7 +490,8 @@ class KoreanBrailleEngine:
                 prev_c = text[i - 1] if i else ""
                 next_c = text[i + w_len:i + w_len + 1]
                 if self.word_abbr_standalone and (
-                    (prev_c and "가" <= prev_c <= "힣") or (next_c and "가" <= next_c <= "힣")
+                    (self.word_abbr_block_before and prev_c and "가" <= prev_c <= "힣")
+                    or (self.word_abbr_block_after and next_c and "가" <= next_c <= "힣")
                 ):
                     break
                 out.append(b_code)
@@ -591,7 +630,12 @@ class KoreanBrailleEngine:
                     braille_syllable, syl_rules = self._translate_hangul_syllable_with_trace(cho, jung, jong, ch)
                     rules_applied.extend(syl_rules)
 
-                final_b = number_break + braille_syllable
+                separator = ""
+                if self._needs_vowel_separator(self._previous_letter(text, i), cho, jung):
+                    separator = self.vowel_separator
+                    rules_applied.append(f"제11·12항: 모음 뒤 '{ch}' 앞에 구분표({separator}) 적용")
+
+                final_b = number_break + separator + braille_syllable
                 out.append(final_b)
                 traces.append({
                     "token": ch,
@@ -743,6 +787,16 @@ class KoreanBrailleEngine:
                     break
             if matched_complete:
                 continue
+
+            # 3b. 제11·12항 구분표. 모음으로 끝난 글자와 예·애 사이의 칸은 읽지 않는다.
+            if self.vowel_separator and decoded and b_token.startswith(self.vowel_separator, i):
+                after = i + len(self.vowel_separator)
+                syllable, consumed = self._decode_single_syllable(b_token, after) if after < n else ("", 0)
+                parts = self.decompose(syllable) if len(syllable) == 1 else None
+                if parts and self._needs_vowel_separator(decoded[-1][-1:], parts[0], parts[1]):
+                    decoded.append(syllable)
+                    i = after + consumed
+                    continue
 
             # 4. 음절 자리. 두 칸 부호(괄호, 밑줄 등)가 한 칸 자음보다 길면 부호를 먼저 읽는다.
             punct, punct_len = self._match_punct(b_token, i)

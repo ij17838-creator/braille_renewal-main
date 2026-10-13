@@ -4,7 +4,10 @@
     "description": "접속사 등 단독으로 쓰이는 단어 약어",
     "rule": {
       "position": "standalone",
-      "priority": 100
+      "priority": 100,
+      "letters_before": "spell_out",
+      "letters_after": "abbreviate",
+      "note": "제18항 [다만]: 약어 앞에 다른 글자가 붙으면 약어를 쓰지 않는다 (예: 오그리고). 제18항 [붙임]: 약어 뒤에 다른 글자가 붙어도 약어를 쓴다 (예: 그래서인지, 그런데도)"
     },
     "items": {
       "그래서": { "word": "그래서", "dots": [[1], [2, 3, 4]], "unicode": "⠁⠎" },
@@ -177,6 +180,22 @@
       "affected_abbreviations": ["운"],
       "action": "terminate_number_with_space",
       "note": "수표(⠼) 뒤에 초성 ㄴ·ㄷ·ㅁ·ㅋ·ㅌ·ㅍ·ㅎ(숫자 3·9·5·6·8·4·0)이나 약자 운(숫자 7)이 오면 띄어쓰기로 숫자 입력을 종료한다. 1급 점자표는 넣지 않는다"
+    },
+    "vowel_separator_rule": {
+      "separator_mark": "-",
+      "separator_source": "ko_marks.json connectors_and_symbols",
+      "before_ye": {
+        "syllable_initial": "ㅇ",
+        "vowel": "ㅖ",
+        "after_open_syllable": true
+      },
+      "before_ae": {
+        "syllable_initial": "ㅇ",
+        "vowel": "ㅐ",
+        "after_vowels": ["ㅑ", "ㅘ", "ㅜ", "ㅝ"]
+      },
+      "skip_across_line_break": true,
+      "note": "제11항: 받침 없는 글자 뒤에 '예'가 오면 그 사이에 구분표를 적는다 (예: 아예, 서예). 제12항: ㅑ·ㅘ·ㅜ·ㅝ로 끝나는 글자 뒤에 '애'가 오면 구분표를 적는다 (예: 소화액, 수액). [다만] 그 사이에서 줄이 바뀌면 구분표를 적지 않는다. 구분표 점형은 separator_mark가 가리키는 ko_marks.json 항목을 쓴다"
     }
   }
 }

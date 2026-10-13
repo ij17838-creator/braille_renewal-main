@@ -8,6 +8,7 @@ const DATA_DIRS = {
   'ko_marks.json': 'ko',
   'ko_number_rules.json': 'ko',
   'lexicon_ko.json': 'ko',
+  'ko_rules.json': 'ko',
   'en_spell.json': 'en',
   'en_shortform.json': 'en',
   'en_contractions.json': 'en',
