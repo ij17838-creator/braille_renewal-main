@@ -1013,10 +1013,11 @@
 
         document.querySelectorAll(`.opt-btn[data-group="${group}"]`).forEach(b => {
           b.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
-          b.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+          b.classList.add('bg-white', 'text-slate-700', 'border-slate-200', 'hover:bg-slate-50');
         });
+        // 선택된 버튼에 hover 배경이 남으면 흰 글자가 밝은 배경에 묻혀 보이지 않으므로 함께 뺀다.
         btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600', 'active-opt');
-        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200', 'hover:bg-slate-50');
 
         if (globalSettings.lang !== val) chosenId = '';
         globalSettings.lang = val;
