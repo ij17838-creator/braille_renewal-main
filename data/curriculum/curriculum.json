@@ -62,6 +62,10 @@
       "skill": {
         "read": "수표와 숫자를 읽는다",
         "write": "수표를 붙여 숫자를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-number.hwpx",
+        "pdf": "materials/ko/ko-number.pdf"
       }
     },
     {
