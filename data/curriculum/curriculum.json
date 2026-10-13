@@ -585,6 +585,10 @@
       "skill": {
         "read": "'약자+겹받침' 글자를 읽는다",
         "write": "'약자+겹받침' 글자를 약자와 받침으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-abbr-double-final.hwpx",
+        "pdf": "materials/ko/ko-abbr-double-final.pdf"
       }
     },
     {
