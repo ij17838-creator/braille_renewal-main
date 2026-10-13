@@ -839,6 +839,10 @@
       "skill": {
         "read": "숫자와 혼동되는 글자 앞의 띄어쓰기를 알아본다",
         "write": "숫자 뒤 혼동되는 글자 앞에서 띄어 쓴다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-exception.hwpx",
+        "pdf": "materials/ko/ko-exception.pdf"
       }
     },
     {

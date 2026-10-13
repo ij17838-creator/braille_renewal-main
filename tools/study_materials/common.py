@@ -293,6 +293,8 @@ def ko_labeled(text):
             lab = ['약어'] * len(cs)
         elif tr.get('rule') != 'Hangul Syllable':
             lab = ['빈칸' if not c else tok for c in cs]
+            if tok.isdigit() and len(cs) > 1 and cs[0] == [3, 4, 5, 6]:  # 제40항: 수표 + 숫자
+                lab[0] = '수표'
         else:
             cho, jung, jong = _decompose(tok)
             tense = cho in TENSE_BASE
