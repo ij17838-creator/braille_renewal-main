@@ -130,6 +130,10 @@
       "skill": {
         "read": "점형을 보고 기본 모음을 읽는다",
         "write": "기본 모음을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-vowel.hwpx",
+        "pdf": "materials/ko/ko-vowel.pdf"
       }
     },
     {

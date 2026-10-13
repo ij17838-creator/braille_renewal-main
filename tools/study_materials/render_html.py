@@ -114,7 +114,9 @@ def block_html(b):
             line = c.get('line') or dots_text(c['cells'])
             items.append(f'<li{span(c["cells"])}><p class="nm">{escape(c["name"])}</p>{cell_row(c["cells"], c.get("labels"))}'
                          f'<p class="ln">{escape(line)}</p><p class="ln">점자: {escape(braille(c["cells"]))}</p></li>')
-        return cap + '<ul class="cards">' + ''.join(items) + '</ul>'
+        grid = '<ul class="cards">' + ''.join(items) + '</ul>'
+        # 설명 글이 카드와 다른 쪽으로 떨어지지 않게 묶는다
+        return f'<div class="keep">{cap}{grid}</div>' if cap else grid
     if t == 'read_ex':
         items = []
         for i, c in enumerate(b['items'], 1):
