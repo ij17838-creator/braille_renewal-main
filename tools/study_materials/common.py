@@ -265,3 +265,59 @@ def pending_jamo(text):
         jong = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'][code % 28]
         out |= {jung, jong} & PENDING_JAMO
     return out
+
+
+def _decompose(ch):
+    code = ord(ch) - 0xAC00
+    if not 0 <= code < 11172:
+        return None
+    return ('ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'[code // 588], 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'[code % 588 // 28],
+            ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'][code % 28])
+
+
+def ko_labeled(text):
+    """엔진 점칸과 칸 이름. 약자는 「가 약자」「억 약자」처럼, 받침은 「받침 ㄱ」처럼 이름을 붙인다.
+
+    엔진이 남긴 규칙 설명(traces)으로 어떤 약자를 썼는지 알아내고, 칸 수가 맞는지 확인한다.
+    """
+    ko_braille('')
+    ko = load_json('data', 'ko', 'ko.json')
+    jong_n = {k: (1 if isinstance(v['dots'][0], int) else len(v['dots'])) for k, v in ko['jongsung']['items'].items()}
+    split = {'ㄲ': 'ㄱㄱ', 'ㄳ': 'ㄱㅅ', 'ㄵ': 'ㄴㅈ', 'ㄶ': 'ㄴㅎ', 'ㄺ': 'ㄹㄱ', 'ㄻ': 'ㄹㅁ', 'ㄼ': 'ㄹㅂ', 'ㄽ': 'ㄹㅅ',
+             'ㄾ': 'ㄹㅌ', 'ㄿ': 'ㄹㅍ', 'ㅀ': 'ㄹㅎ', 'ㅄ': 'ㅂㅅ'}
+    cells, labels = [], []
+    for tr in _ENGINE.text_to_braille(text)['traces']:
+        tok, b, ex = tr['token'], tr['braille'], tr.get('explanation') or ''
+        cs = [[] if c in ' ⠀' else dots_of(c) for c in b]
+        if tr.get('rule') == 'Word Abbreviation':
+            lab = ['약어'] * len(cs)
+        elif tr.get('rule') != 'Hangul Syllable':
+            lab = ['빈칸' if not c else tok for c in cs]
+        else:
+            cho, jung, jong = _decompose(tok)
+            tense = cho in TENSE_BASE
+            base = TENSE_BASE.get(cho, cho)
+            head = (['된소리표'] if tense else [])
+            jl = lambda j: [f'받침 {j}'] * jong_n[j] if j else []
+            if '완전 일치 음절 약자' in ex or "'것' 약자 결합" in ex:
+                lab = head + ['것 약자'] * 2
+            elif '가 계열 약자' in ex:
+                lab = head + [f'{chr(0xAC00 + "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ".index(base) * 588)} 약자'] + jl(jong)
+            elif "뒤 '영' 약자는" in ex:
+                lab = head + [base, '영 약자']
+            elif '제15항 [붙임]' in ex:
+                part = chr(0xAC00 + 11 * 588 + 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'.index(jung) * 28 + ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ'].index(split[jong][0]))
+                lab = head + ([] if base == 'ㅇ' else [base]) + [f'{part} 약자'] + jl(split[jong][1])
+            elif '모음+받침 약자' in ex:
+                whole = chr(0xAC00 + 11 * 588 + 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'.index(jung) * 28 + ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ'].index(jong))
+                lab = head + ([] if base == 'ㅇ' else [base]) + [f'{whole} 약자']
+            else:
+                lab = jamo_spell(tok)[1]
+            if len(lab) < len(cs):  # 구분표·숫자 뒤 빈칸 등 앞에 붙은 칸
+                lab = ['구분표' if c == [3, 6] else '빈칸' for c in cs[:len(cs) - len(lab)]] + lab
+        assert len(lab) == len(cs), (tok, b, lab)
+        cells += cs
+        labels += lab
+    while cells and cells[-1] == []:
+        cells.pop(); labels.pop()
+    return cells, labels

@@ -386,6 +386,10 @@
       "skill": {
         "read": "약자 칸을 가·사·까·싸로 읽는다",
         "write": "가·사·까·싸를 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-ga-sa.hwpx",
+        "pdf": "materials/ko/ko-ga-sa.pdf"
       }
     },
     {
