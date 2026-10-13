@@ -1278,9 +1278,22 @@ function assembleSentence(tokens, mark, lang) {
   return { text, braille, steps, parts, tokens, mark };
 }
 
-function sentenceMaker(generators, marks, lang) {
+// limits: 조각 종류별로 뽑힐 비중(weight, 기본 1)과 한 문장에 넣을 최대 개수(max).
+function sentenceMaker(generators, marks, lang, limits = {}) {
   const kinds = Object.keys(generators);
   if (!kinds.length) return null;
+
+  function pickKind(used) {
+    const open = kinds.filter((kind) => (used[kind] || 0) < (limits[kind]?.max ?? Infinity));
+    const pool = open.length ? open : kinds;
+    const weightOf = (kind) => limits[kind]?.weight ?? 1;
+    let roll = Math.random() * pool.reduce((sum, kind) => sum + weightOf(kind), 0);
+    for (const kind of pool) {
+      roll -= weightOf(kind);
+      if (roll < 0) return kind;
+    }
+    return pool[pool.length - 1];
+  }
 
   function token(kind) {
     for (let attempt = 0; attempt < 6; attempt++) {
@@ -1294,9 +1307,12 @@ function sentenceMaker(generators, marks, lang) {
     sentence() {
       const count = 2 + Math.floor(Math.random() * 2);
       const tokens = [];
+      const used = {};
       for (let i = 0; i < count; i++) {
-        const made = token(pick(kinds));
+        const kind = pickKind(used);
+        const made = token(kind);
         if (!made) return null;
+        used[kind] = (used[kind] || 0) + 1;
         tokens.push(made);
       }
       return assembleSentence(tokens, marks.length ? pick(marks) : null, lang);
@@ -1364,7 +1380,8 @@ function koreanTokens(cards, translate, abbr) {
   }
   if (by.digit && by.digit.length) generators.number = () => numberToken(by.digit);
   const marks = (by.mark || []).filter((card) => ['.', '?', '!'].includes(card.letter));
-  return sentenceMaker(generators, marks, 'ko');
+  // 숫자는 가끔만, 한 문장에 한 번까지 섞는다.
+  return sentenceMaker(generators, marks, 'ko', { number: { weight: 0.3, max: 1 } });
 }
 
 function englishTokens(cards) {

@@ -809,11 +809,14 @@
                 "neutral_single_quote_open",
                 "single_quote_open",
                 "single_quote_close",
+                "double_quote_open",
+                "double_quote_close",
                 "parenthesis_open",
                 "parenthesis_close",
                 "bracket_open",
                 "bracket_close",
                 "hyphen",
+                "em_dash",
                 "solidus_slash"
               ]
             },
@@ -827,11 +830,14 @@
               "neutral_single_quote_open": "아포스트로피",
               "single_quote_open": "여는 작은따옴표",
               "single_quote_close": "닫는 작은따옴표",
+              "double_quote_open": "여는 큰따옴표",
+              "double_quote_close": "닫는 큰따옴표",
               "parenthesis_open": "여는 소괄호",
               "parenthesis_close": "닫는 소괄호",
               "bracket_open": "여는 대괄호",
               "bracket_close": "닫는 대괄호",
               "hyphen": "붙임표",
+              "em_dash": "줄표",
               "solidus_slash": "빗금"
             }
           }
