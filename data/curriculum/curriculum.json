@@ -712,6 +712,10 @@
       "skill": {
         "read": "드러냄표·안드러냄표·기타 부호를 읽는다",
         "write": "그 부호를 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-etc.hwpx",
+        "pdf": "materials/ko/ko-mark-etc.pdf"
       }
     },
     {
