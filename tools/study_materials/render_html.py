@@ -89,6 +89,13 @@ blockquote.reg { background:#f6f8fb; border:1px solid #dbe3ec; border-radius: 8p
 .next { background:#eff6ff; border-radius:8px; padding: 8px 12px; }
 .keep { break-inside: avoid; }
 .answers p { font-size: 9.5pt; }
+table.tbl { width: calc(100% - 2px); table-layout: fixed; border-collapse: collapse; font-size: 9.5pt; margin: 4px 0; }
+table.tbl caption { text-align:left; font-size: 9.5pt; color:#3c4a60; margin-bottom: 4px; }
+table.tbl th, table.tbl td { border:1px solid #dbe3ec; padding: 2px 3px; text-align:center; line-height:1.3; }
+table.tbl thead th, table.tbl tbody th { background:#ecfdf5; }
+table.tbl tr { break-inside: avoid; }
+table.tbl td .br { font-size: 12pt; display:block; }
+.muted { color:#7d8ca0; font-size: 8.5pt; }
 """
 
 
@@ -130,6 +137,17 @@ def block_html(b):
             items.append(f'<li{span([[]] * w["cells"])}><span class="no">({i})</span><span class="ask">{escape(w["ask"])}</span>'
                          f'<span class="desc">빈 점칸 {w["cells"]}칸</span>{cell_row([[]] * w["cells"], dashed=True)}</li>')
         return f'<p class="hint">{escape(b["hint"])}</p><ol class="ex">' + ''.join(items) + '</ol>'
+    if t == 'table':
+        def td(c):  # '고 ⠈⠥' → 고 / ⠈⠥ 두 줄
+            head, _, rest = c.partition(' ')
+            if not rest:
+                return escape(head)
+            return escape(head) + (escape(rest) if rest[0] >= '\u2800' else f'<span class="muted" style="display:block">{escape(rest)}</span>')
+        cap = f'<caption>{escape(b["caption"])}</caption>' if b.get('caption') else ''
+        head = '<tr>' + ''.join(f'<th scope="col">{escape(h)}</th>' for h in b['head']) + '</tr>'
+        body = ''.join('<tr>' + f'<th scope="row">{escape(r[0])}</th>' + ''.join(f'<td>{td(c)}</td>' for c in r[1:]) + '</tr>'
+                       for r in b['rows'])
+        return f'<table class="tbl">{cap}<thead>{head}</thead><tbody>{body}</tbody></table>'
     if t == 'checks':
         return '<ul class="checks">' + ''.join(f'<li>{escape(i)}</li>' for i in b['items']) + '</ul>'
     if t == 'next':

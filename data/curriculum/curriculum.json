@@ -165,6 +165,10 @@
       "skill": {
         "read": "이어진 점형을 한 음절로 읽는다",
         "write": "음절을 초성과 모음으로 풀어 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-syllable.hwpx",
+        "pdf": "materials/ko/ko-syllable.pdf"
       }
     },
     {

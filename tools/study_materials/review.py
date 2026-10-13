@@ -129,6 +129,8 @@ def review(uid, skill, png=None):
         for c in b['items']:
             must += [c['name'], braille(c['cells'])]
     must += [braille(c['cells']) for c in reads]
+    # 표 칸은 PDF에서 글과 점자가 다른 줄로 뽑히므로 조각마다 확인
+    must += [x for b in blocks(doc, 'table') for r in [b['head']] + b['rows'] for c in r for x in c.split()]
     must += [w['ask'] for w in writes]
     must += [v for _, v in next(blocks(doc, 'answers'))['items']]
     for text in must:

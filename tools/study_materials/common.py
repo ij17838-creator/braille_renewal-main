@@ -23,6 +23,7 @@
   {'t': 'cards', 'items': [card], 'caption'} 점형 카드
   {'t': 'read_ex', 'hint', 'items': [card]}  읽기 연습: 점형을 보고 답 쓰기
   {'t': 'write_ex', 'hint', 'items': [{'ask', 'cells'}]}  쓰기 연습: 빈 점칸 n개
+  {'t': 'table', 'caption', 'head', 'rows'}  표 (첫 열은 행 제목, '고 ⠈⠥'처럼 글 뒤 점자는 줄을 나눔)
   {'t': 'checks', 'items'}                   스스로 확인하기
   {'t': 'next', 'text'}                      다음 단원 예고
   {'t': 'answers', 'items': [(이름, 답)]}

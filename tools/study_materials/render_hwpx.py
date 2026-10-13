@@ -172,6 +172,23 @@ def write_block(s, b):
                      for i, w in row]
             cells += [[]] * (k - len(row))
             s.table([cells], even(k), [6000])
+    elif t == 'table':
+        if b.get('caption'):
+            s.add([(CP_SMALL, b['caption'])])
+
+        def cell(text, bold=False):
+            # 글자와 점자를 줄을 나눠 적는다. 예) '고 ⠈⠥' → 고 / ⠈⠥
+            parts = re.split(r'\s+(?=[\u2800-\u28ff])', text, maxsplit=1)
+            out = [(C, CP_BOLD if bold else CP_BODY, parts[0])]
+            if len(parts) > 1:
+                out.append((C, CP_DOT_S, parts[1]))
+            return out
+        n = len(b['head'])
+        first = min(6000, TEXT_WIDTH // n)
+        widths = [first] + even(n - 1, TEXT_WIDTH - first)
+        grid = [[cell(h, True) for h in b['head']]] + [[cell(r[0], True)] + [cell(c) for c in r[1:]] for r in b['rows']]
+        bfs = [[BF_HEAD] * n] + [[BF_HEAD] + [BF_LINE] * (n - 1) for _ in b['rows']]
+        s.table(grid, widths, [1300] + [2000] * len(b['rows']), bfs=bfs, header_row=True)
     elif t == 'checks':
         for i in b['items']:
             s.add('□ ' + i, PP_ITEM)
