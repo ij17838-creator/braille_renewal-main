@@ -669,7 +669,7 @@ class SentenceSlotEngine:
             return self._exempt_unit_tokens()
         if roll < 0.72 and self.roman_units:
             return self._roman_unit_tokens()
-        if roll < 0.86:
+        if roll < 0.86 and self.sa_number_example:
             return self._sa_after_number_tokens()
         return self._collision_gap_tokens()
 

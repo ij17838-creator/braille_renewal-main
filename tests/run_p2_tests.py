@@ -171,7 +171,8 @@ def test_canonical_roundtrip():
             if text.startswith("마침표"):
                 assert braille == period, path
             if text == "4사분기":
-                assert "⠠⠣" in braille and "⠇" not in braille, path
+                # 제13·14·44항: '사'는 숫자 뒤에서도 약자로 붙여 적는다.
+                assert braille == "⠼⠙⠇⠘⠛⠈⠕", path
                 assert braille == ko_engine.text_to_braille(text)["braille"], path
             if text == "사람":
                 assert braille == "⠇⠐⠣⠢", path
@@ -206,16 +207,22 @@ def test_canonical_roundtrip():
     for cell, senses in ko_engine.rev_uses.items():
         if len({sense["text"] for sense in senses}) > 1:
             assert all(sense.get("context") for sense in senses), cell
-    assert {"ㅎ", "”", "》"} <= {sense["text"] for sense in ko_engine.rev_uses["⠴"]}
-    assert {"“", "《", "?"} <= {sense["text"] for sense in ko_engine.rev_uses["⠦"]}
-    assert "”" in ko_engine.braille_to_text("⠴") and "》" in ko_engine.braille_to_text("⠴")
-    assert "“" in ko_engine.braille_to_text("⠦⠫") and "《" in ko_engine.braille_to_text("⠦⠫")
+    assert {"ㅎ", "”"} <= {sense["text"] for sense in ko_engine.rev_uses["⠴"]}
+    assert {"“", "?"} <= {sense["text"] for sense in ko_engine.rev_uses["⠦"]}
+    assert ko_engine.braille_to_text("⠴") == "”"
+    assert ko_engine.braille_to_text("⠦⠫") == "“가"
+    # 제49항: 겹·홑화살괄호와 겹·홑낫표는 따옴표와 점형이 다르다.
+    assert ko_engine.text_to_braille("《가》")["braille"] == "⠰⠶⠫⠶⠆"
+    assert ko_engine.text_to_braille("「가」")["braille"] == "⠐⠦⠫⠴⠂"
     assert ko_engine.braille_to_text("⠦") == "?"
     assert ko_engine.braille_to_text("⠠⠄⠠⠄") == "<tn></tn>"
-    placeholders = ko_engine.braille_to_text("⠴⠴")
-    assert all(ch in placeholders for ch in ("×", "○", "△"))
-    dashes = ko_engine.braille_to_text("⠤⠤")
-    assert all(ch in dashes for ch in ("~", "—", "□"))
+    # 제57·58항: 숨김표·빠짐표. 여러 개면 ⠸과 ⠇ 사이에 개수만큼 적는다.
+    assert ko_engine.text_to_braille("○")["braille"] == "⠸⠴⠇"
+    assert ko_engine.text_to_braille("김○○ 씨")["braille"] == "⠈⠕⠢⠸⠴⠴⠇ ⠠⠠⠕"
+    assert ko_engine.text_to_braille("□□□")["braille"] == "⠸⠶⠶⠶⠇"
+    assert ko_engine.braille_to_text("⠸⠭⠭⠭⠇") == "×××"
+    assert ko_engine.braille_to_text("⠤⠤") == "—"
+    assert ko_engine.braille_to_text("⠴⠴") == "〃"
 
     apostrophe = marks_data["connectors_and_symbols"]["items"]["'"]["unicode"]
     assert ko_engine.text_to_braille("'")["braille"] == apostrophe
@@ -228,8 +235,16 @@ def test_canonical_roundtrip():
     assert ko_engine.text_to_braille("그래서는")["braille"].startswith(so_abbr)
     assert so_abbr not in ko_engine.text_to_braille("아그래서")["braille"]
     assert " " in ko_engine.text_to_braille("7운")["braille"]
-    assert {"7", "운", "g"} <= {sense["text"] for sense in ko_engine.rev_uses["⠛"]}
-    assert "cm" in {sense["text"] for sense in ko_engine.rev_uses["⠉⠍"]}
+    assert {"7", "운"} <= {sense["text"] for sense in ko_engine.rev_uses["⠛"]}
+    assert "g" in {sense["text"] for sense in ko_engine.rev_uses["⠴⠛⠲"]}
+    assert "cm" in {sense["text"] for sense in ko_engine.rev_uses["⠴⠉⠍⠲"]}
+    # 제69항: 로마자 단위 기호는 로마자표와 로마자 종료표 사이에 적는다.
+    assert ko_engine.text_to_braille("1m는")["braille"] == "⠼⠁⠴⠍⠲⠉⠵"
+    # 제43항 [다만]·제47항 [붙임]: 붙임표·빗금 뒤의 숫자에는 수표를 다시 적는다.
+    assert ko_engine.text_to_braille("12,1-9")["braille"] == "⠼⠁⠃⠂⠁⠤⠼⠊"
+    assert ko_engine.text_to_braille("2/3")["braille"] == "⠼⠃⠸⠌⠼⠉"
+    # 제13·14항: '사'는 모음 앞에서도 약자를 쓴다.
+    assert ko_engine.text_to_braille("사이")["braille"] == "⠇⠕"
 
     roundtrip_words = [
         "라", "간", "차", "좋", "사람", "1,000", "4사분기", "사이",

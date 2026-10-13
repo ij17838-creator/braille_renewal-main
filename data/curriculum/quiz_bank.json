@@ -67,23 +67,23 @@
     {
       "id": "ko-sai",
       "level": 2,
-      "category": "풀어쓰기",
-      "type_label": "모음 연접 풀어쓰기",
-      "rule_type": "모음 연접 풀어쓰기",
+      "category": "음절 약자",
+      "type_label": "모음 앞 '사' 약자",
+      "rule_type": "모음 앞 '사' 약자",
       "target_text": "사이",
-      "target_braille": "⠠⠣⠕",
-      "distractors_braille": ["⠇⠕", "⠠⠣⠣", "⠠⠕"],
-      "hint": "'사' 뒤에 모음이 오면 약자 대신 풀어 적습니다.",
-      "explanation": "모음 연접 규정에 따라 '사'를 ⠠⠣로 풀어 적습니다.",
+      "target_braille": "⠇⠕",
+      "distractors_braille": ["⠠⠣⠕", "⠇⠣⠕", "⠠⠕"],
+      "hint": "'사'는 뒤에 모음이 와도 약자 ⠇를 씁니다.",
+      "explanation": "제14항의 ㅏ 적기는 나·다·마·바·자·카·타·파·하에만 해당하므로 '사'는 약자 ⠇로 적습니다.",
       "sentence_pre": "우리 두 사람",
       "sentence_post": "에 벽이 있다.",
-      "clue": "'사' 뒤에 모음 '이'가 오므로 풀어 적습니다.",
+      "clue": "'사' 뒤에 모음 '이'가 와도 약자를 씁니다.",
       "blocks": ["사", "이", "입", "아"],
       "correct_sequence": ["사", "이"],
       "available_blocks": ["사", "이", "입", "아"],
       "rule_analysis": {
-        "rule_name": "모음 연접 풀어쓰기",
-        "detail": "'사' 뒤에 바로 모음이 이어지면 약자 ⠇ 대신 ⠠⠣로 적습니다."
+        "rule_name": "모음 앞 '사' 약자",
+        "detail": "'사'의 약자 ⠇는 첫소리 ㅅ(⠠)과 점형이 달라 모음 앞에서도 그대로 씁니다 (제13·14항)."
       }
     },
     {
@@ -174,23 +174,23 @@
     {
       "id": "ko-sagi",
       "level": 5,
-      "category": "수표 결합 예외",
-      "type_label": "숫자 뒤 풀어쓰기",
-      "rule_type": "숫자 뒤 풀어쓰기",
+      "category": "수표 결합",
+      "type_label": "숫자 뒤 '사' 약자",
+      "rule_type": "숫자 뒤 '사' 약자",
       "target_text": "4사분기",
-      "target_braille": "⠼⠙⠠⠣⠘⠛⠈⠕",
-      "distractors_braille": ["⠼⠙⠇⠘⠛⠈⠕", "⠼⠙⠠⠣⠘⠛", "⠼⠙⠇⠘⠛"],
-      "hint": "숫자 4 직후의 '사'는 수표 충돌 방지를 위해 풀어쓴 '사'(⠠⠣)로 표기합니다.",
-      "explanation": "숫자 연접 직후 풀어쓰기 규정을 적용한 점역입니다.",
+      "target_braille": "⠼⠙⠇⠘⠛⠈⠕",
+      "distractors_braille": ["⠼⠙⠠⠣⠘⠛⠈⠕", "⠼⠙ ⠇⠘⠛⠈⠕", "⠼⠙⠇⠘⠛"],
+      "hint": "'사'의 약자 ⠇는 숫자와 혼동되지 않으므로 숫자 뒤에 붙여 적습니다.",
+      "explanation": "제44항: 숫자 뒤 한글은 묵자대로 붙여 적고, 숫자와 혼동되는 ㄴ·ㄷ·ㅁ·ㅋ·ㅌ·ㅍ·ㅎ과 '운'만 띄어 씁니다.",
       "sentence_pre": "올해",
       "sentence_post": " 실적 발표.",
-      "clue": "숫자 4 바로 뒤의 '사'는 풀어 적습니다.",
+      "clue": "숫자 4 바로 뒤의 '사'도 약자로 붙여 적습니다.",
       "blocks": ["4사", "분기", "사", "4"],
       "correct_sequence": ["4", "사", "분", "기"],
       "available_blocks": ["4", "사", "분", "기", "월"],
       "rule_analysis": {
-        "rule_name": "숫자 뒤 풀어쓰기",
-        "detail": "숫자 바로 뒤에 '사'가 오면 약자 대신 ⠠⠣로 풀어 적습니다."
+        "rule_name": "숫자 뒤 '사' 약자",
+        "detail": "'사'(⠇)는 숫자와 혼동되는 첫소리가 아니므로 수표 뒤에 그대로 붙여 적습니다 (제44항)."
       }
     },
     {
@@ -222,8 +222,8 @@
       "type_label": "단위어",
       "rule_type": "단위어",
       "target_text": "3개",
-      "target_braille": "⠼⠉⠻",
-      "distractors_braille": ["⠼⠉ ⠻", "⠉⠻", "⠼⠙⠻"],
+      "target_braille": "⠼⠉⠈⠗",
+      "distractors_braille": ["⠼⠉ ⠈⠗", "⠉⠈⠗", "⠼⠙⠈⠗"],
       "hint": "숫자 3 뒤 단위어 '개'는 띄어쓰지 않고 이어 적습니다.",
       "explanation": "단위어는 숫자 뒤에 붙여 적습니다.",
       "sentence_pre": "우리 가족은 사과",

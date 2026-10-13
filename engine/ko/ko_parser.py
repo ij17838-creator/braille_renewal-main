@@ -124,7 +124,7 @@ class KoreanBrailleEngine:
         self.sa_after_number = "after_number" in sa_rules
         self.sa_before_vowel = "vowel_connection" in sa_rules
 
-        # 제17항 [붙임]·[다만]: 첫소리와 점형이 같은 약자는 모음 앞에서 ㅏ를 적는다. '팠'도 ㅏ를 적는다.
+        # 제14항·[붙임]: 첫소리와 점형이 같은 약자는 모음 앞에서 ㅏ를 적는다. '팠'도 ㅏ를 적는다.
         keep_a = self.ko.get("abbreviation_syllable", {}).get("rule", {}).get("keep_a", {})
         keep_vowel = keep_a.get("vowel_connection", {})
         self.keep_a_onsets = set()
@@ -423,6 +423,20 @@ class KoreanBrailleEngine:
                 self.toggle_tags[uni] = (opens[0], closes[0])
         self.toggle_tag_sorted = sorted(self.toggle_tags.items(), key=lambda item: len(item[0]), reverse=True)
 
+        # 제57·58항: 숨김표·빠짐표 묶음. 낱개 점형에서 묶음표(⠸ … ⠇)를 떼어 안쪽 점형을 얻는다.
+        placeholder = self.marks.get("placeholder_marks", {})
+        wrapper = placeholder.get("rule", {}).get("run_wrapper", {})
+        self.run_open = wrapper.get("open", "")
+        self.run_close = wrapper.get("close", "")
+        self.placeholder_inner = {}
+        for char, item in placeholder.get("items", {}).items():
+            uni = item.get("unicode", "")
+            if self.run_open and self.run_close and uni.startswith(self.run_open) and uni.endswith(self.run_close):
+                inner = uni[len(self.run_open):len(uni) - len(self.run_close)]
+                if inner:
+                    self.placeholder_inner[char] = inner
+        self.rev_placeholder_inner = {inner: char for char, inner in self.placeholder_inner.items()}
+
     @classmethod
     def decompose(cls, char: str) -> Optional[Tuple[str, str, str]]:
         code = ord(char) - 0xAC00
@@ -463,6 +477,20 @@ class KoreanBrailleEngine:
                     in_number_mode = False
                 traces.append({"token": ch, "braille": ch, "rule": "Whitespace/Newline", "scope": "Reset numeric mode"})
                 i += 1
+                continue
+
+            # 1b. 숨김표·빠짐표가 여러 개 붙으면 ⠸과 ⠇ 사이에 점형을 묵자의 개수만큼 적는다.
+            if ch in self.placeholder_inner and i + 1 < n and text[i + 1] in self.placeholder_inner:
+                j = i
+                inner = ""
+                while j < n and text[j] in self.placeholder_inner:
+                    inner += self.placeholder_inner[text[j]]
+                    j += 1
+                b = self.run_open + inner + self.run_close
+                out.append(b)
+                in_number_mode = False
+                traces.append({"token": text[i:j], "braille": b, "rule": "Placeholder Run", "explanation": "제57·58항 숨김표·빠짐표 묶음"})
+                i = j
                 continue
 
             # 2. 문장부호 및 마크업 태그 다중문자 매칭 (최장 일치)
@@ -583,19 +611,18 @@ class KoreanBrailleEngine:
                 number_break = ""
                 rules_applied = []
 
-                # 제17항: '사' 약자 예외. 제18항은 그래서·그러나 등 단어 약어이다.
-                # 제2호: 숫자 바로 뒤에 '사'가 오면 풀어 적음 (예: "4사분기")
-                # 제1호: '사' 뒤에 모음으로 시작하는 음절이 이어지면 풀어 적음 (예: "사이")
+                # '사' 풀어쓰기는 ko.json 사 항목에 exception_rules가 있을 때만 적용한다.
+                # 개정 규정에는 이 예외가 없어 기본 데이터에서는 '사'를 늘 약자로 적는다 (제13·14항).
                 is_sa_exception = False
                 if ch == '사':
                     if self.sa_after_number and (in_number_mode or (i > 0 and text[i-1].isdigit())):
                         is_sa_exception = True
-                        rules_applied.append(f"제17항 제2호 적용: 숫자 뒤 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
+                        rules_applied.append(f"숫자 뒤 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
                     elif self.sa_before_vowel and i + 1 < n and '가' <= text[i+1] <= '힣':
                         next_decomp = self.decompose(text[i+1])
                         if next_decomp and next_decomp[0] == 'ㅇ':
                             is_sa_exception = True
-                            rules_applied.append(f"제17항 제1호 적용: 모음 연접 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
+                            rules_applied.append(f"모음 연접 '사' 예외 풀어쓰기('{self.sa_expanded}') 적용")
 
                 # 혼동 초성·약자 운은 띄어쓰기로 수표를 끝낸다. 경계가 맞는 단위어만 붙여 적는다.
                 if in_number_mode:
@@ -612,11 +639,11 @@ class KoreanBrailleEngine:
                 keep_a = ""
                 if not is_sa_exception and jung == 'ㅏ':
                     if ch in self.keep_a_spell_out:
-                        keep_a = f"제17항 [다만]: '{ch}'은 ㅏ를 생략하지 않고 적음"
+                        keep_a = f"제14항 [붙임]: '{ch}'은 ㅏ를 생략하지 않고 적음"
                     elif not jong and cho in self.keep_a_onsets and i + 1 < n and '가' <= text[i+1] <= '힣':
                         next_decomp = self.decompose(text[i+1])
                         if next_decomp and next_decomp[0] == 'ㅇ':
-                            keep_a = f"제17항 [붙임]: 모음 앞 '{ch}'은 약자를 쓰지 않고 ㅏ를 적음"
+                            keep_a = f"제14항: 모음 앞 '{ch}'은 약자를 쓰지 않고 ㅏ를 적음"
 
                 if is_sa_exception:
                     braille_syllable = self.sa_expanded
@@ -775,6 +802,18 @@ class KoreanBrailleEngine:
                 break
             if matched_tag:
                 continue
+
+            # 2b. 제57·58항 숨김표·빠짐표 묶음 (⠸ + 점형 둘 이상 + ⠇)
+            if self.rev_placeholder_inner and b_token.startswith(self.run_open, i):
+                j = i + len(self.run_open)
+                chars = []
+                while j < n and b_token[j] in self.rev_placeholder_inner:
+                    chars.append(self.rev_placeholder_inner[b_token[j]])
+                    j += 1
+                if len(chars) > 1 and b_token.startswith(self.run_close, j):
+                    decoded.append("".join(chars))
+                    i = j + len(self.run_close)
+                    continue
 
             # 3. 완전 음절 약자. 부호 칸보다 음절 문맥이 먼저다.
             matched_complete = False
@@ -1022,26 +1061,28 @@ class KoreanBrailleEngine:
             at_end = i + length >= n
             at_start = i == 0
             chars = [sense["char"] for sense in senses]
-            # ⠦: 문장 끝이면 물음표, 단어 앞이면 여는 따옴표 후보를 모두 남긴다.
+            # ⠦: 문장 끝이면 물음표, 단어 앞이면 여는 큰따옴표다.
             if cell == "⠦":
                 if at_end:
                     return "?", length
                 if at_start:
-                    return self._join_candidates([c for c in chars if c in ("“", "《")]), length
-            # ⠴: 부호 자리의 닫는 따옴표. ”와 》를 함께 남긴다.
+                    return self._join_candidates([c for c in chars if c == "“"]), length
+            # ⠴: 부호 자리의 닫는 큰따옴표.
             if cell == "⠴":
-                return self._join_candidates([c for c in chars if c in ("”", "》")]), length
-            if cell == "⠴⠴":
-                return self._join_candidates([c for c in chars if c in ("×", "○", "△")]), length
-            # ⠐: 숫자 사이가 아니고 부호 자리이면 쉼표 또는 아포스트로피.
-            if cell == "⠐":
-                return self._join_candidates([c for c in chars if c in (",", "'")]), length
-            if cell == "⠤⠤":
-                return self._join_candidates([c for c in chars if c in ("~", "—", "□")]), length
+                return self._join_candidates([c for c in chars if c == "”"]), length
+            # 같은 부호의 다른 글자(—·―, ~·∼, …·……)는 처음 것 하나로 읽는다.
+            words = {}
+            for sense in senses:
+                words.setdefault(self._mark_word(sense), sense["char"])
+            chars = list(words.values())
             if len(set(chars)) > 1:
                 return self._join_candidates(chars), length
             return chars[0], length
         return "", 0
+
+    def _mark_word(self, sense: dict) -> str:
+        item = self.marks.get(sense["category"], {}).get("items", {}).get(sense["char"], {})
+        return item.get("word") or sense["char"]
 
     def _decode_single_syllable(self, b_token: str, start_idx: int) -> Tuple[str, int]:
         is_tense = False

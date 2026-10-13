@@ -180,7 +180,7 @@ class TestClosingQuoteBeforeNatpyo(unittest.TestCase):
 
 
 class TestKeepA(unittest.TestCase):
-    """제17항 [붙임]·[다만]: 모음 앞 나·다·마·바·자·카·타·파·하와 '팠'은 ㅏ를 적는다."""
+    """제14항·[붙임]: 모음 앞 나·다·마·바·자·카·타·파·하와 '팠'은 ㅏ를 적는다."""
 
     @classmethod
     def setUpClass(cls):
