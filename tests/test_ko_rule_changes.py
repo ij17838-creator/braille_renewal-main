@@ -135,14 +135,12 @@ class TestUnitBoundary(unittest.TestCase):
         cls.validator = BrailleRuleValidator(data_dir=ROOT)
         cls.engine = load_engine()
 
-    def test_dong_euro_keeps_unit(self):
-        self.assertEqual(self.validator._match_exempt_unit("동으로"), "동")
-        self.assertEqual(self.engine._match_exempt_unit("동으로"), "동")
-        self.assertFalse(self.validator.check_number_letter_collision("5동으로"))
-
-        converted = self.engine.text_to_braille("5동으로")
-        self.assertNotIn(" ", converted["braille"])
-        self.assertEqual(self.engine.braille_to_text(converted["braille"]), "5동으로")
+    def test_dong_is_spaced_after_number(self):
+        # 제44항 [다만]: 숫자 뒤 첫소리 ㄷ은 단위어여도 띄어 쓴다.
+        self.assertIsNone(self.validator._match_exempt_unit("동으로"))
+        self.assertEqual(self.engine._match_exempt_unit("동으로"), "")
+        self.assertTrue(self.validator.check_number_letter_collision("5동으로"))
+        self.assertIn(" ", self.engine.text_to_braille("5동으로")["braille"])
 
     def test_dongan_is_not_split_as_unit(self):
         self.assertIsNone(self.validator._match_exempt_unit("동안"))

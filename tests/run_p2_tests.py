@@ -186,23 +186,18 @@ def test_canonical_roundtrip():
     assert ko_engine.unit_boundary_enabled and ko_val_units.unit_boundary_enabled
     assert "에" in ko_engine.josa_sorted and "에" in ko_val_units.josa_sorted
 
-    assert " " in ko_engine.text_to_braille("5동안")["braille"]
-    assert " " not in ko_engine.text_to_braille("5동")["braille"]
-    assert " " not in ko_engine.text_to_braille("5동에")["braille"]
-    assert " " not in ko_engine.text_to_braille("5동에서")["braille"]
-    assert " " not in ko_engine.text_to_braille("5미터가")["braille"]
-    assert " " not in ko_engine.text_to_braille("1945년에")["braille"]
-    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동안")["braille"]) == "5 동안"
-    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동")["braille"]) == "5동"
-    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동에")["braille"]) == "5동에"
-    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동에서")["braille"]) == "5동에서"
-    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5미터가")["braille"]) == "5미터가"
-    assert ko_engine.braille_to_text(ko_engine.text_to_braille("1945년에")["braille"]) == "1945년에"
-    assert ko_val_units.check_number_letter_collision("5동안")
-    assert not ko_val_units.check_number_letter_collision("5동")
-    assert not ko_val_units.check_number_letter_collision("5동에")
-    assert not ko_val_units.check_number_letter_collision("1945년에")
-    assert not ko_val_units.check_number_letter_collision("제2차 세계대전은 1945년에 끝났다. 5월 12일 3미터 앞.")
+    # 제44항 [다만]: ㄴ·ㄷ·ㅁ·ㅋ·ㅌ·ㅍ·ㅎ으로 시작하는 단위어도 숫자와 띄어 쓴다 (규정 보기: 1년 ⠼⠁ ⠉⠡, 3명 ⠼⠉ ⠑⠻).
+    for text in ["5동안", "5동", "5동에", "5미터가", "1945년에"]:
+        assert " " in ko_engine.text_to_braille(text)["braille"], text
+        assert ko_val_units.check_number_letter_collision(text), text
+    assert ko_engine.text_to_braille("1년")["braille"] == "⠼⠁ ⠉⠡"
+    assert ko_engine.text_to_braille("3명")["braille"] == "⠼⠉ ⠑⠻"
+    assert ko_engine.braille_to_text(ko_engine.text_to_braille("5동")["braille"]) == "5 동"
+    # 숫자와 겹치지 않는 첫소리는 붙여 적는다 (규정 보기: 5월 ⠼⠑⠏⠂, 6일 ⠼⠋⠕⠂).
+    for text in ["5월", "12일", "5개", "5월에"]:
+        assert " " not in ko_engine.text_to_braille(text)["braille"], text
+        assert ko_engine.braille_to_text(ko_engine.text_to_braille(text)["braille"]) == text
+    assert not ko_val_units.check_number_letter_collision("5월 12일 5개")
 
     for cell, senses in ko_engine.rev_uses.items():
         if len({sense["text"] for sense in senses}) > 1:
@@ -253,9 +248,13 @@ def test_canonical_roundtrip():
         "왜", "외", "웨", "위", "얘", "귀", "돼",
         "껏", "껐", "성", "썽", "정", "청", "셩", "쳥",
         "떠", "뻐", "쩌", "써", "꺼", "빠", "싸",
-        "1년", "2월", "3미터", "5명", "8호", "1945년", "1,000명", "2킬로미터",
+        "2월", "1,000원", "3시", "5층",
+        "얽", "꺾", "넋", "읊다", "끓다", "젊", "외국", "부엌에서", "앞집", "겉보리",
         "5개", "7 운", "12km", "1/2", "3.14",
         "것.", "<tn>주</tn>",
+        # 받침 ㅋ·ㅌ·ㅍ·ㅎ과 ! ? . ”는 점형이 같다(제3항, 제49항). 낱말 목록과 따옴표 짝으로 가른다.
+        "부엌", "부엌.", "무릎", "바깥", "나뭇잎", "햇볕", "대나무밭", "키읔", "히읗", "앞", "밭",
+        "왜?", "네.", "아!", "어디 가?", "내 거.", "“왜?”", "“부엌”", "그는 “앞!” 했다.", "왔다.”",
     ]
     for word in roundtrip_words:
         braille = ko_engine.text_to_braille(word)["braille"]

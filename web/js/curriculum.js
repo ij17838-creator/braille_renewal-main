@@ -79,6 +79,7 @@ export function materialsFor(unit, data) {
 }
 
 function cardsFromSlice(slice, data) {
+  if (slice.role === 'abbr') return abbrCards(slice, data);
   if (slice.ranges || slice.syllables) return syllableCards(slice, data);
   if (slice.role === 'abbr') return abbrCards(slice, data);
   if (slice.role === 'exception') return exceptionCards(slice, data);
@@ -328,6 +329,12 @@ export function decomposeSyllable(ch) {
  *   - 가·나·다 계열 첫소리 + ㅏ (된소리 포함, 받침이 붙어도 약자 + 받침)
  *   - 모음 + 받침이 억·언·얼 계열인 경우 (ㅅ·ㅈ·ㅊ 뒤 성·정·청 포함)
  */
+// 쌍받침·겹받침 = 앞 받침 + 뒤 받침 (받침 ㅆ은 따로 약자가 있어 넣지 않는다)
+const DOUBLE_JONG_SPLIT = {
+  'ㄲ': ['ㄱ', 'ㄱ'], 'ㄳ': ['ㄱ', 'ㅅ'], 'ㄵ': ['ㄴ', 'ㅈ'], 'ㄶ': ['ㄴ', 'ㅎ'], 'ㄺ': ['ㄹ', 'ㄱ'], 'ㄻ': ['ㄹ', 'ㅁ'],
+  'ㄼ': ['ㄹ', 'ㅂ'], 'ㄽ': ['ㄹ', 'ㅅ'], 'ㄾ': ['ㄹ', 'ㅌ'], 'ㄿ': ['ㄹ', 'ㅍ'], 'ㅀ': ['ㄹ', 'ㅎ'], 'ㅄ': ['ㅂ', 'ㅅ']
+};
+
 export function abbreviationIndex(ko) {
   const items = ko?.abbreviation_syllable?.items || {};
   const syllables = new Set();
@@ -355,7 +362,10 @@ export function abbreviationIndex(ko) {
       if (jung === yeongVowel) return true;
       if (jung === 'ㅕ') return false;
     }
-    return vowelCoda.has(`${jung}|${jong}`);
+    if (vowelCoda.has(`${jung}|${jong}`)) return true;
+    // 제15항 [붙임]: 겹받침·쌍받침의 앞 받침이 약자를 이루면 약자를 쓴다 (얽 = 얼 + ㄱ).
+    const split = DOUBLE_JONG_SPLIT[jong];
+    return Boolean(split) && vowelCoda.has(`${jung}|${split[0]}`);
   }
 
   return {
@@ -476,9 +486,17 @@ function abbrSyllableSteps(syllable, items, maps) {
     if (jung === 'ㅕ') return null;
   }
   const whole = composeSyllable('ㅇ', jung, jong);
-  if (items[whole]?.type !== 'vowel_coda_series') return null;
+  if (items[whole]?.type === 'vowel_coda_series') {
+    const head = choSteps();
+    return head ? { kind: 'eok', steps: [...head, abbr(whole)] } : null;
+  }
+  // 제15항 [붙임]: 얽 = 얼 약자 + 받침 ㄱ, 꺾 = 된소리표 + ㄱ + 억 약자 + 받침 ㄱ
+  const split = DOUBLE_JONG_SPLIT[jong];
+  const part = split ? composeSyllable('ㅇ', jung, split[0]) : '';
+  if (!part || items[part]?.type !== 'vowel_coda_series') return null;
   const head = choSteps();
-  return head ? { kind: 'eok', steps: [...head, abbr(whole)] } : null;
+  const tail = jongStep(split[1]);
+  return head && tail ? { kind: 'eok', steps: [...head, abbr(part), tail] } : null;
 }
 
 function abbrCards(slice, data) {

@@ -98,9 +98,10 @@ class Section:
                         f'<hp:run charPrIDRef="0">{tbl}</hp:run><hp:run charPrIDRef="0"><hp:t/></hp:run></hp:p>')
 
 
-def dot_lines(cells):
-    """●○ 그림 3줄. 칸 사이는 넓게 띄운다."""
-    return ['  '.join(f'{"●" if a else "○"} {"●" if b else "○"}' for a, b in [rows(c)[r] for c in cells]) for r in range(3)]
+def dot_lines(cells, blank=False):
+    """●○ 그림 3줄. 칸 사이는 넓게 띄운다. 빈 점칸 []은 띄어쓰기 자리로 비워 두고, blank=True(쓰기 연습)면 ○로 그린다."""
+    return ['  '.join(f'{"●" if a else "○"} {"●" if b else "○"}' if c or blank else '   ' for c, (a, b) in [(c, rows(c)[r]) for c in cells])
+            for r in range(3)]
 
 
 def dot_cp(cells):
@@ -168,10 +169,27 @@ def write_block(s, b):
         items = list(enumerate(b['items'], 1))
         for row in chunk(items, k):
             cells = [[(C, CP_SMALL, f'({i})'), (C, CP_PART, w['ask']), (C, CP_SMALL, f'빈 점칸 {w["cells"]}칸')]
-                     + [(C, dot_cp([[]] * w['cells']), l) for l in dot_lines([[]] * w['cells'])]
+                     + [(C, dot_cp([[]] * w['cells']), l) for l in dot_lines([[]] * w['cells'], blank=True)]
                      for i, w in row]
             cells += [[]] * (k - len(row))
             s.table([cells], even(k), [6000])
+    elif t == 'table':
+        if b.get('caption'):
+            s.add([(CP_SMALL, b['caption'])])
+
+        def cell(text, bold=False):
+            # 글자와 점자를 줄을 나눠 적는다. 예) '고 ⠈⠥' → 고 / ⠈⠥
+            parts = re.split(r'\s+(?=[\u2800-\u28ff])', text, maxsplit=1)
+            out = [(C, CP_BOLD if bold else CP_BODY, parts[0])]
+            if len(parts) > 1:
+                out.append((C, CP_DOT_S, parts[1]))
+            return out
+        n = len(b['head'])
+        first = min(6000, TEXT_WIDTH // n)
+        widths = [first] + even(n - 1, TEXT_WIDTH - first)
+        grid = [[cell(h, True) for h in b['head']]] + [[cell(r[0], True)] + [cell(c) for c in r[1:]] for r in b['rows']]
+        bfs = [[BF_HEAD] * n] + [[BF_HEAD] + [BF_LINE] * (n - 1) for _ in b['rows']]
+        s.table(grid, widths, [1300] + [2000] * len(b['rows']), bfs=bfs, header_row=True)
     elif t == 'checks':
         for i in b['items']:
             s.add('□ ' + i, PP_ITEM)
@@ -194,7 +212,7 @@ def build_section(doc, skill):
 
     s = Section()
     u = doc
-    s.add([(CP_SANS, f'{lang_label(u)} 점자 {u["order"]}단원 · {u["part"]}')])
+    s.add([(CP_SANS, f'{lang_label(u)} 점자 {u["num"]}단원 · {u["part"]}')])
     s.add([(CP_TITLE, u['title'])], PP_CENTER)
     s.add('게임 전 학습자료 · 이름: ____________', PP_RIGHT)
     for pi, part in enumerate(doc['parts']):

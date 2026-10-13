@@ -96,6 +96,10 @@
       "skill": {
         "read": "점형을 보고 초성 자음을 읽는다",
         "write": "초성 자음을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-initial.hwpx",
+        "pdf": "materials/ko/ko-initial.pdf"
       }
     },
     {
@@ -126,6 +130,10 @@
       "skill": {
         "read": "점형을 보고 기본 모음을 읽는다",
         "write": "기본 모음을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-vowel.hwpx",
+        "pdf": "materials/ko/ko-vowel.pdf"
       }
     },
     {
@@ -157,6 +165,10 @@
       "skill": {
         "read": "이어진 점형을 한 음절로 읽는다",
         "write": "음절을 초성과 모음으로 풀어 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-syllable.hwpx",
+        "pdf": "materials/ko/ko-syllable.pdf"
       }
     },
     {
@@ -196,6 +208,10 @@
       "skill": {
         "read": "점형을 보고 이중 모음과 그 음절을 읽는다",
         "write": "이중 모음이 든 음절을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-double-vowel.hwpx",
+        "pdf": "materials/ko/ko-double-vowel.pdf"
       }
     },
     {
@@ -235,6 +251,10 @@
       "skill": {
         "read": "된소리표가 붙은 점형을 쌍자음으로 읽는다",
         "write": "쌍자음을 된소리표와 자음으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-tense.hwpx",
+        "pdf": "materials/ko/ko-tense.pdf"
       }
     },
     {
@@ -274,6 +294,10 @@
       "skill": {
         "read": "점형을 보고 받침과 받침이 든 음절을 읽는다",
         "write": "받침이 든 음절을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-final.hwpx",
+        "pdf": "materials/ko/ko-final.pdf"
       }
     },
     {
@@ -309,6 +333,10 @@
       "skill": {
         "read": "점형을 보고 쌍받침·겹받침과 그 음절을 읽는다",
         "write": "쌍받침·겹받침이 든 음절을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-double-final.hwpx",
+        "pdf": "materials/ko/ko-double-final.pdf"
       }
     },
     {
@@ -331,6 +359,10 @@
       "skill": {
         "read": "정자 점자로 쓴 문장을 말로 읽는다",
         "write": "정자 점자로 문장을 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-plain-sentence.hwpx",
+        "pdf": "materials/ko/ko-plain-sentence.pdf"
       }
     },
     {
@@ -354,6 +386,10 @@
       "skill": {
         "read": "약자 칸을 가·사·까·싸로 읽는다",
         "write": "가·사·까·싸를 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-ga-sa.hwpx",
+        "pdf": "materials/ko/ko-ga-sa.pdf"
       }
     },
     {
@@ -381,6 +417,10 @@
       "skill": {
         "read": "초성만 적힌 약자를 '자음+ㅏ'로 읽는다",
         "write": "'자음+ㅏ' 음절을 ㅏ를 생략한 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-ga.hwpx",
+        "pdf": "materials/ko/ko-ga.pdf"
       }
     },
     {
@@ -410,6 +450,10 @@
       "skill": {
         "read": "ㅏ가 적힌 자리와 약자 자리를 가려 읽는다",
         "write": "모음 앞과 팠에서 ㅏ를 빠뜨리지 않고 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-keep-a.hwpx",
+        "pdf": "materials/ko/ko-keep-a.pdf"
       }
     },
     {
@@ -440,6 +484,10 @@
       "skill": {
         "read": "것·껏과 받침 ㅆ이 든 음절을 읽는다",
         "write": "것·껏과 받침 ㅆ을 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-geot.hwpx",
+        "pdf": "materials/ko/ko-geot.pdf"
       }
     },
     {
@@ -475,6 +523,10 @@
       "skill": {
         "read": "'모음+받침' 약자와 '자음+약자'를 읽는다",
         "write": "'모음+받침' 음절을 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-eok.hwpx",
+        "pdf": "materials/ko/ko-eok.pdf"
       }
     },
     {
@@ -485,16 +537,16 @@
       "title": "'모음+겹받침' 글자",
       "teach": {
         "letter": "얽",
-        "pattern": "⠎⠂⠁",
-        "dots": [[2, 3, 4], [2], [1]],
-        "line": "모음 뒤에 쌍받침이나 겹받침을 이어 적습니다. 예) 얽 = ㅓ + 받침 ㄺ"
+        "pattern": "⠞⠁",
+        "dots": [[2, 3, 4, 5], [1]],
+        "line": "억·언·얼·을 같은 약자가 들어 있는 글자는 쌍받침·겹받침이 붙어도 약자를 쓰고, 남은 받침을 뒤에 적습니다. 예) 얽 = 얼 약자 + 받침 ㄱ (제15항 [붙임])"
       },
       "source": {
         "kind": "slice",
         "slices": [
           {
             "bundle": "ko.json",
-            "role": "syllable",
+            "role": "abbr",
             "syllables": ["얶", "섞", "꺾", "볶", "넋", "얹", "얽", "얾", "엷", "젊", "넓", "굵", "굶", "끓", "긁", "늙", "흙", "읊"]
           }
         ]
@@ -502,6 +554,10 @@
       "skill": {
         "read": "'모음+겹받침' 글자를 읽는다",
         "write": "'모음+겹받침' 글자를 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-vowel-double-final.hwpx",
+        "pdf": "materials/ko/ko-vowel-double-final.pdf"
       }
     },
     {
@@ -529,6 +585,10 @@
       "skill": {
         "read": "'약자+겹받침' 글자를 읽는다",
         "write": "'약자+겹받침' 글자를 약자와 받침으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-abbr-double-final.hwpx",
+        "pdf": "materials/ko/ko-abbr-double-final.pdf"
       }
     },
     {
@@ -552,6 +612,10 @@
       "skill": {
         "read": "약어를 접속어로 읽는다",
         "write": "접속어를 약어로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-word.hwpx",
+        "pdf": "materials/ko/ko-word.pdf"
       }
     },
     {
@@ -575,6 +639,10 @@
       "skill": {
         "read": "마침표·물음표·느낌표를 읽고 구분한다",
         "write": "문장 끝에 알맞은 부호를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-end.hwpx",
+        "pdf": "materials/ko/ko-mark-end.pdf"
       }
     },
     {
@@ -605,6 +673,10 @@
       "skill": {
         "read": "쉼표·가운뎃점·쌍점·빗금을 읽는다",
         "write": "낱말 사이에 알맞은 부호를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-pause.hwpx",
+        "pdf": "materials/ko/ko-mark-pause.pdf"
       }
     },
     {
@@ -637,6 +709,10 @@
       "skill": {
         "read": "따옴표·묶음표·이음표를 읽는다",
         "write": "짝을 맞추어 따옴표와 묶음표를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-pair.hwpx",
+        "pdf": "materials/ko/ko-mark-pair.pdf"
       }
     },
     {
@@ -676,6 +752,10 @@
       "skill": {
         "read": "드러냄표·안드러냄표·기타 부호를 읽는다",
         "write": "그 부호를 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-etc.hwpx",
+        "pdf": "materials/ko/ko-mark-etc.pdf"
       }
     },
     {
@@ -698,6 +778,10 @@
       "skill": {
         "read": "문장 부호가 든 문장을 말로 읽는다",
         "write": "문장 부호를 넣어 문장을 점자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-sentence.hwpx",
+        "pdf": "materials/ko/ko-sentence.pdf"
       }
     },
     {
@@ -720,6 +804,10 @@
       "skill": {
         "read": "배운 점자를 모두 섞은 문장을 말로 읽는다",
         "write": "배운 점자를 모두 섞어 문장을 점자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-use.hwpx",
+        "pdf": "materials/ko/ko-use.pdf"
       }
     },
     {
@@ -751,6 +839,10 @@
       "skill": {
         "read": "숫자와 혼동되는 글자 앞의 띄어쓰기를 알아본다",
         "write": "숫자 뒤 혼동되는 글자 앞에서 띄어 쓴다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-exception.hwpx",
+        "pdf": "materials/ko/ko-exception.pdf"
       }
     },
     {
