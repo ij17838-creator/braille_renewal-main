@@ -21,6 +21,7 @@ import {
   abbreviationIndex
 } from './curriculum.js';
 import { dataUrl } from './data_paths.js';
+import { soundsAsWritten, soundsConfusable, needsLiaison } from './ko_pronounce.js';
 import { STAGE_SIZE, wrongItemKeys, isUnitOpen, isUnitPassed, loadStudyMode } from './shell.js';
 
 const SPACE_STEP = makeStep('띄어쓰기', [], ' ', '단어 사이');
@@ -1090,6 +1091,7 @@ function nearPatterns(card, scope) {
   scope.forEach(({ cards }) => {
     cards.forEach((other) => {
       if (!other.pattern || seen.has(other.pattern)) return;
+      if (soundsConfusable(card.letter, other.letter)) return;
       seen.add(other.pattern);
       const distance = patternDistance(card.pattern, other.pattern);
       if (distance < 99) ranked.push({ pattern: other.pattern, score: distance + Math.random() * 1.5 });
@@ -1107,6 +1109,7 @@ function nearTexts(unit, card, scope) {
     const bucket = owner.id === unit.id ? current : before;
     cards.forEach((other) => {
       if (!other.letter || other.letter === card.letter || other.pattern === card.pattern) return;
+      if (soundsConfusable(card.letter, other.letter)) return;
       bucket.add(other.letter);
     });
   });
@@ -1161,6 +1164,7 @@ function meaningOptions(target, lang) {
   const seen = new Set([target]);
   for (let i = 0; i < 24 && found.length < 3; i++) {
     const next = distractorText(target, lang);
+    if (lang === 'KO' && (!soundsAsWritten(next) || soundsConfusable(target, next))) continue;
     if (next && !seen.has(next)) {
       seen.add(next);
       found.push(next);
@@ -1178,12 +1182,17 @@ function finishItem(raw, lang, seq) {
   let meanings;
   if (Array.isArray(raw.distractTexts)) {
     // 단원 문제: 재료 밖의 글자(잠긴 약자·약어)가 보기에 끼지 않게 재료에서만 고른다.
-    const extras = raw.distractTexts.filter(item => item && item !== target);
+    const extras = raw.distractTexts.filter(item => item && item !== target && !(lang === 'KO' && soundsConfusable(target, item)));
     meanings = shuffle([target, ...extras.slice(0, 3)]);
     blocks = shuffle(seqText.concat(extras.filter(item => !seqText.includes(item)).slice(0, 3)));
   } else {
     const extras = [];
-    for (let i = 0; i < 4; i++) extras.push(distractorText(seqText[i % seqText.length] || target, lang));
+    for (let i = 0; i < 8 && extras.length < 4; i++) {
+      const source = seqText[i % seqText.length] || target;
+      const made = distractorText(source, lang);
+      if (lang === 'KO' && (!soundsAsWritten(made) || soundsConfusable(source, made))) continue;
+      extras.push(made);
+    }
     blocks = shuffle(seqText.concat(extras.filter(item => item && !seqText.includes(item)).slice(0, 3)));
     meanings = meaningOptions(target, lang);
   }
@@ -1296,7 +1305,7 @@ function sentenceMaker(generators, marks, lang, limits = {}) {
   }
 
   function token(kind) {
-    for (let attempt = 0; attempt < 6; attempt++) {
+    for (let attempt = 0; attempt < 12; attempt++) {
       const made = generators[kind]();
       if (made && made.text && made.braille) return made;
     }
@@ -1331,6 +1340,7 @@ function sentenceMaker(generators, marks, lang, limits = {}) {
         tokens[index] = swapped;
         const alt = assembleSentence(tokens, sentence.mark, lang);
         if (seenBraille.has(alt.braille) || seenText.has(alt.text)) continue;
+        if (lang === 'ko' && (!soundsAsWritten(alt.text) || soundsConfusable(sentence.text, alt.text))) continue;
         seenBraille.add(alt.braille);
         seenText.add(alt.text);
         out.push({ text: alt.text, braille: alt.braille });
@@ -1345,20 +1355,28 @@ function sentenceMaker(generators, marks, lang, limits = {}) {
 // 억·언·얼 계열 약자를 아직 배우지 않았으면, 받침을 붙여 그 약자가 생기는 음절은 만들지 않는다.
 function koreanWord(pieces, jongs, translate, jongOk = () => true) {
   const count = 1 + Math.floor(Math.random() * 3);
+  // 받침 ㅅ·ㅈ·ㅊ·ㅋ·ㅌ·ㅍ·쌍받침·겹받침은 끝소리 규칙을 피하려고 뒤에 ㅇ으로 시작하는 글자를 붙인다(연음).
+  const vowelLed = pieces.filter((piece) => decompose(piece.letter)?.[0] === 'ㅇ');
   let text = '';
-  for (let i = 0; i < count; i++) {
-    const piece = pick(pieces);
+  let mustLink = false;
+  for (let i = 0; i < count || mustLink; i++) {
+    if (i >= 6) return null;
+    const pool = mustLink ? vowelLed : pieces;
+    if (!pool.length) return null;
+    const piece = pick(pool);
     if (!piece || !piece.letter) break;
     let syllable = piece.letter;
     const parts = decompose(piece.letter);
     if (jongs.length && parts && !parts[2] && (piece.kind === 'syllable' || piece.kind === 'ga') && Math.random() < 0.35) {
       const jong = pick(jongs);
       const composed = compose(parts[0], parts[1], jong.letter);
-      if (composed && jongOk(parts[0], parts[1], jong.letter)) syllable = composed;
+      const linkable = !needsLiaison(jong.letter) || vowelLed.length;
+      if (composed && linkable && jongOk(parts[0], parts[1], jong.letter)) syllable = composed;
     }
     text += syllable;
+    mustLink = needsLiaison(decompose(syllable)?.[2]);
   }
-  if (!text) return null;
+  if (!text || !soundsAsWritten(text)) return null;
   const made = translate(text);
   if (!made || !made.braille) return null;
   return tokenOf('word', text, made.braille, partsToSteps(made.parts), '낱말');
@@ -1622,37 +1640,72 @@ export function createEngine(data) {
       else slot = 1;
     }
 
-    let fillers = null;
-    const bag = shuffle(pool);
-    for (let attempt = 0; attempt < 12 && !fillers; attempt += 1) {
-      const picked = [];
-      for (let i = 0; i < bag.length && picked.length < 2; i += 1) {
-        const item = bag[(attempt + i) % bag.length];
-        if (picked.some((chosen) => chosen.letter === item.letter)) continue;
-        picked.push(item);
+    // 한글은 적은 대로 소리 나는 조합만 낸다(끝소리 규칙 피하기). 안 되면 주제 자리를 옮겨 본다.
+    // 주제 끝 받침이 ㅅ·ㅆ·ㅈ 같은 것이면 바로 뒤에 ㅇ으로 시작하는 글자를 붙여 연음되게 한다.
+    const soundOk = (made) => unit.lang === 'en' || soundsAsWritten(made.text);
+    const topicTail = unit.lang === 'en' ? null : decompose(Array.from(card.letter).pop() || '');
+    // 받침 ㅎ(ㄶ·ㅀ)은 ㅇ 앞에서 소리가 사라지므로 ㄱ·ㄷ·ㅈ 앞에 둔다(좋고[조코]).
+    const hTail = !!topicTail && ['ㅎ', 'ㄶ', 'ㅀ'].includes(topicTail[2]);
+    const linkTopic = !!topicTail && (hTail || needsLiaison(topicTail[2]));
+    const leads = hTail ? ['ㄱ', 'ㄷ', 'ㅈ'] : ['ㅇ'];
+    const vowelLed = shuffle(pool.filter((item) => leads.includes(decompose(item.letter)?.[0])));
+    let slots = card.kind === 'mark' ? [slot] : [slot, (slot + 1) % 3, (slot + 2) % 3];
+    if (linkTopic) slots = slots.filter((item) => item !== 2);
+    // 같은 채움 글자로 다른 주제를 넣어 보기를 만든다. 소리가 헷갈리는 보기는 빼므로, 보기가 모자라면 채움 글자를 바꿔 본다.
+    const altOrder = shuffle(alts);
+    const linkPool = unit.lang === 'en' ? [] : pool.filter((item) => {
+      const parts = decompose(item.letter);
+      return parts && parts[0] === 'ㅇ' && !needsLiaison(parts[2]) && !['ㅎ', 'ㄶ', 'ㅀ'].includes(parts[2]);
+    });
+    function distractorsFor(made, fillers, trySlot) {
+      const distractBraille = [];
+      const distractTexts = [];
+      for (const alt of altOrder) {
+        if (distractBraille.length >= 3) break;
+        let other = renderSeq(arrangeTopic(alt, fillers, trySlot), unit);
+        // 보기 글자 받침이 연음이 필요하면, 바로 뒤 채움 글자만 ㅇ으로 시작하는 글자로 바꿔 본다.
+        const follow = trySlot === 0 ? 0 : trySlot === 1 ? 1 : -1;
+        if (other && !soundOk(other) && follow >= 0 && follow < fillers.length && linkPool.length) {
+          const swapped = fillers.slice();
+          swapped[follow] = pick(linkPool);
+          other = renderSeq(arrangeTopic(alt, swapped, trySlot), unit);
+        }
+        if (!other || !other.braille || other.braille === made.braille || other.text === made.text) continue;
+        if (!soundOk(other) || (unit.lang !== 'en' && soundsConfusable(made.text, other.text))) continue;
+        distractBraille.push(other.braille);
+        distractTexts.push(other.text);
       }
-      if (!picked.length) break;
-      const seq = arrangeTopic(card, picked, slot);
-      if (renderSeq(seq, unit)) fillers = picked;
+      return { distractBraille, distractTexts };
     }
-    if (!fillers) return null;
 
-    const made = renderSeq(arrangeTopic(card, fillers, slot), unit);
-    if (!made || !made.text || made.text === card.letter) return null;
-
-    const distractBraille = [];
-    const distractTexts = [];
-    for (const alt of shuffle(alts)) {
-      if (distractBraille.length >= 3) break;
-      const seq = arrangeTopic(alt, fillers, slot);
-      const other = renderSeq(seq, unit);
-      if (!other || !other.braille || other.braille === made.braille || other.text === made.text) continue;
-      distractBraille.push(other.braille);
-      distractTexts.push(other.text);
+    const enough = Math.min(3, altOrder.length);
+    let best = null;
+    const bag = shuffle(pool);
+    for (const trySlot of slots) {
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        if (best && best.distractTexts.length >= enough) break;
+        const picked = [];
+        // 주제 바로 뒤 자리: slot 0이면 첫째 채움 글자, slot 1이면 둘째 채움 글자
+        if (linkTopic && vowelLed.length && trySlot === 1) picked.push(bag[attempt % bag.length]);
+        if (linkTopic && vowelLed.length) picked.push(vowelLed[attempt % vowelLed.length]);
+        for (let i = 0; i < bag.length && picked.length < 2; i += 1) {
+          const item = bag[(attempt + i) % bag.length];
+          if (picked.some((chosen) => chosen.letter === item.letter)) continue;
+          picked.push(item);
+        }
+        if (picked.length === 2 && picked[0].letter === picked[1].letter) continue;
+        if (!picked.length) break;
+        const made = renderSeq(arrangeTopic(card, picked, trySlot), unit);
+        if (!made || !made.text || made.text === card.letter || !soundOk(made)) continue;
+        const options = distractorsFor(made, picked, trySlot);
+        if (!best || options.distractTexts.length > best.distractTexts.length) best = { ...made, ...options };
+      }
+      if (best && best.distractTexts.length >= enough) break;
     }
+    if (!best) return null;
 
     if (card.kind !== 'mark') placeCursor.set(unit.id, (placeCursor.get(unit.id) || 0) + 1);
-    return { ...made, distractBraille, distractTexts };
+    return best;
   }
 
   function fromCard(unit, card, owner = unit) {
@@ -1773,6 +1826,7 @@ export function createEngine(data) {
       const raw = bank.byRecipe(pick(recipes));
       if (!raw || !raw.braille || !raw.parts?.length) continue;
       const text = raw.text || raw.parts.map(part => part.text).join('');
+      if (lang === 'KO' && !soundsAsWritten(text)) continue;
       const key = `${lang}:${text}`;
       if (recent.has(key)) continue;
       recent.add(key);
