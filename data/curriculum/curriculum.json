@@ -294,6 +294,10 @@
       "skill": {
         "read": "점형을 보고 받침과 받침이 든 음절을 읽는다",
         "write": "받침이 든 음절을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-final.hwpx",
+        "pdf": "materials/ko/ko-final.pdf"
       }
     },
     {
