@@ -186,6 +186,12 @@ class KoreanBrailleEngine:
 
         # 5. 문장부호
         self._init_punctuation()
+        # 받침과 점형이 같은 문장 끝 부호 칸 (ㅍ=., ㅋ=!, ㅌ=?)
+        self.jong_terminal_cells = {
+            uni for uni, senses in self.punct_senses.items()
+            if uni in self.rev_jongsung and any(sense["context"] == "sentence_end" for sense in senses)
+        }
+        self._sentence_mode = False
         # 단위어 점형은 음절 규칙이 준비된 뒤에 만든다.
         self._build_exempt_unit_braille()
 
@@ -253,14 +259,14 @@ class KoreanBrailleEngine:
         cho = self._ga_choseong(cell)
         if not cho:
             return "", 0
-        jong, jong_len = self._read_symbol(self.rev_jongsung, token, idx + 1)
+        jong, jong_len = self._read_jong(token, idx + 1)
         if jong:
             jong_cells = token[idx + 1:idx + 1 + jong_len]
             if jong_cells in self.rev_jungsung and not self.prefer_abbr_over_jungsung:
                 return "", 0
             # ㅆ과 ㅖ가 같은 칸이다. 그 뒤에 받침이 더 있으면 ㅖ+받침으로 읽는다.
             if jong_cells in self.rev_jungsung:
-                more, _ = self._read_symbol(self.rev_jongsung, token, idx + 1 + jong_len)
+                more, _ = self._read_jong(token, idx + 1 + jong_len)
                 if more:
                     return "", 0
             return self._compose_ga(cho, jong), 1 + jong_len
@@ -688,6 +694,8 @@ class KoreanBrailleEngine:
         tokens = re.findall(r'[\u2800-\u28FF]+|[^\u2800-\u28FF]+', braille_str)
         result = []
         self._tag_open = {uni: False for uni in self.toggle_tags}
+        braille_tokens = [t for t in tokens if any('\u2800' <= c <= '\u28FF' for c in t)]
+        self._sentence_mode = len(braille_tokens) > 1
 
         for token in tokens:
             if not token.strip() or not any('\u2800' <= c <= '\u28FF' for c in token):
@@ -943,6 +951,22 @@ class KoreanBrailleEngine:
                 return word, len(braille)
         return "", 0
 
+    def _read_jong(self, token: str, idx: int) -> Tuple[Optional[str], int]:
+        """받침을 읽는다. 받침 ㅍ·ㅋ·ㅌ은 마침표·느낌표·물음표와 점형이 같다.
+
+        문장(여러 토큰)에서 토큰 끝에 남은 그 칸은 받침이 아니라 문장부호로 읽는다.
+        낱말 하나만 들어오면 받침으로 읽는다 (⠣⠲ -> 앞, ⠣⠲⠲ -> 앞.).
+        """
+        for length in (2, 1):
+            cells = token[idx:idx + length]
+            if idx + length > len(token) or cells not in self.rev_jongsung:
+                continue
+            if (self._sentence_mode and idx + length == len(token)
+                    and cells[-1] in self.jong_terminal_cells):
+                continue
+            return self.rev_jongsung[cells], length
+        return None, 0
+
     def _read_symbol(self, table: dict, token: str, idx: int) -> Tuple[Optional[str], int]:
         """두 칸 자모(ㅒ, ㅄ 등)를 한 칸 자모보다 먼저 읽는다."""
         for length in (2, 1):
@@ -1014,14 +1038,14 @@ class KoreanBrailleEngine:
                 if follows_vowel and follows_jong and not self.prefer_abbr_over_jungsung:
                     use_ga = False
                 if use_ga and follows_jong:
-                    jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2)
+                    jong, jong_len = self._read_jong(b_token, start_idx + 2)
                     jong_cells = b_token[start_idx + 2:start_idx + 2 + jong_len]
                     if jong_cells in self.rev_jungsung:
-                        more, _ = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2 + jong_len)
+                        more, _ = self._read_jong(b_token, start_idx + 2 + jong_len)
                         if more:
                             use_ga = False
                 if use_ga:
-                    jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, start_idx + 2)
+                    jong, jong_len = self._read_jong(b_token, start_idx + 2)
                     if jong:
                         return self._compose_ga(ga_cho, jong, True), 2 + jong_len
                     return self._compose_ga(ga_cho, "", True), 2
@@ -1066,7 +1090,7 @@ class KoreanBrailleEngine:
             jung, jung_len = self._read_symbol(self.rev_jungsung, b_token, idx + 1)
             if jung:
                 cho = apply_tense(self.rev_chosung[c1])
-                jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, idx + 1 + jung_len)
+                jong, jong_len = self._read_jong(b_token, idx + 1 + jung_len)
                 if jong:
                     return self.compose(cho, jung, jong), offset + 1 + jung_len + jong_len
                 return self.compose(cho, jung, ""), offset + 1 + jung_len
@@ -1082,7 +1106,7 @@ class KoreanBrailleEngine:
         # 5. 초성 ㅇ 생략. 두 칸 모음·받침을 한 음절로 읽는다.
         jung, jung_len = self._read_symbol(self.rev_jungsung, b_token, idx)
         if jung:
-            jong, jong_len = self._read_symbol(self.rev_jongsung, b_token, idx + jung_len)
+            jong, jong_len = self._read_jong(b_token, idx + jung_len)
             if jong:
                 return self.compose("ㅇ", jung, jong), jung_len + jong_len
             return self.compose("ㅇ", jung, ""), jung_len

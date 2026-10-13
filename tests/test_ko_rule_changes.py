@@ -212,5 +212,34 @@ class TestKeepA(unittest.TestCase):
         self.assertEqual(rules, ["keep_a_vowel_connection", "keep_a_spell_out"])
 
 
+class JongsungTestCase(unittest.TestCase):
+    """받침 자음은 첫소리 자음과 다른 점형을 쓴다."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.engine = load_engine()
+
+    def braille(self, text):
+        return self.engine.text_to_braille(text)["braille"]
+
+    def test_jong_differs_from_cho(self):
+        ko = self.engine.ko
+        cho = ko["chosung"]["items"]
+        jong = ko["jongsung"]["items"]
+        for letter in ("ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"):
+            self.assertNotEqual(cho[letter]["unicode"], jong[letter]["unicode"], letter)
+
+    def test_kieuk_tieut_pieup_finals(self):
+        self.assertEqual(self.braille("부엌"), "⠘⠍⠎⠖")
+        self.assertEqual(self.braille("밭"), "⠘⠦")
+        self.assertEqual(self.braille("앞"), "⠣⠲")
+        self.assertEqual(self.braille("핥다"), "⠚⠂⠦⠊")
+        self.assertEqual(self.braille("읊다"), "⠪⠂⠲⠊")
+
+    def test_round_trip_with_terminal_punctuation(self):
+        for text in ("앞", "앞.", "부엌!", "끝?", "밭에 갔다.", "앞으로 가자!", "팥죽이 좋아?", "옆집 앞마당"):
+            self.assertEqual(self.engine.braille_to_text(self.braille(text)), text)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
