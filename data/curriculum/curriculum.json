@@ -484,6 +484,10 @@
       "skill": {
         "read": "것·껏과 받침 ㅆ이 든 음절을 읽는다",
         "write": "것·껏과 받침 ㅆ을 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-geot.hwpx",
+        "pdf": "materials/ko/ko-geot.pdf"
       }
     },
     {
