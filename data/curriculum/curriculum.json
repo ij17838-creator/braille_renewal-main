@@ -554,6 +554,10 @@
       "skill": {
         "read": "'모음+겹받침' 글자를 읽는다",
         "write": "'모음+겹받침' 글자를 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-vowel-double-final.hwpx",
+        "pdf": "materials/ko/ko-vowel-double-final.pdf"
       }
     },
     {
