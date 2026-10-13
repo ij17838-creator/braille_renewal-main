@@ -1,0 +1,1380 @@
+{
+  "schema_version": "1.0",
+  "source": "한국 점자 규정(개정) 전문 · 한글 점자 제1장~제6장(제1~74항)",
+  "description": "한글 점자 규정의 규칙(본항)·보충 규칙([붙임])·예외([다만])를 유형별로 모은 목록이다. 점형 표는 ko.json·ko_marks.json·ko_number_rules.json이 맡으며 이 파일은 점형을 정의하지 않는다. 본문 속 점자는 규정 원문을 옮긴 것이다. corrected_existing_rules는 규정과 달라 고친 기존 규칙이다.",
+  "clause_types": {
+    "rule": "본항: 기본 규칙",
+    "supplement": "[붙임]: 본항을 보충하는 규칙",
+    "exception": "[다만]: 본항의 예외"
+  },
+  "statuses": {
+    "implemented": "이미 코드에 있던 규칙 (그대로 유지)",
+    "inserted": "이번에 코드에 새로 넣은 규칙",
+    "partial": "일부만 코드에 반영됨 (note 참고)",
+    "catalog_only": "목록에만 등록. 새 점형이 필요하거나 엔진이 다루지 않는 영역 (note 참고)"
+  },
+  "categories": {
+    "jamo": {
+      "name": "자모",
+      "articles": "제1~7항",
+      "section": "제1장 제1~3절 첫소리·받침·모음자"
+    },
+    "standalone_jamo": {
+      "name": "단독 자모",
+      "articles": "제8~10항",
+      "section": "제1장 제4절"
+    },
+    "vowel_sequence": {
+      "name": "모음 연쇄",
+      "articles": "제11~12항",
+      "section": "제1장 제5절"
+    },
+    "syllable_abbreviation": {
+      "name": "약자",
+      "articles": "제13~17항",
+      "section": "제2장 제6절"
+    },
+    "word_abbreviation": {
+      "name": "약어",
+      "articles": "제18항",
+      "section": "제2장 제7절"
+    },
+    "old_letters": {
+      "name": "옛 글자",
+      "articles": "제19~27항",
+      "section": "제3장"
+    },
+    "roman_greek": {
+      "name": "로마자와 그리스 문자",
+      "articles": "제28~39항",
+      "section": "제4장"
+    },
+    "numbers": {
+      "name": "숫자",
+      "articles": "제40~44항",
+      "section": "제5장 제11절"
+    },
+    "number_symbols": {
+      "name": "숫자와 함께 쓰는 기호",
+      "articles": "제45~48항",
+      "section": "제5장 제12절"
+    },
+    "punctuation": {
+      "name": "문장 부호",
+      "articles": "제49~58항",
+      "section": "제6장 제13절"
+    },
+    "other_symbols": {
+      "name": "기타 부호",
+      "articles": "제59~74항",
+      "section": "제6장 제14절"
+    }
+  },
+  "summary": {
+    "total": 120,
+    "by_clause": {
+      "rule": 74,
+      "exception": 20,
+      "supplement": 26
+    },
+    "by_status": {
+      "implemented": 39,
+      "catalog_only": 65,
+      "inserted": 5,
+      "partial": 11
+    }
+  },
+  "corrected_existing_rules": [
+    "'사' 풀어쓰기 예외(모음 앞·숫자 뒤)를 없앴다. 규정에 없는 예외다. '사'는 늘 약자 ⠇로 적는다 (제13·14·44항).",
+    "숫자 사이 붙임표(-)와 빗금(/) 뒤의 숫자에 수표를 다시 적는다 (제43항 [다만], 제47항 [붙임]). 분수 빗금은 ⠸⠌으로 적는다.",
+    "숫자 뒤 로마자 단위에 로마자표 ⠴와 종료표 ⠲를 적는다 (제69항).",
+    "문장 부호 점형을 제49항 표대로 고쳤다: 쌍점 ⠐⠂, 대괄호 ⠦⠆ ⠰⠴, 중괄호 ⠦⠂ ⠐⠴, 겹낫표 ⠰⠦ ⠴⠆, 홑낫표 ⠐⠦ ⠴⠂, 겹화살괄호 ⠰⠶ ⠶⠆, 홑화살괄호 ⠐⠶ ⠶⠂, 물결표 ⠈⠔, 줄임표 ⠠⠠⠠, 숨김표 ⠸⠴⠇ ⠸⠭⠇ ⠸⠬⠇, 빠짐표 ⠸⠶⠇.",
+    "기타 부호 점형을 고쳤다: 별표·참고표 ⠐⠔ (제60항), 아포스트로피 ⠄ (제61항), 상동 기호 ⠴⠴ (제62항), 굵은 글자체표 ⠰⠤ ⠤⠆ (제56항).",
+    "옛 항 번호(제17항 [붙임]·[다만])로 적힌 주석을 개정 규정의 제14항·[붙임]으로 고쳤다."
+  ],
+  "rules": [
+    {
+      "id": "1",
+      "article": 1,
+      "label": "제1항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "기본 자음자 14개가 첫소리로 쓰일 때에는 다음과 같이 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#chosung"
+      ]
+    },
+    {
+      "id": "1-exception-1",
+      "article": 1,
+      "label": "제1항 [다만 1]",
+      "clause": "exception",
+      "category": "jamo",
+      "text": "‘ㅇ’이 첫소리로 쓰일 때에는 점자로 이를 표기하지 않는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#chosung.rule.omitZeroConsonant"
+      ]
+    },
+    {
+      "id": "1-exception-2",
+      "article": 1,
+      "label": "제1항 [다만 2]",
+      "clause": "exception",
+      "category": "jamo",
+      "text": "첫소리로 쓰인 ‘ㅇ’을 나타내야 할 때에는 ⠛으로 표기한다.",
+      "status": "catalog_only",
+      "note": "‘ㅇ’을 드러내야 하는 자리는 문맥으로 정해지고, 이 용도의 점형이 데이터에 없다."
+    },
+    {
+      "id": "2",
+      "article": 2,
+      "label": "제2항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "된소리 글자 ‘ㄲ, ㄸ, ㅃ, ㅆ, ㅉ’이 첫소리로 쓰일 때에는 ‘ㄱ, ㄷ, ㅂ, ㅅ, ㅈ’ 앞에 된소리표 ⠠을 적어 나타낸다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#chosung",
+        "engine/ko/ko_parser.py:_load_tensers"
+      ]
+    },
+    {
+      "id": "3",
+      "article": 3,
+      "label": "제3항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "기본 자음자 14개가 받침으로 쓰일 때에는 다음과 같이 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#jongsung"
+      ]
+    },
+    {
+      "id": "4",
+      "article": 4,
+      "label": "제4항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "쌍받침 ‘ㄲ’은 ⠁⠁으로 적고, 쌍받침 ‘ㅆ’은 약자인 ⠌으로 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#jongsung.ㄲ",
+        "data/ko/ko.json#jongsung.ㅆ"
+      ]
+    },
+    {
+      "id": "5",
+      "article": 5,
+      "label": "제5항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "겹받침은 각 받침 글자를 어울러 다음과 같이 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#jongsung"
+      ]
+    },
+    {
+      "id": "6",
+      "article": 6,
+      "label": "제6항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "기본 모음자 10개는 다음과 같이 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#jungsung"
+      ]
+    },
+    {
+      "id": "7",
+      "article": 7,
+      "label": "제7항",
+      "clause": "rule",
+      "category": "jamo",
+      "text": "그 밖의 모음자 11개는 다음과 같이 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#jungsung"
+      ]
+    },
+    {
+      "id": "8",
+      "article": 8,
+      "label": "제8항",
+      "clause": "rule",
+      "category": "standalone_jamo",
+      "text": "자음자나 모음자가 단독으로 쓰일 때에는 해당 글자 앞에 온표 ⠿을 적어 나타내며, 자음자는 받침으로 적는다.",
+      "status": "catalog_only",
+      "note": "온표 점형이 데이터에 없어 낱자모는 아직 그대로 통과한다."
+    },
+    {
+      "id": "8-supplement",
+      "article": 8,
+      "label": "제8항 [붙임]",
+      "clause": "supplement",
+      "category": "standalone_jamo",
+      "text": "자음자나 모음자가 단독으로 쓰일 때 띄어쓰기는 묵자를 따른다.",
+      "status": "catalog_only",
+      "note": "제8항 본항과 함께 적용한다."
+    },
+    {
+      "id": "9",
+      "article": 9,
+      "label": "제9항",
+      "clause": "rule",
+      "category": "standalone_jamo",
+      "text": "한글의 자음자가 번호로 쓰일 때에는 온표를 앞세워 받침으로 적는다.",
+      "status": "catalog_only",
+      "note": "온표 점형이 데이터에 없다."
+    },
+    {
+      "id": "10",
+      "article": 10,
+      "label": "제10항",
+      "clause": "rule",
+      "category": "standalone_jamo",
+      "text": "단독으로 쓰인 자음자가 단어에 붙어 나올 때에는 ⠸을 앞세워 받침으로 적는다.",
+      "status": "catalog_only",
+      "note": "이 용도의 점형이 데이터에 없다."
+    },
+    {
+      "id": "11",
+      "article": 11,
+      "label": "제11항",
+      "clause": "rule",
+      "category": "vowel_sequence",
+      "text": "모음자에 ‘예’가 붙어 나올 때에는 그 사이에 구분표 ⠤을 적어 나타낸다.",
+      "status": "inserted",
+      "code": [
+        "data/ko/ko.json#special_rules.vowel_separator_rule",
+        "engine/ko/ko_parser.py:_needs_vowel_separator",
+        "web/js/quiz_combo.js"
+      ],
+      "note": "구분표 점형은 ko_marks.json의 붙임표(-) 점형을 그대로 쓴다."
+    },
+    {
+      "id": "11-exception",
+      "article": 11,
+      "label": "제11항 [다만]",
+      "clause": "exception",
+      "category": "vowel_sequence",
+      "text": "그 사이에서 줄이 바뀔 때에는 구분표를 적지 않는다.",
+      "status": "inserted",
+      "code": [
+        "data/ko/ko.json#special_rules.vowel_separator_rule.skip_across_line_break",
+        "engine/ko/ko_parser.py:_needs_vowel_separator"
+      ]
+    },
+    {
+      "id": "12",
+      "article": 12,
+      "label": "제12항",
+      "clause": "rule",
+      "category": "vowel_sequence",
+      "text": "‘ㅑ, ㅘ, ㅜ, ㅝ’에 ‘애’가 붙어 나올 때에는 두 모음자 사이에 구분표 ⠤을 적어 나타낸다.",
+      "status": "inserted",
+      "code": [
+        "data/ko/ko.json#special_rules.vowel_separator_rule",
+        "engine/ko/ko_parser.py:_needs_vowel_separator",
+        "web/js/quiz_combo.js"
+      ]
+    },
+    {
+      "id": "12-exception",
+      "article": 12,
+      "label": "제12항 [다만]",
+      "clause": "exception",
+      "category": "vowel_sequence",
+      "text": "그 사이에서 줄이 바뀔 때에는 구분표를 적지 않는다.",
+      "status": "inserted",
+      "code": [
+        "data/ko/ko.json#special_rules.vowel_separator_rule.skip_across_line_break",
+        "engine/ko/ko_parser.py:_needs_vowel_separator"
+      ]
+    },
+    {
+      "id": "13",
+      "article": 13,
+      "label": "제13항",
+      "clause": "rule",
+      "category": "syllable_abbreviation",
+      "text": "다음 글자들은 약자를 사용하여 적는다. 가 나 다 마 바 사 자 카 타 파 하",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable (ga_series)"
+      ]
+    },
+    {
+      "id": "13-supplement",
+      "article": 13,
+      "label": "제13항 [붙임]",
+      "clause": "supplement",
+      "category": "syllable_abbreviation",
+      "text": "위의 글자들에 받침이 있거나 첫소리가 된소리일 때에도 약자를 사용하여 적는다.",
+      "status": "implemented",
+      "code": [
+        "engine/ko/ko_parser.py:_translate_hangul_syllable_with_trace"
+      ]
+    },
+    {
+      "id": "14",
+      "article": 14,
+      "label": "제14항",
+      "clause": "rule",
+      "category": "syllable_abbreviation",
+      "text": "‘나, 다, 마, 바, 자, 카, 타, 파, 하’에 모음이 붙어 나올 때에는 약자를 사용하지 않는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable.rule.keep_a.vowel_connection"
+      ]
+    },
+    {
+      "id": "14-exception",
+      "article": 14,
+      "label": "제14항 [다만]",
+      "clause": "exception",
+      "category": "syllable_abbreviation",
+      "text": "그 사이에서 줄이 바뀔 때에는 약자를 사용하여 적는다.",
+      "status": "implemented",
+      "code": [
+        "engine/ko/ko_parser.py:text_to_braille"
+      ],
+      "note": "다음 글자가 줄바꿈이면 모음 연결로 보지 않으므로 약자를 쓴다."
+    },
+    {
+      "id": "14-supplement",
+      "article": 14,
+      "label": "제14항 [붙임]",
+      "clause": "supplement",
+      "category": "syllable_abbreviation",
+      "text": "‘팠’을 적을 때에는 ‘ㅏ’를 생략하지 않고 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable.rule.keep_a.spell_out"
+      ]
+    },
+    {
+      "id": "15",
+      "article": 15,
+      "label": "제15항",
+      "clause": "rule",
+      "category": "syllable_abbreviation",
+      "text": "다음 글자들은 약자를 사용하여 적는다. 억 언 얼 연 열 영 옥 온 옹 운 울 은 을 인 것",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable (vowel_coda_series, complete_syllable)"
+      ]
+    },
+    {
+      "id": "15-supplement",
+      "article": 15,
+      "label": "제15항 [붙임]",
+      "clause": "supplement",
+      "category": "syllable_abbreviation",
+      "text": "‘억, 언, 얼, 연, 열, 영, 옥, 온, 옹, 운, 울, 은, 을, 인, 것’이 포함되어 있는 글자에도 약자를 사용하여 적는다.",
+      "status": "implemented",
+      "code": [
+        "engine/ko/ko_parser.py:_translate_hangul_syllable_with_trace"
+      ]
+    },
+    {
+      "id": "16",
+      "article": 16,
+      "label": "제16항",
+      "clause": "rule",
+      "category": "syllable_abbreviation",
+      "text": "‘까, 싸, 껏’을 적을 때에는 ‘가, 사, 것’의 약자 앞에 된소리표를 적어 나타낸다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable.것.tensed_same_abbreviation",
+        "engine/ko/ko_parser.py:_translate_hangul_syllable_with_trace"
+      ]
+    },
+    {
+      "id": "16-supplement",
+      "article": 16,
+      "label": "제16항 [붙임]",
+      "clause": "supplement",
+      "category": "syllable_abbreviation",
+      "text": "‘껐’을 적을 때에는 ‘꺼’와 받침 ‘ㅆ’ 약자를 어울러 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable.것.ssang_jong_exception"
+      ]
+    },
+    {
+      "id": "17",
+      "article": 17,
+      "label": "제17항",
+      "clause": "rule",
+      "category": "syllable_abbreviation",
+      "text": "‘성, 썽, 정, 쩡, 청’을 적을 때에는 ‘ㅅ, ㅆ, ㅈ, ㅉ, ㅊ’ 다음에 ‘영’의 약자 ⠻을 적어 나타낸다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_syllable.영.initial_vowel_override"
+      ]
+    },
+    {
+      "id": "18",
+      "article": 18,
+      "label": "제18항",
+      "clause": "rule",
+      "category": "word_abbreviation",
+      "text": "다음 단어들은 약어를 사용하여 적는다. 그래서 그러나 그러면 그러므로 그런데 그리고 그리하여",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_word"
+      ]
+    },
+    {
+      "id": "18-supplement",
+      "article": 18,
+      "label": "제18항 [붙임]",
+      "clause": "supplement",
+      "category": "word_abbreviation",
+      "text": "약어 뒤에 다른 글자가 붙어 나올 때에도 약어를 사용하여 적는다.",
+      "status": "inserted",
+      "code": [
+        "data/ko/ko.json#abbreviation_word.rule.letters_after",
+        "engine/ko/ko_parser.py:text_to_braille",
+        "engine/ko/ko_syntax_analyzer.py:_standalone_word_notes",
+        "engine/ko/ko_generator.py:_embeds_word_abbr",
+        "web/js/quiz_combo.js"
+      ],
+      "note": "전에는 뒤에 한글이 붙으면 풀어 적었다(예: 그래서는). 이제 규정대로 약어를 쓴다."
+    },
+    {
+      "id": "18-exception",
+      "article": 18,
+      "label": "제18항 [다만]",
+      "clause": "exception",
+      "category": "word_abbreviation",
+      "text": "약어 앞에 다른 글자가 붙어 나올 때에는 약어를 사용하지 않는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#abbreviation_word.rule.letters_before",
+        "engine/ko/ko_parser.py:text_to_braille"
+      ]
+    },
+    {
+      "id": "19",
+      "article": 19,
+      "label": "제19항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "자음자 가운데 옛 글자는 옛 글자표 ⠐을 앞세워 다음과 같이 적는다.",
+      "status": "catalog_only",
+      "note": "옛 글자표와 옛 자모 점형이 데이터에 없다."
+    },
+    {
+      "id": "19-supplement",
+      "article": 19,
+      "label": "제19항 [붙임]",
+      "clause": "supplement",
+      "category": "old_letters",
+      "text": "동국정운식 한자음 표기에서 사용되는 음가 없는 받침 ‘ㅇ’은 ⠐⠶으로 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "20",
+      "article": 20,
+      "label": "제20항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "연서로 만들어진 옛 자음자는 옛 글자표를 앞세워 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "21",
+      "article": 21,
+      "label": "제21항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "각자 병서로 만들어진 옛 자음자는 옛 글자표를 앞세워 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "22",
+      "article": 22,
+      "label": "제22항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "합용 병서로 만들어진 옛 자음자가 첫소리로 쓰일 때에는 옛 글자표를 앞세워 각 자음자를 어울러 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "22-exception",
+      "article": 22,
+      "label": "제22항 [다만]",
+      "clause": "exception",
+      "category": "old_letters",
+      "text": "현재 쓰이지 않는 겹받침 글자는 각 받침 글자를 어울러 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "23",
+      "article": 23,
+      "label": "제23항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "단독으로 쓰인 자음자가 단어의 중간이나 끝에 붙어 나올 때에는 ⠸을 앞세워 받침으로 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "24",
+      "article": 24,
+      "label": "제24항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "옛 자음자가 포함된 글자에 모음 ‘ㅏ’가 나올 때에는 ‘ㅏ’를 생략하지 않는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "25",
+      "article": 25,
+      "label": "제25항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "옛 모음자는 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "26",
+      "article": 26,
+      "label": "제26항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "단독으로 쓰인 ‘딴이(ㅣ)’는 ⠸⠕으로 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "27",
+      "article": 27,
+      "label": "제27항",
+      "clause": "rule",
+      "category": "old_letters",
+      "text": "방점은 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "28",
+      "article": 28,
+      "label": "제28항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "로마자는 「통일영어점자 규정」에 따라 다음과 같이 적는다.",
+      "status": "catalog_only",
+      "note": "한글 엔진은 로마자를 아직 그대로 통과시킨다. 영어 점자는 engine/en이 따로 맡는다."
+    },
+    {
+      "id": "28-supplement",
+      "article": 28,
+      "label": "제28항 [붙임]",
+      "clause": "supplement",
+      "category": "roman_greek",
+      "text": "로마자가 한 글자만 대문자일 때에는 대문자 기호표 ⠠을 그 앞에 적고, 단어 전체가 대문자이거나 두 글자 이상 연속해서 대문자일 때에는 대문자 단어표 ⠠⠠을 그 앞에 적는다. 세 개 이상의 연속된 단어가 모두 대문자일 때에는 첫 단어 앞에 대문자 구절표 ⠠⠠⠠을 적고, 마지막 단어 뒤에 대문자 종료표 ⠠⠄을 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "29",
+      "article": 29,
+      "label": "제29항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "국어 문장 안에 로마자가 나올 때에는 그 앞에 로마자표 ⠴을 적고 그 뒤에 로마자 종료표 ⠲을 적는다. 이때 로마자가 둘 이상 연이어 나오면 첫 로마자 앞에 로마자표를 적고 마지막 로마자 뒤에 로마자 종료표를 적는다.",
+      "status": "catalog_only",
+      "note": "로마자표·종료표 점형이 한글 데이터에 없다."
+    },
+    {
+      "id": "29-exception",
+      "article": 29,
+      "label": "제29항 [다만]",
+      "clause": "exception",
+      "category": "roman_greek",
+      "text": "문단 전체가 로마자일 때에는 로마자표와 로마자 종료표를 생략할 수 있다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "30",
+      "article": 30,
+      "label": "제30항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "그리스 문자는 「통일영어점자 규정」에 따라 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "31",
+      "article": 31,
+      "label": "제31항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "국어 문장 안에 그리스 문자가 나올 때에는 그 앞에 로마자표 ⠴을 적고 그 뒤에 로마자 종료표 ⠲을 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "32",
+      "article": 32,
+      "label": "제32항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "로마자표와 로마자 종료표 사이의 표기는 「통일영어점자 규정」에 따라 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "33",
+      "article": 33,
+      "label": "제33항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "「통일영어점자 규정」과 「한글 점자」의 점형이 다른 문장 부호(, : ; ―)가 로마자와 한글 사이에 나올 때에는 로마자 종료표를 적지 않고 문장 부호는 「한글 점자」에 따라 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "33-exception",
+      "article": 33,
+      "label": "제33항 [다만]",
+      "clause": "exception",
+      "category": "roman_greek",
+      "text": "「통일영어점자 규정」과 「한글 점자」의 점형이 같은 문장 부호 중에서 ‘. ? ! ...’는 문장 부호 뒤에 로마자 종료표를 적지 않고, ‘/ - ~’는 문장 부호 앞에 로마자 종료표를 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "34",
+      "article": 34,
+      "label": "제34항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "로마자가 따옴표나 괄호 등으로 묶일 때에는 로마자 종료표를 적지 않는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "35",
+      "article": 35,
+      "label": "제35항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "로마자와 숫자가 이어 나올 때에는 로마자 종료표를 적지 않는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "36",
+      "article": 36,
+      "label": "제36항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "로마 숫자는 해당 로마자를 사용하여 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "37",
+      "article": 37,
+      "label": "제37항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "다음 영어 단어 앞에 로마자표가 올 때에는 단어 약자를 쓰지 않고 알파벳과 여러 글자를 나타내는 묶음 약자를 사용하여 풀어 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "37-supplement",
+      "article": 37,
+      "label": "제37항 [붙임]",
+      "clause": "supplement",
+      "category": "roman_greek",
+      "text": "‘be, enough, his, in, was, were’는 로마자 종료표 앞에서도 단어 약자를 쓰지 않고 알파벳과 묶음 약자를 사용하여 풀어 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "38",
+      "article": 38,
+      "label": "제38항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "발음 기호를 표기할 때에는 국제영어점자위원회가 정한 「국제음성기호 점자」에 따라 국제음성기호 점자 규정 변환표를 사용하여 적는다. 이때 사용하는 묶음 기호는 다음과 같다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "39",
+      "article": 39,
+      "label": "제39항",
+      "clause": "rule",
+      "category": "roman_greek",
+      "text": "로마자가 주된 문장 안에 한글이 나올 때에는 한글표 ⠸⠷과 한글 종료표 ⠸⠾ 사이에 한글을 묶어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "40",
+      "article": 40,
+      "label": "제40항",
+      "clause": "rule",
+      "category": "numbers",
+      "text": "숫자는 수표 ⠼을 앞세워 다음과 같이 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/common/numbers.json#numeric_indicators",
+        "engine/ko/ko_parser.py:text_to_braille"
+      ]
+    },
+    {
+      "id": "41",
+      "article": 41,
+      "label": "제41항",
+      "clause": "rule",
+      "category": "numbers",
+      "text": "숫자 사이에 붙어 나오는 쉼표와 자릿점은 ⠂으로 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#symbols.comma"
+      ]
+    },
+    {
+      "id": "42",
+      "article": 42,
+      "label": "제42항",
+      "clause": "rule",
+      "category": "numbers",
+      "text": "일곱 자리 이상의 긴 숫자를 두 줄에 나누어 적을 때에는 위 줄 끝에 연결표 ⠠을 적고, 아래 줄의 첫머리에는 수표를 다시 적지 않는다. 이때 아래 줄에는 세 자리 이상의 숫자가 나와야 한다.",
+      "status": "catalog_only",
+      "note": "엔진이 줄 나눔을 하지 않는다."
+    },
+    {
+      "id": "42-supplement",
+      "article": 42,
+      "label": "제42항 [붙임]",
+      "clause": "supplement",
+      "category": "numbers",
+      "text": "자릿점이 있는 숫자의 경우, 자릿점 뒤에 연결표를 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "43",
+      "article": 43,
+      "label": "제43항",
+      "clause": "rule",
+      "category": "numbers",
+      "text": "숫자 사이에 마침표, 쉼표, 연결표가 붙어 나올 때에는 뒤의 숫자에 수표를 다시 적지 않는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#scope_maintenance"
+      ]
+    },
+    {
+      "id": "43-exception",
+      "article": 43,
+      "label": "제43항 [다만]",
+      "clause": "exception",
+      "category": "numbers",
+      "text": "그 밖의 다른 기호가 숫자 사이에 붙어 나올 때에는 수표를 다시 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#symbols.hyphen",
+        "data/ko/ko_number_rules.json#symbols.fraction_slash",
+        "data/ko/ko_number_rules.json#termination_triggers"
+      ],
+      "note": "붙임표·빗금·가운뎃점·쌍점 뒤의 숫자에는 수표를 다시 적는다 (예: 12,1-9)."
+    },
+    {
+      "id": "44",
+      "article": 44,
+      "label": "제44항",
+      "clause": "rule",
+      "category": "numbers",
+      "text": "숫자 뒤에 이어 나오는 한글의 띄어쓰기는 묵자를 따른다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#collision_resolutions.trailing_letters"
+      ],
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "44-exception",
+      "article": 44,
+      "label": "제44항 [다만]",
+      "clause": "exception",
+      "category": "numbers",
+      "text": "숫자와 혼동되는 ‘ㄴ, ㄷ, ㅁ, ㅋ, ㅌ, ㅍ, ㅎ’의 첫소리 글자와 ‘운’의 약자는 숫자 뒤에 붙어 나오더라도 숫자와 한글을 띄어 쓴다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko.json#special_rules.number_prefix_rule"
+      ]
+    },
+    {
+      "id": "45",
+      "article": 45,
+      "label": "제45항",
+      "clause": "rule",
+      "category": "number_symbols",
+      "text": "연산 기호와 비교 기호는 다음과 같이 적는다.",
+      "status": "catalog_only",
+      "note": "연산·비교 기호 점형이 데이터에 없다."
+    },
+    {
+      "id": "46",
+      "article": 46,
+      "label": "제46항",
+      "clause": "rule",
+      "category": "number_symbols",
+      "text": "연산 기호와 비교 기호가 한글 사이에 나올 때에는 기호의 앞뒤를 한 칸씩 띄어 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "47",
+      "article": 47,
+      "label": "제47항",
+      "clause": "rule",
+      "category": "number_symbols",
+      "text": "분수는 분수표 ⠌을 사용하여 분모, 분수표, 분자 순으로 적고, 대분수는 정수와 분수를 붙여 적는다.",
+      "status": "catalog_only",
+      "note": "기존 분수선(fraction_slash)은 입력 순서(분자/분모)대로 적는다."
+    },
+    {
+      "id": "47-supplement",
+      "article": 47,
+      "label": "제47항 [붙임]",
+      "clause": "supplement",
+      "category": "number_symbols",
+      "text": "분수를 표시하는 빗금(/)은 ⠸⠌으로 적고, 순서는 묵자를 따른다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#symbols.fraction_slash"
+      ],
+      "note": "입력한 순서대로 ⠸⠌을 적고 뒤 숫자에 수표를 다시 적는다 (예: 2/3)."
+    },
+    {
+      "id": "48",
+      "article": 48,
+      "label": "제48항",
+      "clause": "rule",
+      "category": "number_symbols",
+      "text": "소수점은 ⠲으로 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#symbols.period"
+      ]
+    },
+    {
+      "id": "49",
+      "article": 49,
+      "label": "제49항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "문장 부호는 다음과 같이 적는다. 띄어쓰기는 묵자를 따르되, 「한글 맞춤법」의 [부록] 문장 부호의 규정을 준수한다.",
+      "status": "partial",
+      "code": [
+        "data/ko/ko_marks.json"
+      ],
+      "note": "표의 부호 점형을 규정대로 맞췄다. 드러냄표·밑줄을 앞뒤로 묶는 표기는 아직 없다."
+    },
+    {
+      "id": "49-supplement",
+      "article": 49,
+      "label": "제49항 [붙임]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "빈칸 뒤에 문장 부호가 단독으로 쓰여 다른 기호와 혼동될 때에는 그 앞에 ⠸을 적고, 문장 부호 뒤에 한 칸을 띈 후 문장 부호의 명칭을 점역자 주표 ⠠⠄ ⠠⠄으로 묶어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "50",
+      "article": 50,
+      "label": "제50항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "가운뎃점은 앞뒤를 모두 붙여 적으며, 줄 끝에는 올 수 있고 줄 첫머리에는 올 수 없다.",
+      "status": "partial",
+      "code": [
+        "data/ko/ko_marks.json#pausal_punctuation.·"
+      ],
+      "note": "줄 첫머리 제한은 줄 나눔을 하지 않아 다루지 않는다."
+    },
+    {
+      "id": "50-supplement",
+      "article": 50,
+      "label": "제50항 [붙임]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "가운뎃점이 숫자 사이에 올 때에는 뒤의 숫자에 수표를 다시 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#termination_triggers"
+      ]
+    },
+    {
+      "id": "51",
+      "article": 51,
+      "label": "제51항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "쌍점의 앞은 붙여 쓰고 뒤는 한 칸 띄어 쓴다.",
+      "status": "partial",
+      "code": [
+        "data/ko/ko_marks.json#pausal_punctuation.:"
+      ],
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "51-exception-1",
+      "article": 51,
+      "label": "제51항 [다만 1]",
+      "clause": "exception",
+      "category": "punctuation",
+      "text": "쌍점 뒤에 붙어 나오는 숫자에는 수표를 다시 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_number_rules.json#termination_triggers"
+      ]
+    },
+    {
+      "id": "51-exception-2",
+      "article": 51,
+      "label": "제51항 [다만 2]",
+      "clause": "exception",
+      "category": "punctuation",
+      "text": "쌍점을 사용하여 시와 분, 장과 절 등을 구별하거나 둘 이상을 대비할 때에는 쌍점의 앞뒤를 붙여 쓴다.",
+      "status": "partial",
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "52",
+      "article": 52,
+      "label": "제52항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "빗금이 두 개 연이어 나올 때에는 ⠸⠌⠸⠌으로 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#pausal_punctuation./"
+      ]
+    },
+    {
+      "id": "52-supplement-1",
+      "article": 52,
+      "label": "제52항 [붙임 1]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "대비되는 두 개 이상의 어구를 묶어 나타낼 때는 빗금의 앞뒤를 붙여 쓰되, 대비되는 어구가 두 어절 이상인 경우에는 빗금의 앞뒤를 띄어 쓸 수 있다.",
+      "status": "partial",
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "52-supplement-2",
+      "article": 52,
+      "label": "제52항 [붙임 2]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "기준 단위당 수량을 표시할 때 해당 수량과 기준 단위 사이의 빗금은 앞뒤를 붙여 쓴다.",
+      "status": "partial",
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "53",
+      "article": 53,
+      "label": "제53항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "가운뎃점으로 쓴 줄임표(…… , …)는 ⠠⠠⠠으로, 마침표로 쓴 줄임표(...... , ...)는 ⠲⠲⠲으로 적는다.",
+      "status": "partial",
+      "code": [
+        "data/ko/ko_marks.json#connectors_and_symbols.…"
+      ],
+      "note": "가운뎃점 줄임표(…, ……)는 ⠠⠠⠠으로 적는다. 마침표 줄임표는 마침표를 입력한 개수만큼 적는다."
+    },
+    {
+      "id": "53-exception",
+      "article": 53,
+      "label": "제53항 [다만]",
+      "clause": "exception",
+      "category": "punctuation",
+      "text": "줄임표 점의 개수를 분명히 밝혀야 할 때에는 ⠠이나 ⠲을 묵자의 개수만큼 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "53-supplement",
+      "article": 53,
+      "label": "제53항 [붙임]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "줄임표는 앞말에 붙여 쓰되, 문장이나 글의 일부를 생략할 때에는 줄임표의 앞뒤를 한 칸씩 띄어 쓴다.",
+      "status": "partial",
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "54",
+      "article": 54,
+      "label": "제54항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "여는 따옴표와 여는 괄호 뒤, 닫는 따옴표와 닫는 괄호 앞은 붙여 쓴다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#opening_delimiters.rule.allowSpaceAfter",
+        "data/ko/ko_marks.json#closing_delimiters.rule.allowSpaceBefore"
+      ]
+    },
+    {
+      "id": "55",
+      "article": 55,
+      "label": "제55항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "빗금, 줄표, 물결표는 줄의 끝이나 첫머리에 올 수 있다.",
+      "status": "catalog_only",
+      "note": "엔진이 줄 나눔을 하지 않는다."
+    },
+    {
+      "id": "55-exception",
+      "article": 55,
+      "label": "제55항 [다만]",
+      "clause": "exception",
+      "category": "punctuation",
+      "text": "접사나 어미를 나타내는 붙임표와 생략된 말 대신에 쓴 물결표는 줄의 끝이나 첫머리에 홀로 적지 않고 해당 앞말이나 뒷말과 함께 줄을 바꿔 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "56",
+      "article": 56,
+      "label": "제56항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "드러냄표나 밑줄로 강조된 글자체는 ⠠⠤ ⠤⠄으로, 굵은 글자로 강조된 글자체는 ⠰⠤ ⠤⠆으로 묶어 나타낸다.",
+      "status": "partial",
+      "code": [
+        "data/ko/ko_marks.json#transcriber_and_formatting_tags.<i>"
+      ],
+      "note": "굵은 글자체표(<i> … <b> 태그)는 ⠰⠤ ⠤⠆으로 적는다. 드러냄표·밑줄 묶음은 아직 없다."
+    },
+    {
+      "id": "56-supplement",
+      "article": 56,
+      "label": "제56항 [붙임]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "색상이나 모양으로 강조된 글자체는 제1점역자 정의 글자체표 ⠐⠤ ⠤⠂이나 제2점역자 정의 글자체표 ⠈⠤ ⠤⠁으로 묶어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "56-exception",
+      "article": 56,
+      "label": "제56항 [다만]",
+      "clause": "exception",
+      "category": "punctuation",
+      "text": "글자체가 시각적 장식의 목적으로 표기되어 있을 때에는 글자체표를 표기하지 않고 강조나 구별의 필요가 있을 때에만 표기한다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "57",
+      "article": 57,
+      "label": "제57항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "숨김표가 여러 개 붙어 나올 때에는 ⠸과 ⠇ 사이에 해당 숨김표의 점형을 묵자의 개수만큼 적어 나타낸다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#placeholder_marks.rule.run_wrapper",
+        "engine/ko/ko_parser.py",
+        "web/js/quiz_combo.js"
+      ]
+    },
+    {
+      "id": "57-supplement",
+      "article": 57,
+      "label": "제57항 [붙임]",
+      "clause": "supplement",
+      "category": "punctuation",
+      "text": "‘○’, ‘×’, ‘△’ 이외의 숨김표는 제1~제3점역자 정의 숨김표를 사용하여 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "58",
+      "article": 58,
+      "label": "제58항",
+      "clause": "rule",
+      "category": "punctuation",
+      "text": "빠짐표가 여러 개 붙어 나올 때에는 ⠸과 ⠇ 사이에 ⠶을 묵자의 개수만큼 적어 나타낸다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#placeholder_marks.rule.run_wrapper",
+        "engine/ko/ko_parser.py",
+        "web/js/quiz_combo.js"
+      ]
+    },
+    {
+      "id": "59",
+      "article": 59,
+      "label": "제59항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "쌍반점(;)은 ⠰⠆으로 적으며, 앞은 붙여 쓰고 뒤는 한 칸 띄어 쓴다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#pausal_punctuation.;"
+      ]
+    },
+    {
+      "id": "60",
+      "article": 60,
+      "label": "제60항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "별표(*)와 참고표(※)는 ⠐⠔으로 적고, 앞뒤를 한 칸씩 띄어 쓴다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#connectors_and_symbols.*",
+        "data/ko/ko_marks.json#connectors_and_symbols.※"
+      ],
+      "note": "띄어쓰기는 입력한 묵자를 따른다."
+    },
+    {
+      "id": "60-exception-1",
+      "article": 60,
+      "label": "제60항 [다만 1]",
+      "clause": "exception",
+      "category": "other_symbols",
+      "text": "별표와 참고표를 구별해야 할 때에는 참고표를 ⠸⠔으로 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "60-exception-2",
+      "article": 60,
+      "label": "제60항 [다만 2]",
+      "clause": "exception",
+      "category": "other_symbols",
+      "text": "주석을 가리키는 별표의 위치와 띄어쓰기는 묵자를 따른다.",
+      "status": "partial",
+      "note": "띄어쓰기는 입력한 묵자의 공백을 그대로 옮긴다."
+    },
+    {
+      "id": "61",
+      "article": 61,
+      "label": "제61항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "아포스트로피(’)는 ⠄으로 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#connectors_and_symbols.'"
+      ]
+    },
+    {
+      "id": "62",
+      "article": 62,
+      "label": "제62항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "상동 기호(〃)는 ⠴⠴으로 적는다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#connectors_and_symbols.〃"
+      ]
+    },
+    {
+      "id": "63",
+      "article": 63,
+      "label": "제63항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "긴소리표(ː)는 ⠠⠄으로 적고, 앞뒤를 붙여 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "64",
+      "article": 64,
+      "label": "제64항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "동그라미 숫자는 수표 뒤에 숫자의 점형을 한 단 내려 적고, 그 밖의 동그라미 문자는 ⠶ ⠶으로, 네모 문자는 ⠸⠦ ⠴⠇으로 묶어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "65",
+      "article": 65,
+      "label": "제65항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "화폐 기호는 ⠴을 앞세워 다음과 같이 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "65-supplement",
+      "article": 65,
+      "label": "제65항 [붙임]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "화폐 기호 뒤에 한글이 이어 나올 때에는 한 칸 띄어 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "66",
+      "article": 66,
+      "label": "제66항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "점역자가 묵자에 없는 내용을 삽입하려고 할 때에는 해당 내용을 점역자 주표 ⠠⠄ ⠠⠄으로 묶어 나타낸다.",
+      "status": "implemented",
+      "code": [
+        "data/ko/ko_marks.json#transcriber_and_formatting_tags.<tn>"
+      ]
+    },
+    {
+      "id": "67",
+      "article": 67,
+      "label": "제67항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "묵자에 표기된 점형은 해당 점형 앞에 점형표 ⠸⠿을 적어 나타내며, 뒤는 한 칸 띄어 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "68",
+      "article": 68,
+      "label": "제68항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "위 첨자는 ⠘ 뒤에, 아래 첨자는 ⠰ 뒤에 첨자의 내용을 적어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "68-supplement-1",
+      "article": 68,
+      "label": "제68항 [붙임 1]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "숫자 첨자 뒤에 숫자와 혼동되는 한글이 붙어 나올 때에는 그 사이를 한 칸 띄어 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "68-supplement-2",
+      "article": 68,
+      "label": "제68항 [붙임 2]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "+나 -가 첨자일 때에는 그 뒤를 한 칸 띄어 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "69",
+      "article": 69,
+      "label": "제69항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "로마자로 쓰인 단위 기호는 그 앞에 로마자표를 적고 그 뒤에 로마자 종료표를 적는다. 이때 제37항의 규정에 따라 묶음 약자를 사용하고, 띄어쓰기는 묵자를 따른다.",
+      "status": "partial",
+      "code": [
+        "data/ko/ko_number_rules.json#collision_resolutions.trailing_letters.roman_unit_symbols"
+      ],
+      "note": "숫자 바로 뒤의 로마자 단위(m, km, cm, mm, kg, g, l, ml)는 ⠴ … ⠲으로 적는다. 숫자와 띄어 쓴 단위와 목록에 없는 단위는 아직 다루지 않는다."
+    },
+    {
+      "id": "69-supplement-1",
+      "article": 69,
+      "label": "제69항 [붙임 1]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "그리스 문자가 포함된 단위 기호는 그 앞에 로마자표를 적고 그 뒤에는 로마자 종료표를 적으며, 띄어쓰기는 묵자를 따른다. 이때 제30항의 규정에 따라 그리스 문자를 사용한다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "69-supplement-2",
+      "article": 69,
+      "label": "제69항 [붙임 2]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "비로마자 단위 기호는 단위표 ⠴을 앞세워 다음과 같이 적어 나타내고, 그 뒤에 한글이 나오면 한 칸 띄어 쓴다. 숫자와 단위 사이의 띄어쓰기는 묵자를 따른다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "69-supplement-3",
+      "article": 69,
+      "label": "제69항 [붙임 3]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "빗금으로 연결된 단위 기호에 로마자와 한글이 섞여 있을 때에는 다음과 같이 적어 나타내고, 띄어쓰기는 묵자를 따른다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "70",
+      "article": 70,
+      "label": "제70항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "화살표는 다음과 같이 적고, 앞뒤를 한 칸씩 띄어 쓴다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "71",
+      "article": 71,
+      "label": "제71항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "자주 쓰이는 아래의 기호는 다음과 같이 적어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "71-exception",
+      "article": 71,
+      "label": "제71항 [다만]",
+      "clause": "exception",
+      "category": "other_symbols",
+      "text": "한글과 혼동되는 앰퍼샌드(&), 섹션 기호(§), 문단 기호(¶), 저작권 기호(©), 등록 상표(®), 상표 기호(™)는 로마자표와 로마자 종료표를 사용하여 적는다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "72",
+      "article": 72,
+      "label": "제72항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "글머리 기호는 다음과 같이 적어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "72-supplement",
+      "article": 72,
+      "label": "제72항 [붙임]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "○, □가 ◎, ▣와 함께 나와 구별해야 할 때 ◎는 ⠸⠴⠴으로, ▣는 ⠸⠶⠶으로 적어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "73",
+      "article": 73,
+      "label": "제73항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "채워 넣어야 할 빈칸은 다음과 같이 적어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "73-exception",
+      "article": 73,
+      "label": "제73항 [다만]",
+      "clause": "exception",
+      "category": "other_symbols",
+      "text": "빈칸의 개수를 나타내야 할 때에는 해당 기호를 묵자의 개수만큼 적어 나타낸다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "73-supplement",
+      "article": 73,
+      "label": "제73항 [붙임]",
+      "clause": "supplement",
+      "category": "other_symbols",
+      "text": "밑줄 빈칸에 표시 문자가 있을 때에는 표시 문자를 먼저 적고 밑줄 빈칸 기호를 붙여 적는다. 네모 빈칸에 표시 문자가 있을 때에는 묵자를 따른다.",
+      "status": "catalog_only"
+    },
+    {
+      "id": "74",
+      "article": 74,
+      "label": "제74항",
+      "clause": "rule",
+      "category": "other_symbols",
+      "text": "컴퓨터 점자는 「통일영어점자 규정」에 따라 적는다.",
+      "status": "catalog_only"
+    }
+  ]
+}

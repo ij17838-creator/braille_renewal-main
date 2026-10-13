@@ -408,7 +408,11 @@ class SentenceSlotEngine:
         self.validator._init_rules()
 
         word_block = self.ko.get("abbreviation_word", {})
-        self.word_abbr_standalone = word_block.get("rule", {}).get("position") == "standalone"
+        word_rule = word_block.get("rule", {})
+        self.word_abbr_standalone = word_rule.get("position") == "standalone"
+        # 제18항 [다만]·[붙임]: 약어 앞뒤에 붙은 글자를 막을지는 ko.json이 정한다.
+        self.word_abbr_block_before = word_rule.get("letters_before", "spell_out") != "abbreviate"
+        self.word_abbr_block_after = word_rule.get("letters_after", "spell_out") != "abbreviate"
         self.wordsigns = list(word_block.get("items", {}).keys())
         syllable_items = self.ko.get("abbreviation_syllable", {}).get("items", {})
         self.syllable_items = syllable_items
@@ -665,7 +669,7 @@ class SentenceSlotEngine:
             return self._exempt_unit_tokens()
         if roll < 0.72 and self.roman_units:
             return self._roman_unit_tokens()
-        if roll < 0.86:
+        if roll < 0.86 and self.sa_number_example:
             return self._sa_after_number_tokens()
         return self._collision_gap_tokens()
 
@@ -680,7 +684,9 @@ class SentenceSlotEngine:
                     break
                 prev_c = word[index - 1] if index else ""
                 next_c = word[index + len(abbr):index + len(abbr) + 1]
-                if ("가" <= prev_c <= "힣") or ("가" <= next_c <= "힣"):
+                if (self.word_abbr_block_before and "가" <= prev_c <= "힣") or (
+                    self.word_abbr_block_after and "가" <= next_c <= "힣"
+                ):
                     return True
                 start = index + len(abbr)
         return False

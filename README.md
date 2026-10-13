@@ -15,7 +15,7 @@ web/                     브라우저 게임
   js/                      공용 스크립트 (shell, curriculum, quiz_combo, data_paths)
   css/                     공용 스타일 (mobile.css)
 data/                    점자 규칙·학습 데이터 (JSON)
-  ko/                      한글: ko, ko_marks, ko_number_rules, lexicon_ko
+  ko/                      한글: ko, ko_marks, ko_number_rules, lexicon_ko, ko_rules(규정 제1~74항 목록)
   en/                      영어(UEB): en_spell, en_shortform, en_contractions, lexicon_en, ueb_number_rules
   common/                  한/영 공통: numbers
   curriculum/              단원표·문제은행: curriculum, quiz_bank

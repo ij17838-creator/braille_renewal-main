@@ -184,11 +184,19 @@ function buildKorean(data) {
     if (item.unicode) wordAbbr[word] = item.unicode;
   });
   const wordAbbrSorted = Object.entries(wordAbbr).sort((a, b) => b[0].length - a[0].length);
+  // 제18항 [다만]: 앞에 글자가 붙으면 풀어 적는다. [붙임]: 뒤에 글자가 붙어도 약어를 쓴다.
+  const wordRule = ko.abbreviation_word?.rule || {};
+  const wordBlockBefore = (wordRule.letters_before || 'spell_out') !== 'abbreviate';
+  const wordBlockAfter = (wordRule.letters_after || 'spell_out') !== 'abbreviate';
 
   const gaByOnset = {};
   const vc = {};
   const complete = {};
   let saExpanded = '⠠⠣';
+  // '사' 풀어쓰기는 ko.json 사 항목의 exception_rules에 있을 때만 쓴다. 개정 규정에는 없다.
+  const saRules = ko.abbreviation_syllable?.items?.['사']?.exception_rules || {};
+  const saAfterNumber = 'after_number' in saRules;
+  const saBeforeVowel = 'vowel_connection' in saRules;
   Object.entries(ko.abbreviation_syllable?.items || {}).forEach(([syllable, item]) => {
     if (item.expanded_unicode) saExpanded = item.expanded_unicode;
     const parts = decompose(syllable);
@@ -216,7 +224,7 @@ function buildKorean(data) {
   const yeongVowel = yeong.initial_vowel_override?.surface_vowel || 'ㅓ';
   const yeongCell = yeong.unicode || '';
   const geotTensed = new Set(ko.abbreviation_syllable?.items?.['것']?.tensed_same_abbreviation || []);
-  // 제17항 [붙임]·[다만]: 첫소리와 점형이 같은 약자는 모음 앞에서 ㅏ를 적는다. '팠'도 ㅏ를 적는다.
+  // 제14항·[붙임]: 첫소리와 점형이 같은 약자는 모음 앞에서 ㅏ를 적는다. '팠'도 ㅏ를 적는다.
   const keepA = ko.abbreviation_syllable?.rule?.keep_a || {};
   const keepAOnsets = new Set();
   (keepA.vowel_connection?.syllables || []).forEach((syllable) => {
@@ -282,6 +290,33 @@ function buildKorean(data) {
   });
   punct.sort((a, b) => b.ch.length - a.ch.length);
 
+  // 제11·12항: 받침 없는 글자 뒤 '예', ㅑ·ㅘ·ㅜ·ㅝ 뒤 '애' 앞에 구분표를 적는다. 점형은 ko_marks.json에서 읽는다.
+  const sepRule = ko.special_rules?.vowel_separator_rule || {};
+  const separator = punct.find(item => item.ch === sepRule.separator_mark)?.unicode || '';
+  const sepYe = sepRule.before_ye?.vowel || '';
+  const sepAe = sepRule.before_ae?.vowel || '';
+  const sepAeAfter = new Set(sepRule.before_ae?.after_vowels || []);
+
+  // 제57·58항: 숨김표·빠짐표가 여러 개 붙으면 묶음표 사이에 점형을 개수만큼 적는다.
+  const runWrap = marks.placeholder_marks?.rule?.run_wrapper || {};
+  const placeholderInner = {};
+  Object.entries(marks.placeholder_marks?.items || {}).forEach(([ch, item]) => {
+    const cells = item.unicode || '';
+    if (runWrap.open && runWrap.close && cells.startsWith(runWrap.open) && cells.endsWith(runWrap.close)) {
+      const inner = cells.slice(runWrap.open.length, cells.length - runWrap.close.length);
+      if (inner) placeholderInner[ch] = inner;
+    }
+  });
+
+  function needsSeparator(prevCh, ch) {
+    if (!separator || !prevCh) return false;
+    const prev = decompose(prevCh);
+    const cur = decompose(ch);
+    if (!prev || !cur || prev[2] || cur[0] !== 'ㅇ') return false;
+    if (cur[1] === sepYe) return true;
+    return cur[1] === sepAe && sepAeAfter.has(prev[1]);
+  }
+
   const connectors = {};
   Object.values(rules.symbols || {}).forEach((item) => {
     if (!item.char || !item.unicode || item.char === ' ') return;
@@ -298,12 +333,14 @@ function buildKorean(data) {
     const labels = [];
     const exemptHit = isExemptUnit(rest);
 
-    if (ch === '사' && (afterNumber || (nextCh && decompose(nextCh)?.[0] === 'ㅇ'))) {
+    const saNumber = saAfterNumber && afterNumber;
+    const saVowel = saBeforeVowel && !!nextCh && decompose(nextCh)?.[0] === 'ㅇ';
+    if (ch === '사' && (saNumber || saVowel)) {
       let braille = saExpanded + (jong ? (jongMap[jong] || '') : '');
       if (afterNumber && affected.includes(cho) && !exemptHit) braille = ` ${braille}`;
       return {
         braille,
-        label: afterNumber ? "숫자 뒤 '사' 풀어쓰기" : "모음 앞 '사' 풀어쓰기"
+        label: saNumber ? "숫자 뒤 '사' 풀어쓰기" : "모음 앞 '사' 풀어쓰기"
       };
     }
 
@@ -410,7 +447,7 @@ function buildKorean(data) {
         if (!text.startsWith(word, i)) continue;
         const prev = i ? text[i - 1] : '';
         const next = text[i + word.length] || '';
-        if (hangulChar(prev) || hangulChar(next)) break;
+        if ((wordBlockBefore && hangulChar(prev)) || (wordBlockAfter && hangulChar(next))) break;
         matchedWord = { word, cells };
         break;
       }
@@ -463,11 +500,29 @@ function buildKorean(data) {
       if (ch >= '가' && ch <= '힣') {
         const piece = translateSyllable(ch, text[i + 1] || '', afterNumber, text.slice(i));
         if (!piece || !piece.braille) return null;
+        if (needsSeparator(i ? text[i - 1] : '', ch)) {
+          piece.braille = separator + piece.braille;
+          piece.label = `구분표 + ${piece.label}`;
+        }
         braille += piece.braille;
         parts.push(piece.keepA
           ? { text: ch, braille: piece.braille, label: piece.label, keepA: true }
           : { text: ch, braille: piece.braille, label: piece.label });
         i += 1;
+        continue;
+      }
+
+      if (placeholderInner[ch] && placeholderInner[text[i + 1]]) {
+        let j = i;
+        let inner = '';
+        while (j < text.length && placeholderInner[text[j]]) {
+          inner += placeholderInner[text[j]];
+          j += 1;
+        }
+        const cells = runWrap.open + inner + runWrap.close;
+        braille += cells;
+        parts.push({ text: text.slice(i, j), braille: cells, label: '숨김표·빠짐표 묶음' });
+        i = j;
         continue;
       }
 
@@ -1448,8 +1503,8 @@ export function createEngine(data) {
 
   const HANGUL_KINDS = new Set(['syllable', 'ga', 'eok']);
   const WORD_KINDS = new Set(['word', 'wordsign', 'shortform', 'contraction']);
-  const OPEN_MARKS = new Set(['“', '‘', '《', '〈', '(', '[', '<tn>', '<i>']);
-  const END_MARKS = new Set(['”', '’', '》', '〉', ')', ']', '</tn>', '<b>', '.', '?', '!']);
+  const OPEN_MARKS = new Set(['“', '‘', '《', '〈', '『', '「', '(', '{', '[', '<tn>', '<i>']);
+  const END_MARKS = new Set(['”', '’', '》', '〉', '』', '」', ')', '}', ']', '</tn>', '<b>', '.', '?', '!']);
 
   function hangulCard(card) {
     return HANGUL_KINDS.has(card.kind);
