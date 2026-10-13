@@ -3,9 +3,10 @@
   python tools/study_materials/build.py ko-number --skill <hwpx 스킬 폴더> --out web/materials/ko
 
 필요한 것: hwpx 스킬(report 템플릿과 build/validate 스크립트), Node Playwright(Chromium), 인터넷(구글 글꼴).
-새 단원은 units/에 파일을 하나 더하고 UNITS에 등록한다.
+새 단원은 units/<단원 id의 -를 _로 바꾼 이름>.py 파일을 하나 더하면 된다.
 """
 import argparse
+import json
 import importlib
 import shutil
 import subprocess
@@ -20,10 +21,23 @@ from common import doc_title, file_stem  # noqa: E402
 import render_html  # noqa: E402
 import render_hwpx  # noqa: E402
 
-UNITS = {
-    'ko-dots': 'units.ko_dots',
-    'ko-number': 'units.ko_number',
-}
+def unit_module(uid):
+    """단원 id ko-initial → units/ko_initial.py"""
+    return importlib.import_module('units.' + uid.replace('-', '_'))
+
+
+def link_materials(uid, lang):
+    """curriculum.json의 단원에 materials를 넣어 로비 「학습자료 받기」 버튼을 켠다. 파일 모양은 그대로 둔다."""
+    path = HERE.parents[1] / 'data' / 'curriculum' / 'curriculum.json'
+    text = path.read_text(encoding='utf-8')
+    start = text.index(f'"id": "{uid}"')
+    end = text.find('\n    }', start)  # 단원 끝
+    if '"materials"' in text[start:end]:
+        return
+    block = (f',\n      "materials": {{\n        "hwpx": "materials/{lang}/{uid}.hwpx",\n'
+             f'        "pdf": "materials/{lang}/{uid}.pdf"\n      }}')
+    path.write_text(text[:end] + block + text[end:], encoding='utf-8')
+    json.loads(path.read_text(encoding='utf-8'))
 
 
 def run(cmd):
@@ -38,12 +52,13 @@ def main():
     ap.add_argument('units', nargs='+', help='단원 id (예: ko-dots ko-number)')
     ap.add_argument('--skill', required=True, type=Path, help='hwpx 스킬 폴더')
     ap.add_argument('--out', type=Path, default=HERE.parents[1] / 'web' / 'materials' / 'ko')
+    ap.add_argument('--link', action='store_true', help='curriculum.json에 materials를 넣어 로비 버튼과 연결')
     ap.add_argument('--copy-to', type=Path, help='사람이 읽는 이름(한글점자_2단원_숫자.*)으로도 복사할 폴더')
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     scripts = a.skill / 'scripts'
     for uid in a.units:
-        doc = importlib.import_module(UNITS[uid]).build()
+        doc = unit_module(uid).build()
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             html = tmp / 'doc.html'
@@ -64,6 +79,8 @@ def main():
             a.copy_to.mkdir(parents=True, exist_ok=True)
             for ext in ('hwpx', 'pdf'):
                 shutil.copy(a.out / f'{uid}.{ext}', a.copy_to / f'{file_stem(doc)}.{ext}')
+        if a.link:
+            link_materials(uid, doc['lang'])
         print(f'{uid}: {pdf.name}, {hwpx.name}')
 
 

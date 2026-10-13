@@ -30,6 +30,7 @@
 card = {'name', 'cells': [[점 번호…], …], 'labels': [칸 이름…], 'line'(설명, 선택)}
 """
 import json
+import subprocess
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -58,9 +59,35 @@ def unit_data(unit_id):
 
 
 def unit_after(unit):
-    later = [u for u in load_json('data', 'curriculum', 'curriculum.json')['units']
-             if u['lang'] == unit['lang'] and u['order'] == unit['order'] + 1]
+    """같은 언어에서 순서가 바로 다음인 단원 (12 → 12.1 → 13)."""
+    later = sorted((u for u in load_json('data', 'curriculum', 'curriculum.json')['units']
+                    if u['lang'] == unit['lang'] and u['order'] > unit['order']), key=lambda u: u['order'])
     return later[0] if later else None
+
+
+def app_cards(unit_id):
+    """앱(web/js/curriculum.js cardsFor)이 만드는 카드를 그대로 받아 온다."""
+    out = subprocess.run(['node', str(Path(__file__).with_name('cards.mjs')), unit_id],
+                         capture_output=True, text=True, check=True, cwd=REPO).stdout
+    return json.loads(out)
+
+
+# 규정집 PDF의 보기는 점자 ASCII 글꼴로 추출된다 (북미 Braille ASCII). ~는 ^와 같은 4·5점.
+BRAILLE_ASCII = {
+    '!': '2346', '"': '5', '#': '3456', '$': '1246', '%': '146', '&': '12346', "'": '3', '(': '12356',
+    ')': '23456', '*': '16', '+': '346', ',': '6', '-': '36', '.': '46', '/': '34', '0': '356', '1': '2',
+    '2': '23', '3': '25', '4': '256', '5': '26', '6': '235', '7': '2356', '8': '236', '9': '35', ':': '156',
+    ';': '56', '<': '126', '=': '123456', '>': '345', '?': '1456', '@': '4', 'a': '1', 'b': '12', 'c': '14',
+    'd': '145', 'e': '15', 'f': '124', 'g': '1245', 'h': '125', 'i': '24', 'j': '245', 'k': '13', 'l': '123',
+    'm': '134', 'n': '1345', 'o': '135', 'p': '1234', 'q': '12345', 'r': '1235', 's': '234', 't': '2345',
+    'u': '136', 'v': '1236', 'w': '2456', 'x': '1346', 'y': '13456', 'z': '1356', '[': '246', '\\': '1256',
+    ']': '12456', '^': '45', '~': '45', '_': '456', '{': '246', '|': '1256', '}': '12456',
+}
+
+
+def asc(text):
+    """규정집 점자 ASCII → 점칸 목록. 예) '#a' → [[3,4,5,6],[1]]"""
+    return [[int(d) for d in BRAILLE_ASCII[ch]] for ch in text.replace(' ', '')]
 
 
 def braille(cells):
