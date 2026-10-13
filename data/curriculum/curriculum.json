@@ -26,6 +26,10 @@
       "skill": {
         "read": "점 번호를 보고 칸의 자리를 찾는다",
         "write": "번호를 듣고 그 점만 찍는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-dots.hwpx",
+        "pdf": "materials/ko/ko-dots.pdf"
       }
     },
     {
