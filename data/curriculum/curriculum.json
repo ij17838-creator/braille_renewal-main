@@ -669,6 +669,10 @@
       "skill": {
         "read": "따옴표·묶음표·이음표를 읽는다",
         "write": "짝을 맞추어 따옴표와 묶음표를 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-mark-pair.hwpx",
+        "pdf": "materials/ko/ko-mark-pair.pdf"
       }
     },
     {
