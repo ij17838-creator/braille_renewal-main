@@ -117,12 +117,26 @@ def lang_label(unit):
     return '영어' if unit['lang'] == 'en' else '한글'
 
 
+def num(unit):
+    """화면에 보이는 단원 번호. 12.1단원은 label '12-1'을 쓴다."""
+    return unit.get('label') or unit.get('num') or str(unit['order'])
+
+
+def part_of(unit):
+    """단원에 part가 없으면(12-1단원) 바로 앞 단원의 part를 쓴다."""
+    if unit.get('part'):
+        return unit['part']
+    before = sorted((u for u in load_json('data', 'curriculum', 'curriculum.json')['units']
+                     if u['lang'] == unit['lang'] and u['order'] < unit['order'] and u.get('part')), key=lambda u: u['order'])
+    return before[-1]['part'] if before else ''
+
+
 def file_stem(unit):
-    return f"{lang_label(unit)}점자_{unit['order']}단원_{unit['title'].replace(' ', '')}"
+    return f"{lang_label(unit)}점자_{num(unit)}단원_{unit['title'].replace(' ', '')}"
 
 
 def doc_title(unit):
-    return f"{lang_label(unit)} 점자 {unit['order']}단원 {unit['title']} 학습자료"
+    return f"{lang_label(unit)} 점자 {num(unit)}단원 {unit['title']} 학습자료"
 
 
 def check_card(card):
@@ -143,14 +157,14 @@ def standard_doc(unit, *, rules, rule_src, key, intro_bullets, learn, practice, 
     ]
     closing = [{'title': '게임 전에 스스로 확인하기', 'blocks': [{'t': 'checks', 'items': checks}]}]
     if nxt:
-        closing.append({'title': '다음 단원 예고', 'blocks': [{'t': 'next', 'text': f"다음은 {nxt['order']}단원 「{nxt['title']}」입니다."}]})
+        closing.append({'title': '다음 단원 예고', 'blocks': [{'t': 'next', 'text': f"다음은 {num(nxt)}단원 「{nxt['title']}」입니다."}]})
     closing.append({'title': '정답', 'blocks': [{'t': 'answers', 'items': answers}]})
     for sec in learn + practice:
         for b in sec['blocks']:
             for c in b.get('items', []) if b['t'] in ('cards', 'read_ex') else []:
                 check_card(c)
     return {
-        'id': unit['id'], 'lang': unit['lang'], 'order': unit['order'], 'part': unit['part'], 'title': unit['title'],
+        'id': unit['id'], 'lang': unit['lang'], 'order': unit['order'], 'num': num(unit), 'part': part_of(unit), 'title': unit['title'],
         'parts': [
             {'title': PART_TITLES[0], 'sections': intro},
             {'title': PART_TITLES[1], 'sections': learn},
@@ -168,7 +182,7 @@ def cell_labels(card):
     out = []
     for s in card['steps']:
         n = len(s['cells'])
-        if n == 2 and s['label'] in TENSE_BASE and card['kind'] in ('chosung', 'syllable'):
+        if n == 2 and s['label'] in TENSE_BASE and s['cells'][0] == [6]:
             out += ['된소리표', TENSE_BASE[s['label']]]
         else:
             out += [s['label']] * n

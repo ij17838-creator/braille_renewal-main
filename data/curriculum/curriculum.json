@@ -426,6 +426,10 @@
       "skill": {
         "read": "ㅏ가 적힌 자리와 약자 자리를 가려 읽는다",
         "write": "모음 앞과 팠에서 ㅏ를 빠뜨리지 않고 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-keep-a.hwpx",
+        "pdf": "materials/ko/ko-keep-a.pdf"
       }
     },
     {

@@ -164,7 +164,7 @@ def render(doc):
     h = ['<!doctype html><html lang="ko"><head><meta charset="utf-8">', f'<title>{escape(title)}</title>',
          '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=block" rel="stylesheet">',
          f'<style>{CSS}</style></head><body><main>',
-         f'<header class="doc"><div><p class="kicker">{lang_label(u)} 점자 {u["order"]}단원 · {escape(u["part"])}</p>'
+         f'<header class="doc"><div><p class="kicker">{lang_label(u)} 점자 {u["num"]}단원 · {escape(u["part"])}</p>'
          f'<h1>{escape(u["title"])}</h1></div><p class="meta">게임 전 학습자료<br>이름: ____________</p></header>']
     for pi, part in enumerate(doc['parts']):
         cls = 'part newpage' if pi else 'part'

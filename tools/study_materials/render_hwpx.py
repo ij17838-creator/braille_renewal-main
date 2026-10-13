@@ -211,7 +211,7 @@ def build_section(doc, skill):
 
     s = Section()
     u = doc
-    s.add([(CP_SANS, f'{lang_label(u)} 점자 {u["order"]}단원 · {u["part"]}')])
+    s.add([(CP_SANS, f'{lang_label(u)} 점자 {u["num"]}단원 · {u["part"]}')])
     s.add([(CP_TITLE, u['title'])], PP_CENTER)
     s.add('게임 전 학습자료 · 이름: ____________', PP_RIGHT)
     for pi, part in enumerate(doc['parts']):
