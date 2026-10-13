@@ -285,10 +285,13 @@
           <div id="unit-list" class="flex flex-col gap-1"></div>
         </div>
       </div>
-      <!-- 게임 전에 이 단원의 학습자료(한글 파일·PDF)를 받는다. 자료가 없는 단원에서는 숨긴다. -->
-      <button type="button" id="btn-materials" class="hidden btn-scalable w-full px-4 py-2.5 rounded-2xl glass-button text-sm font-black text-slate-700 hover:text-emerald-700 shadow-sm flex items-center justify-center gap-2" aria-haspopup="dialog" aria-controls="materials-modal">
+      <!-- 게임 전에 이 단원의 학습자료(한글 파일·PDF)를 받는다.
+           자료는 차차 추가하므로 버튼은 단원·언어가 바뀌어도 늘 이 자리에 둔다.
+           자료가 없는 단원에서는 '준비 중'으로 두고(aria-disabled), 눌러도 창을 열지 않는다. -->
+      <button type="button" id="btn-materials" class="btn-scalable w-full px-4 py-2.5 rounded-2xl glass-button text-sm font-black text-slate-700 hover:text-emerald-700 shadow-sm flex items-center justify-center gap-2" aria-haspopup="dialog" aria-controls="materials-modal">
         <span aria-hidden="true">📥</span>
         <span>학습자료 받기</span>
+        <span id="materials-soon" class="hidden text-xs font-bold text-slate-500">(준비 중)</span>
       </button>
     </section>
 
@@ -844,9 +847,14 @@
       const files = unit?.materials || {};
       const has = Boolean(files.hwpx || files.pdf);
       if (btn) {
-        btn.classList.toggle('hidden', !has);
-        btn.setAttribute('aria-label', has ? `${unitLine(lang, unit)} 학습자료 받기` : '학습자료 받기');
+        btn.setAttribute('aria-disabled', has ? 'false' : 'true');
+        btn.classList.toggle('opacity-60', !has);
+        btn.setAttribute('aria-label', has
+          ? `${unitLine(lang, unit)} 학습자료 받기`
+          : `${unitLine(lang, unit)} 학습자료 받기, 준비 중`);
       }
+      const soon = document.getElementById('materials-soon');
+      if (soon) soon.classList.toggle('hidden', has);
       if (!has) return;
       const head = document.getElementById('materials-unit');
       if (head) head.textContent = `${unitLine(lang, unit)} 학습자료`;
@@ -1009,6 +1017,11 @@
 
     function openMaterials() {
       closeUnitMenu();
+      if (materialsBtn && materialsBtn.getAttribute('aria-disabled') === 'true') {
+        const live = document.getElementById('a11y-live-region');
+        if (live) live.textContent = '이 단원의 학습자료는 준비 중입니다.';
+        return;
+      }
       materialsModal.classList.remove('hidden');
       const first = materialStops()[0];
       if (first) first.focus();
