@@ -768,6 +768,10 @@
       "skill": {
         "read": "배운 점자를 모두 섞은 문장을 말로 읽는다",
         "write": "배운 점자를 모두 섞어 문장을 점자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-use.hwpx",
+        "pdf": "materials/ko/ko-use.pdf"
       }
     },
     {
