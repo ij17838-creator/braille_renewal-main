@@ -333,6 +333,10 @@
       "skill": {
         "read": "점형을 보고 쌍받침·겹받침과 그 음절을 읽는다",
         "write": "쌍받침·겹받침이 든 음절을 점형으로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-double-final.hwpx",
+        "pdf": "materials/ko/ko-double-final.pdf"
       }
     },
     {
