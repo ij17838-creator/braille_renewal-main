@@ -417,6 +417,10 @@
       "skill": {
         "read": "초성만 적힌 약자를 '자음+ㅏ'로 읽는다",
         "write": "'자음+ㅏ' 음절을 ㅏ를 생략한 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-ga.hwpx",
+        "pdf": "materials/ko/ko-ga.pdf"
       }
     },
     {
