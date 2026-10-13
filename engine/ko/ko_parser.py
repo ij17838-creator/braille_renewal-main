@@ -16,6 +16,11 @@ class KoreanBrailleEngine:
     CHOSUNG_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
     JUNGSUNG_LIST = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ']
     JONGSUNG_LIST = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
+    # 쌍받침·겹받침 = 앞 받침 + 뒤 받침 (제15항 [붙임] 약자 판별용, 받침 ㅆ은 따로 약자가 있어 넣지 않는다)
+    DOUBLE_JONG_SPLIT = {'ㄲ': ('ㄱ', 'ㄱ'), 'ㄳ': ('ㄱ', 'ㅅ'), 'ㄵ': ('ㄴ', 'ㅈ'), 'ㄶ': ('ㄴ', 'ㅎ'), 'ㄺ': ('ㄹ', 'ㄱ'), 'ㄻ': ('ㄹ', 'ㅁ'),
+                         'ㄼ': ('ㄹ', 'ㅂ'), 'ㄽ': ('ㄹ', 'ㅅ'), 'ㄾ': ('ㄹ', 'ㅌ'), 'ㄿ': ('ㄹ', 'ㅍ'), 'ㅀ': ('ㄹ', 'ㅎ'), 'ㅄ': ('ㅂ', 'ㅅ')}
+    DOUBLE_JONG_JOIN = {v: k for k, v in DOUBLE_JONG_SPLIT.items()}
+    WORD_END_MARK_CELLS = {'⠦', '⠲', '⠴', '⠖'}
 
     # 초성 된소리 매핑 (쌍자음 -> 된소리표 ⠠ + 기본 자음)
     TENSER_SIGN = "⠠"  # 6점 (된소리표)
@@ -736,6 +741,18 @@ class KoreanBrailleEngine:
                 rules.append(f"초성 '{cho}' + 모음+받침 약자 적용 (중성:{jung}, 종성:{jong})")
                 return tenser_prefix + cho_b + vc_b, rules
 
+        # D-2. 제15항 [붙임]: 쌍받침·겹받침의 앞 받침이 '모음+받침' 약자를 이루면 약자 뒤에 남은 받침을 적는다 (얽 = 얼 + ㄱ).
+        split = self.DOUBLE_JONG_SPLIT.get(jong)
+        if not skip_yeong_abbr and split and (jung, split[0]) in self.vowel_coda_series and split[1] in self.jongsung_map:
+            vc_b = self.vowel_coda_series[(jung, split[0])]
+            rest_b = self.jongsung_map[split[1]]
+            if base_cho == 'ㅇ' and self.omit_zero_consonant:
+                rules.append(f"제15항 [붙임]: 모음+받침 약자(중성:{jung}, 종성:{split[0]}) + 받침 '{split[1]}'")
+                return tenser_prefix + vc_b + rest_b, rules
+            cho_b = self._onset_braille(base_cho)
+            rules.append(f"제15항 [붙임]: 초성 '{cho}' + 모음+받침 약자(중성:{jung}, 종성:{split[0]}) + 받침 '{split[1]}'")
+            return tenser_prefix + cho_b + vc_b + rest_b, rules
+
         # E. 일반 자모음 분해
         cho_b = self._onset_braille(base_cho)
         if base_cho == 'ㅇ' and self.omit_zero_consonant:
@@ -844,6 +861,16 @@ class KoreanBrailleEngine:
                 decoded.append(punct)
                 i += punct_len
                 continue
+            # 받침 ㅋ·ㅌ·ㅍ·ㅎ(제3항)은 느낌표·물음표·마침표·닫는 따옴표와 점형이 같다.
+            # 여러 글자 낱말의 끝 칸이면 문장 부호로 읽는다 (갔다. → 닾 이 되지 않도록).
+            if consumed > 0 and decoded and i + consumed == n and b_token[n - 1] in self.WORD_END_MARK_CELLS:
+                short, short_len = self._decode_single_syllable(b_token[:n - 1], i)
+                mark, mark_len = self._match_punct(b_token, n - 1)
+                if short_len == consumed - 1 and short_len > 0 and mark_len == 1:
+                    decoded.append(short)
+                    decoded.append(mark)
+                    i = n
+                    continue
             if consumed > 0:
                 decoded.append(syllable)
                 i += consumed
@@ -1084,6 +1111,22 @@ class KoreanBrailleEngine:
         item = self.marks.get(sense["category"], {}).get("items", {}).get(sense["char"], {})
         return item.get("word") or sense["char"]
 
+    def _merge_abbr_coda(self, b_token: str, pos: int, jong: str, word_start: bool = False) -> Tuple[str, int]:
+        """제15항 [붙임]: 모음+받침 약자 뒤의 받침 한 칸을 겹받침으로 합친다 (⠞⠁ → 얽).
+
+        여러 글자 낱말 끝의 ⠦⠲⠴⠖는 물음표·마침표·닫는 따옴표·느낌표로 읽는다.
+        """
+        if pos >= len(b_token):
+            return jong, 0
+        cell = b_token[pos]
+        rest = self.rev_jongsung.get(cell)
+        merged = self.DOUBLE_JONG_JOIN.get((jong, rest)) if rest else None
+        if not merged:
+            return jong, 0
+        if pos == len(b_token) - 1 and cell in self.WORD_END_MARK_CELLS and not word_start:
+            return jong, 0
+        return merged, 1
+
     def _decode_single_syllable(self, b_token: str, start_idx: int) -> Tuple[str, int]:
         is_tense = False
         offset = 0
@@ -1154,7 +1197,9 @@ class KoreanBrailleEngine:
             if c2 == self.yeong_unicode and cho in self.yeong_override_initials:
                 jung = self.yeong_surface_vowel
                 jong = self.yeong_surface_jong
-            return self.compose(cho, jung, jong), offset + 2
+                return self.compose(cho, jung, jong), offset + 2
+            jong, extra = self._merge_abbr_coda(b_token, idx + 2, jong, start_idx == 0)
+            return self.compose(cho, jung, jong), offset + 2 + extra
 
         # 2. 초성 + 중성 + 선택적 종성. ㅒ·ㅙ·ㅄ처럼 두 칸인 자모를 먼저 읽는다.
         if c1 in self.rev_chosung:
@@ -1172,7 +1217,8 @@ class KoreanBrailleEngine:
         # 4. 모음받침 약자 단독
         if c1 in self.rev_vowel_coda:
             jung, jong = self.rev_vowel_coda[c1]
-            return self.compose("ㅇ", jung, jong), 1
+            jong, extra = self._merge_abbr_coda(b_token, idx + 1, jong, start_idx == 0)
+            return self.compose("ㅇ", jung, jong), 1 + extra
 
         # 5. 초성 ㅇ 생략. 두 칸 모음·받침을 한 음절로 읽는다.
         jung, jung_len = self._read_symbol(self.rev_jungsung, b_token, idx)
