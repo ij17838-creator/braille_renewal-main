@@ -448,7 +448,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './js/quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems, createStageSession, describeForSpeech } from './js/shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, goHub, loadQuizBank, bankItems, createStageSession, describeForSpeech, speakParts } from './js/shell.js';
 
     // 1. 상태 관리
     const urlParams = new URLSearchParams(window.location.search);
@@ -468,6 +468,18 @@
 
     const stage = createStageSession({
       game: 'blank',
+      intro: {
+        title: '점자 빈칸 수사대',
+        lines: [
+          '화면에 뜻이 나옵니다. 그 뜻의 점형을 직접 입력합니다.',
+          '키보드 F, D, S, J, K, L 키가 1점부터 6점입니다. 화면의 1부터 6 버튼을 눌러도 됩니다.',
+          '같이 누른 점은 한 칸이 됩니다. 손을 떼고 잠시 기다리면 그 칸이 들어갑니다.',
+          'Space 키는 띄어쓰기, Backspace 키는 지우기, Enter 키는 판정 요청입니다.',
+          '틀리면 다시 입력합니다. 맞히면 다음 문제 버튼을 누릅니다.',
+          '스피커 버튼을 누르면 단서를 다시 들을 수 있습니다.',
+          '한 스테이지는 10문제입니다. 8문제 이상 맞히면 이 게임을 완료합니다.'
+        ]
+      },
       trackCombo: false,
       getMeta: () => {
         const q = quizList[currentQuizIndex];
@@ -658,7 +670,7 @@
           return;
         }
         refillQuizList();
-        renderCurrentQuiz();
+        stage.whenStarted(renderCurrentQuiz);
         return;
       } catch (e) {
         console.warn("조합 출제 엔진 로드 실패, 퀴즈 은행을 사용합니다.", e);
@@ -673,7 +685,7 @@
         }
       }
 
-      renderCurrentQuiz();
+      stage.whenStarted(renderCurrentQuiz);
     }
 
     // 5. 퀴즈 렌더링 및 조작
@@ -714,7 +726,14 @@
       document.getElementById('keyboard-dock').classList.remove('hidden');
       document.getElementById('block-dock').classList.add('hidden');
 
-      speak(describeForSpeech(q.target_text || '', appState.lang));
+      const said = describeForSpeech(q.target_text || '', appState.lang);
+      const lead = stage.firstQuestionLead();
+      if (lead) {
+        const sentence = `${document.getElementById('clue-text').textContent}.`;
+        speakParts([{ text: `${lead} ${sentence}`, lang: 'KO' }, { text: said, lang: appState.lang }], { liveId: 'a11y-live-region', tts: appState.tts });
+      } else {
+        speak(said);
+      }
     }
 
     function renderBlockPool(blocks) {

@@ -379,7 +379,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './js/quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech } from './js/shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, readRuleStats, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech, speakParts } from './js/shell.js';
 
     // 1. 상태 객체
     const urlParams = new URLSearchParams(window.location.search);
@@ -403,6 +403,16 @@
     const stage = createStageSession({
       game: 'morpheme',
       trackCombo: true,
+      intro: {
+        title: '형태소 & 낱말 점자 퀴즈',
+        lines: [
+          '화면에 문제 글자가 나옵니다. 그 글자에 맞는 점자 카드를 네 장 중에서 하나 고릅니다.',
+          '카드를 누르거나 숫자 키 1부터 4로 고릅니다. 카드마다 점 번호를 읽어 줍니다.',
+          '틀리면 다른 카드를 다시 고릅니다. 맞히면 다음 문제 버튼을 누릅니다.',
+          'R 키나 스피커 버튼을 누르면 문제를 다시 들을 수 있습니다.',
+          '한 스테이지는 10문제입니다. 8문제 이상 맞히면 이 게임을 완료합니다.'
+        ]
+      },
       getMeta: () => ({
         lang: appState.lang,
         level: appState.level,
@@ -512,7 +522,7 @@
           appState.dataset = [];
         }
       }
-      renderNextQuiz();
+      stage.whenStarted(renderNextQuiz);
     }
 
     // 5. 퀴즈 바인딩
@@ -552,7 +562,14 @@
       appState.currentQuiz.options = options;
 
       renderCards(options);
-      speak(describeForSpeech(promptText, appState.lang));
+      const said = describeForSpeech(promptText, appState.lang);
+      const lead = stage.firstQuestionLead();
+      if (lead) {
+        const sentence = isDotUnit ? '이 점의 자리를 고르세요.' : '이 글자에 맞는 점자 카드를 고르세요.';
+        speakParts([{ text: `${lead} ${sentence}`, lang: 'KO' }, { text: said, lang: appState.lang }], { liveId: 'a11y-live-region', tts: appState.tts });
+      } else {
+        speak(said);
+      }
     }
 
     function renderCards(options) {
@@ -603,7 +620,7 @@
         appState.isAnsweringLocked = true;
         playSound('correct');
         updateTitleBadge();
-        speak(firstTry ? `정답입니다! 연속 ${appState.combo}콤보 달성.` : '정답입니다.');
+        speak('정답입니다.');
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
         document.querySelectorAll('#card-grid button').forEach(c => c.disabled = true);
