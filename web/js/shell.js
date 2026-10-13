@@ -444,16 +444,89 @@ export function goHub() {
 
 export const STAGE_SIZE = 10;
 
-function speakStage(text) {
+function speakStage(text, lang) {
   const settings = loadSettings();
   if (!settings.tts || !window.speechSynthesis || !text) return;
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = settings.lang === 'EN' ? 'en-US' : 'ko-KR';
+  utter.lang = (lang || settings.lang) === 'EN' ? 'en-US' : 'ko-KR';
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utter);
 }
 
-export function createStageSession({ game, trackCombo = true, getMeta, onContinue, onNext, onHome }) {
+// 여러 조각을 차례로 읽는다. 조각마다 언어를 따로 정한다(안내 문장은 한국어, 영어 문제는 영어).
+// 화면낭독기용 라이브 영역에는 조각을 이어 붙여 적는다.
+export function speakParts(parts, { liveId, tts } = {}) {
+  const list = (parts || []).filter((part) => part && part.text);
+  if (!list.length) return;
+  const live = liveId ? document.getElementById(liveId) : null;
+  if (live) live.textContent = list.map((part) => part.text).join(' ');
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const on = typeof tts === 'boolean' ? tts : loadSettings().tts;
+  if (!on) return;
+  list.forEach((part) => {
+    const utter = new SpeechSynthesisUtterance(part.text);
+    utter.lang = String(part.lang || 'KO').toUpperCase() === 'EN' ? 'en-US' : 'ko-KR';
+    window.speechSynthesis.speak(utter);
+  });
+}
+
+// 게임을 열면 먼저 게임 방법 창을 띄운다. 시작하기를 누르면 창을 닫고 onStart를 부른다.
+// 창 이름과 설명을 화면낭독기가 읽도록 하고, 초점은 시작하기 버튼에 둔다.
+function showGameIntro({ title, lines, onStart }) {
+  const overlay = document.createElement('div');
+  overlay.id = 'game-intro-overlay';
+  overlay.className = 'fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'game-intro-title');
+  overlay.setAttribute('aria-describedby', 'game-intro-body');
+  overlay.innerHTML = `
+    <div class="glass-panel bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div>
+        <p class="text-xs font-black uppercase tracking-wider text-indigo-600">게임 방법</p>
+        <h3 id="game-intro-title" class="text-2xl font-black text-slate-900 mt-1"></h3>
+      </div>
+      <ol id="game-intro-body" class="text-sm text-slate-700 font-semibold leading-relaxed list-decimal pl-5 flex flex-col gap-1.5"></ol>
+      <button type="button" id="game-intro-start" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl text-sm shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-300">시작하기</button>
+    </div>
+  `;
+  overlay.querySelector('#game-intro-title').textContent = `${title} 게임 방법`;
+  const body = overlay.querySelector('#game-intro-body');
+  lines.forEach((line) => {
+    const li = document.createElement('li');
+    li.textContent = line;
+    body.appendChild(li);
+  });
+  document.body.appendChild(overlay);
+
+  const startBtn = overlay.querySelector('#game-intro-start');
+  let closed = false;
+  const start = () => {
+    if (closed) return;
+    closed = true;
+    overlay.remove();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    onStart();
+  };
+  startBtn.addEventListener('click', start);
+  // 창 안에는 버튼이 하나뿐이다. Tab은 그 버튼에 머물고, Esc도 시작으로 본다.
+  overlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      startBtn.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      start();
+    }
+    e.stopPropagation();
+  });
+  startBtn.focus();
+  // 브라우저가 첫 클릭 전 음성을 막으면 읽지 않는다. 그때는 화면낭독기가 창을 읽는다.
+  speakStage(`${title} 게임 방법. ${lines.join(' ')} 시작하기 버튼을 누르면 첫 문제가 나옵니다.`, 'KO');
+}
+
+export function createStageSession({ game, trackCombo = true, intro, getMeta, onContinue, onNext, onHome }) {
   const size = STAGE_SIZE;
   let stage = 1;
   let correct = 0;
@@ -465,6 +538,11 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
   // 한 문제는 맞힐 때까지 다시 고른다. 점수는 첫 시도로만 매긴다.
   let scored = false;
   let solved = false;
+  // 스테이지 첫 문제에서 문제 문장을 한 번 읽었는지.
+  let leadDone = false;
+  // 게임 방법 창을 닫기 전에는 첫 문제를 내지 않는다.
+  let started = !intro;
+  const waiting = [];
 
   const overlay = document.createElement('div');
   overlay.id = 'stage-result-overlay';
@@ -534,6 +612,7 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     answered = 0;
     bestCombo = 0;
     accepting = false;
+    leadDone = false;
     paint();
     if (typeof onContinue === 'function') onContinue();
   });
@@ -696,8 +775,33 @@ export function createStageSession({ game, trackCombo = true, getMeta, onContinu
     speakStage(spoken);
   }
 
+  // 게임 방법 창을 닫은 뒤에 fn을 부른다. 창이 없거나 이미 닫혔으면 바로 부른다.
+  function whenStarted(fn) {
+    if (typeof fn !== 'function') return;
+    if (started) fn();
+    else waiting.push(fn);
+  }
+
+  // 스테이지의 첫 문제이면 "스테이지 1, 첫 문제입니다." 같은 머리말을 돌려준다. 한 스테이지에 한 번만.
+  function firstQuestionLead() {
+    if (leadDone || answered > 0) return '';
+    leadDone = true;
+    return `스테이지 ${stage}, 첫 문제입니다.`;
+  }
+
+  if (intro) {
+    showGameIntro({
+      title: intro.title,
+      lines: intro.lines || [],
+      onStart: () => {
+        started = true;
+        waiting.splice(0).forEach((fn) => fn());
+      }
+    });
+  }
+
   paint();
-  return { onAnswer, allowNext, showResult, canAnswer, isFirstTry, paint, size };
+  return { onAnswer, allowNext, showResult, canAnswer, isFirstTry, paint, size, whenStarted, firstQuestionLead };
 }
 
 export async function loadQuizBank() {

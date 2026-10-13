@@ -394,7 +394,7 @@
 
   <script type="module">
     import { loadQuizEngine, canOpenUnit } from './js/quiz_combo.js';
-    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech } from './js/shell.js';
+    import { loadSettings, saveSettings as persistSettings, recordResult, errorCounts, goHub, loadQuizBank, bankItems, createStageSession, bindChoiceClick, describeForSpeech, speakParts } from './js/shell.js';
 
     // 1. UEB / 한글 규칙 라벨 매퍼
     const RULE_LABELS = {
@@ -440,6 +440,16 @@
     const stage = createStageSession({
       game: 'select',
       trackCombo: true,
+      intro: {
+        title: '점자 카드 셀렉트',
+        lines: [
+          '화면에 낱말이나 구가 나옵니다. 그 글에 맞는 점자 카드를 네 장 중에서 하나 고릅니다.',
+          '카드를 누르거나 숫자 키 1부터 4로 고릅니다. 카드마다 점 번호를 읽어 줍니다.',
+          '틀리면 다른 카드를 다시 고릅니다. 맞히면 다음 문제 버튼을 누릅니다.',
+          'R 키나 스피커 버튼을 누르면 문제를 다시 들을 수 있습니다.',
+          '한 스테이지는 10문제입니다. 8문제 이상 맞히면 이 게임을 완료합니다.'
+        ]
+      },
       getMeta: () => ({
         lang: state.lang,
         level: state.level,
@@ -681,7 +691,14 @@
         : (quizObj.hint || `${readableRule}에 맞는 올바른 점자 카드를 선택하세요.`);
 
       renderCards(options);
-      speak(describeForSpeech(targetText, state.lang));
+      const said = describeForSpeech(targetText, state.lang);
+      const lead = stage.firstQuestionLead();
+      if (lead) {
+        const sentence = dotUnit ? '이 점의 자리를 고르세요.' : '이 글에 맞는 점자 카드를 고르세요.';
+        speakParts([{ text: `${lead} ${sentence}`, lang: 'KO' }, { text: said, lang: state.lang }], { liveId: 'select-live-region', tts: globalSettings.tts });
+      } else {
+        speak(said);
+      }
     }
 
     function renderCards(options) {
@@ -735,9 +752,7 @@
         playSound('correct');
         updateTitleAndBadges();
         if (firstTry) recordResult({ game: 'select', rule: ruleLabel, correct: true });
-        speak(state.lang === "KO"
-          ? (firstTry ? `정답입니다! 연속 ${state.combo}콤보 달성.` : "정답입니다.")
-          : (firstTry ? `Correct! ${state.combo} in a row.` : "Correct."));
+        speak(state.lang === "KO" ? "정답입니다." : "Correct.");
 
         cardElement.classList.add('animate-card-pop', 'border-emerald-500', 'bg-emerald-50/90');
         document.querySelectorAll('#card-selection-grid button').forEach(c => c.disabled = true);
@@ -1003,7 +1018,7 @@
         goHub();
         return;
       }
-      generateNextQuiz();
+      stage.whenStarted(generateNextQuiz);
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootSelect);
