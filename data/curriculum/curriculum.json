@@ -523,6 +523,10 @@
       "skill": {
         "read": "'모음+받침' 약자와 '자음+약자'를 읽는다",
         "write": "'모음+받침' 음절을 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/ko/ko-eok.hwpx",
+        "pdf": "materials/ko/ko-eok.pdf"
       }
     },
     {
