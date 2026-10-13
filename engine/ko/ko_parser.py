@@ -21,6 +21,17 @@ class KoreanBrailleEngine:
                          'ㄼ': ('ㄹ', 'ㅂ'), 'ㄽ': ('ㄹ', 'ㅅ'), 'ㄾ': ('ㄹ', 'ㅌ'), 'ㄿ': ('ㄹ', 'ㅍ'), 'ㅀ': ('ㄹ', 'ㅎ'), 'ㅄ': ('ㅂ', 'ㅅ')}
     DOUBLE_JONG_JOIN = {v: k for k, v in DOUBLE_JONG_SPLIT.items()}
     WORD_END_MARK_CELLS = {'⠦', '⠲', '⠴', '⠖'}
+    # 역번역 전용: 받침 ㅋ·ㅌ·ㅍ·ㅎ과 ! ? . ”는 점형이 같아(제3항, 제49항) 점자만으로는 가를 수 없다.
+    # 아래 낱말로 끝나면 받침으로 읽고, 나머지는 문장 부호로 읽는다 (갔다. 왜? 어디 가?).
+    FINAL_MARK_WORDS = {
+        '부엌', '무릎', '헝겊', '바깥', '키읔', '티읕', '피읖', '히읗',
+        '꽃잎', '나뭇잎', '풀잎', '깻잎', '솔잎', '댓잎', '떡잎', '눈앞', '코앞', '문앞', '집앞', '바로앞',
+        '머리맡', '머리숱', '가마솥',
+    }
+    # 이 글자로 끝나는 합성어도 받침으로 읽는다 (끝 = 끄+?, 밭 = 바+? 처럼 문장 끝 말로 드문 것만).
+    FINAL_MARK_TAILS = {'끝', '밭', '숲', '볕', '녘', '밑', '늪', '솥', '팥'}
+    # 한 글자 낱말은 이 글자일 때만 받침으로 읽는다 (앞, 옆, 잎 …).
+    FINAL_MARK_SINGLES = {'밭', '앞', '옆', '잎', '숲', '끝', '밑', '곁', '겉', '솥', '팥', '볕', '늪', '짚', '섶', '숱', '녘', '맡', '낱'}
 
     # 초성 된소리 매핑 (쌍자음 -> 된소리표 ⠠ + 기본 자음)
     TENSER_SIGN = "⠠"  # 6점 (된소리표)
@@ -776,13 +787,18 @@ class KoreanBrailleEngine:
         tokens = re.findall(r'[\u2800-\u28FF]+|[^\u2800-\u28FF]+', braille_str)
         result = []
         self._tag_open = {uni: False for uni in self.toggle_tags}
+        self._quote_open = False
 
         for token in tokens:
             if not token.strip() or not any('\u2800' <= c <= '\u28FF' for c in token):
                 result.append(token)
                 continue
 
-            result.append(self._decode_braille_token(token))
+            text = self._decode_braille_token(token)
+            for ch in text:
+                if ch in "“”":
+                    self._quote_open = ch == "“"
+            result.append(text)
 
         return "".join(result)
 
@@ -863,13 +879,17 @@ class KoreanBrailleEngine:
                 continue
             # 받침 ㅋ·ㅌ·ㅍ·ㅎ(제3항)은 느낌표·물음표·마침표·닫는 따옴표와 점형이 같다.
             # 여러 글자 낱말의 끝 칸이면 문장 부호로 읽는다 (갔다. → 닾 이 되지 않도록).
-            if consumed > 0 and decoded and i + consumed == n and b_token[n - 1] in self.WORD_END_MARK_CELLS:
-                short, short_len = self._decode_single_syllable(b_token[:n - 1], i)
-                mark, mark_len = self._match_punct(b_token, n - 1)
-                if short_len == consumed - 1 and short_len > 0 and mark_len == 1:
+            # 뒤에 닫는 부호만 더 남은 경우(“왜?”)도 같다. 어느 쪽으로 읽을지는 _reads_as_final이 정한다.
+            end = i + consumed
+            if consumed > 0 and b_token[end - 1] in self.WORD_END_MARK_CELLS and all(
+                    c in self.WORD_END_MARK_CELLS for c in b_token[end:]):
+                short, short_len = self._decode_single_syllable(b_token[:end - 1], i)
+                mark, mark_len = self._match_punct(b_token[:end], end - 1)
+                if (short_len == consumed - 1 and short_len > 0 and mark_len == 1
+                        and not self._reads_as_final("".join(decoded), syllable, short, mark)):
                     decoded.append(short)
                     decoded.append(mark)
-                    i = n
+                    i = end
                     continue
             if consumed > 0:
                 decoded.append(syllable)
@@ -1110,6 +1130,19 @@ class KoreanBrailleEngine:
     def _mark_word(self, sense: dict) -> str:
         item = self.marks.get(sense["category"], {}).get("items", {}).get(sense["char"], {})
         return item.get("word") or sense["char"]
+
+    def _reads_as_final(self, before: str, full: str, short: str, mark: str) -> bool:
+        """낱말 끝 칸을 받침으로 읽을지 정한다. full = 받침까지 읽은 글자, short + mark = 부호로 읽은 경우."""
+        quote_open = self._quote_open
+        for ch in before:
+            if ch in "“”":
+                quote_open = ch == "“"
+        if mark == "”" and not quote_open:
+            return True  # 열린 따옴표가 없으면 닫는 따옴표가 아니다 (히읗).
+        word = re.search(r'[가-힣]*$', before).group() + full
+        if len(word) == 1:
+            return word in self.FINAL_MARK_SINGLES
+        return word in self.FINAL_MARK_WORDS or word[-1] in self.FINAL_MARK_TAILS
 
     def _merge_abbr_coda(self, b_token: str, pos: int, jong: str, word_start: bool = False) -> Tuple[str, int]:
         """제15항 [붙임]: 모음+받침 약자 뒤의 받침 한 칸을 겹받침으로 합친다 (⠞⠁ → 얽).
