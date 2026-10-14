@@ -300,6 +300,50 @@ def test_canonical_roundtrip():
         print(f"EN {word} -> {braille} -> {back}")
         assert back == word, (word, braille, back)
 
+    # 같은 점형 여러 뜻 (reports/영어_같은점형_조사.md). 점자는 UEB 규정 예시 그대로.
+    shared_cell_cases = [
+        ("A.B.", "⠠⠁⠲⠠⠃⠲"),            # 7.1.1 U.S.A.: 마침표로 이어진 글자는 단독이 아님
+        ("e.g.", "⠑⠲⠛⠲"),
+        ("U.S.A.", "⠠⠥⠲⠠⠎⠲⠠⠁⠲"),
+        ("J. S. Bach", "⠰⠠⠚⠲ ⠰⠠⠎⠲ ⠠⠃⠁⠡"),  # 5.2: 1급 점자표가 대문자 표시 앞
+        ("Mrs X and Mr O", "⠠⠍⠗⠎ ⠰⠠⠭ ⠯ ⠠⠍⠗ ⠠⠕"),
+        ("22b 22B", "⠼⠃⠃⠰⠃ ⠼⠃⠃⠠⠃"),
+        ("4.b", "⠼⠙⠲⠰⠃"),               # 6.5.2
+        ("4.2", "⠼⠙⠲⠃"),
+        ("He said “yes.”", "⠠⠓⠑ ⠎⠙ ⠦⠽⠑⠎⠲⠴"),  # 7.6.7: 낱말 앞 ⠦는 여는 큰따옴표
+        ("His dog", "⠠⠦ ⠙⠕⠛"),         # 7.6.10: 단독 ⠠⠦ = His
+        ("Was it", "⠠⠴ ⠭"),
+        ("(“ ... that is the question.”)", "⠐⠣⠘⠦ ⠲⠲⠲ ⠞ ⠊⠎ ⠮ ⠐⠟⠲⠘⠴⠐⠜"),  # 7.6.8
+        ("the ” at the end", "⠮ ⠘⠴ ⠁⠞ ⠮ ⠢⠙"),
+        ("(‘ ... that is the question.’)", "⠐⠣⠰⠠⠦ ⠲⠲⠲ ⠞ ⠊⠎ ⠮ ⠐⠟⠲⠠⠴⠐⠜"),  # 7.6.10
+        ("the ’ at the end", "⠮ ⠰⠠⠴ ⠁⠞ ⠮ ⠢⠙"),
+        # 10.5.1: be·were·his·was는 아래 점 부호(따옴표 포함)에 붙으면 풀어 쓴다
+        ("‘His mother owns “his” car.’", "⠠⠦⠠⠓⠊⠎ ⠐⠍ ⠪⠝⠎ ⠦⠓⠊⠎⠴ ⠉⠜⠲⠠⠴"),
+        ("“Was that his?”", "⠦⠠⠺⠁⠎ ⠞ ⠓⠊⠎⠦⠴"),
+        ("“Be safe.”", "⠦⠠⠃⠑ ⠎⠁⠋⠑⠲⠴"),
+        ("That was right!", "⠠⠞ ⠴ ⠐⠗⠖"),
+        ("at my (not his) house", "⠁⠞ ⠍⠽ ⠐⠣⠝ ⠦⠐⠜ ⠓⠳⠎⠑"),
+        ("He is [was]; they are [were].", "⠠⠓⠑ ⠊⠎ ⠨⠣⠺⠁⠎⠨⠜⠆ ⠮⠽ ⠜⠑ ⠨⠣⠺⠻⠑⠨⠜⠲"),
+        ("Be good.", "⠠⠆ ⠛⠙⠲"),
+    ]
+    for text, expected in shared_cell_cases:
+        braille = en_engine.text_to_braille(text)
+        back = en_engine.braille_to_text(braille)
+        print(f"EN {text} -> {braille} -> {back}")
+        assert braille == expected, (text, braille, expected)
+        assert back == text, (text, braille, back)
+
+    # UEB에서 가져온 영어 묶음은 영어 단원에서만 쓴다 (중연 결정, 2026-10-14).
+    with open(find_data_file("curriculum.json"), "r", encoding="utf-8") as f:
+        curriculum = json.load(f)
+    ueb_bundles = {"en_spell.json", "en_shortform.json", "en_contractions.json", "ueb_number_rules.json"}
+    for unit in curriculum["units"]:
+        if unit.get("lang") == "en":
+            continue
+        for item in (unit.get("source") or {}).get("slices", []):
+            assert item.get("bundle") not in ueb_bundles, (unit["id"], item.get("bundle"))
+            assert (item.get("prefix") or {}).get("bundle") not in ueb_bundles, unit["id"]
+
     print("Canonical checks passed.")
 
 
