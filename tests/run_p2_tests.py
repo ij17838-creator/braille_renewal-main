@@ -317,6 +317,14 @@ def test_canonical_roundtrip():
         ("the ” at the end", "⠮ ⠘⠴ ⠁⠞ ⠮ ⠢⠙"),
         ("(‘ ... that is the question.’)", "⠐⠣⠰⠠⠦ ⠲⠲⠲ ⠞ ⠊⠎ ⠮ ⠐⠟⠲⠠⠴⠐⠜"),  # 7.6.10
         ("the ’ at the end", "⠮ ⠰⠠⠴ ⠁⠞ ⠮ ⠢⠙"),
+        # 10.5.1: be·were·his·was는 아래 점 부호(따옴표 포함)에 붙으면 풀어 쓴다
+        ("‘His mother owns “his” car.’", "⠠⠦⠠⠓⠊⠎ ⠐⠍ ⠪⠝⠎ ⠦⠓⠊⠎⠴ ⠉⠜⠲⠠⠴"),
+        ("“Was that his?”", "⠦⠠⠺⠁⠎ ⠞ ⠓⠊⠎⠦⠴"),
+        ("“Be safe.”", "⠦⠠⠃⠑ ⠎⠁⠋⠑⠲⠴"),
+        ("That was right!", "⠠⠞ ⠴ ⠐⠗⠖"),
+        ("at my (not his) house", "⠁⠞ ⠍⠽ ⠐⠣⠝ ⠦⠐⠜ ⠓⠳⠎⠑"),
+        ("He is [was]; they are [were].", "⠠⠓⠑ ⠊⠎ ⠨⠣⠺⠁⠎⠨⠜⠆ ⠮⠽ ⠜⠑ ⠨⠣⠺⠻⠑⠨⠜⠲"),
+        ("Be good.", "⠠⠆ ⠛⠙⠲"),
     ]
     for text, expected in shared_cell_cases:
         braille = en_engine.text_to_braille(text)
