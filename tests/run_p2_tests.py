@@ -300,6 +300,31 @@ def test_canonical_roundtrip():
         print(f"EN {word} -> {braille} -> {back}")
         assert back == word, (word, braille, back)
 
+    # 같은 점형 여러 뜻 (reports/영어_같은점형_조사.md). 점자는 UEB 규정 예시 그대로.
+    shared_cell_cases = [
+        ("A.B.", "⠠⠁⠲⠠⠃⠲"),            # 7.1.1 U.S.A.: 마침표로 이어진 글자는 단독이 아님
+        ("e.g.", "⠑⠲⠛⠲"),
+        ("U.S.A.", "⠠⠥⠲⠠⠎⠲⠠⠁⠲"),
+        ("J. S. Bach", "⠰⠠⠚⠲ ⠰⠠⠎⠲ ⠠⠃⠁⠡"),  # 5.2: 1급 점자표가 대문자 표시 앞
+        ("Mrs X and Mr O", "⠠⠍⠗⠎ ⠰⠠⠭ ⠯ ⠠⠍⠗ ⠠⠕"),
+        ("22b 22B", "⠼⠃⠃⠰⠃ ⠼⠃⠃⠠⠃"),
+        ("4.b", "⠼⠙⠲⠰⠃"),               # 6.5.2
+        ("4.2", "⠼⠙⠲⠃"),
+        ("He said “yes.”", "⠠⠓⠑ ⠎⠙ ⠦⠽⠑⠎⠲⠴"),  # 7.6.7: 낱말 앞 ⠦는 여는 큰따옴표
+        ("His dog", "⠠⠦ ⠙⠕⠛"),         # 7.6.10: 단독 ⠠⠦ = His
+        ("Was it", "⠠⠴ ⠭"),
+        ("(“ ... that is the question.”)", "⠐⠣⠘⠦ ⠲⠲⠲ ⠞ ⠊⠎ ⠮ ⠐⠟⠲⠘⠴⠐⠜"),  # 7.6.8
+        ("the ” at the end", "⠮ ⠘⠴ ⠁⠞ ⠮ ⠢⠙"),
+        ("(‘ ... that is the question.’)", "⠐⠣⠰⠠⠦ ⠲⠲⠲ ⠞ ⠊⠎ ⠮ ⠐⠟⠲⠠⠴⠐⠜"),  # 7.6.10
+        ("the ’ at the end", "⠮ ⠰⠠⠴ ⠁⠞ ⠮ ⠢⠙"),
+    ]
+    for text, expected in shared_cell_cases:
+        braille = en_engine.text_to_braille(text)
+        back = en_engine.braille_to_text(braille)
+        print(f"EN {text} -> {braille} -> {back}")
+        assert braille == expected, (text, braille, expected)
+        assert back == text, (text, braille, back)
+
     print("Canonical checks passed.")
 
 

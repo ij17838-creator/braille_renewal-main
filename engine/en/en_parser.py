@@ -118,6 +118,10 @@ class BrailleEngine:
     # 대문자표는 영어 JSON에 따로 없고, 점역과 역점역이 같은 칸을 쓴다.
     CAP_LETTER = "\u2820"
     CAP_WORD = "\u2820\u2820"
+    # UEB 7.6.8: 홀로 놓인 큰따옴표(와 그 짝)는 두 칸 따옴표로 적어 his·was로 읽히지 않게 한다.
+    TWO_CELL_DOUBLE_QUOTES = {"“": "\u2818\u2826", "”": "\u2818\u2834"}
+    # 낱말 앞에 붙은 부호는 여는 부호로 읽는다 (UEB 7.6.7: 낱말 앞 ⠦는 여는 큰따옴표).
+    OPENING_MARKS = "“‘(["
     def __init__(self, base_data_dir: Optional[str] = None):
         self.base_data_dir = base_data_dir
         lexicon_path = find_data_file("lexicon_en.json", base_data_dir)
@@ -225,6 +229,12 @@ class BrailleEngine:
         self.surrounding_allowed_symbols = set()
         self.disallowed_delimiters = set()
         adjacent = num_data.get("standing_alone_rules", {}).get("adjacent_delimiters", {})
+        # UEB 2.6.1: 빈칸처럼 "단독"의 경계가 되는 붙임표·줄표
+        self.standing_alone_delimiters = {
+            sym.get("char", "")
+            for sym in (adjacent.get("hyphen_and_dashes") or {}).get("symbols", [])
+            if sym.get("char")
+        }
         for group in adjacent.values():
             if not isinstance(group, dict):
                 continue
@@ -254,6 +264,27 @@ class BrailleEngine:
         self.punctuation_sequences = sorted(
             ((braille, char) for char, braille in self.punctuation.items() if braille),
             key=lambda item: (-len(item[0]), item[1]),
+        )
+        self.grade1_quote_chars = {
+            char for char, braille in self.punctuation.items()
+            if char in "‘’" and braille
+        }
+        # 단독 따옴표 표기(UEB 7.6.8 두 칸 큰따옴표, 7.6.10 1급 점자표 + 작은따옴표)도 되돌리기에서 읽는다.
+        standalone_quotes = [(braille, char) for char, braille in self.TWO_CELL_DOUBLE_QUOTES.items()]
+        if self.letter_grade1_indicator:
+            standalone_quotes += [
+                (self.letter_grade1_indicator + self.punctuation[char], char)
+                for char in self.grade1_quote_chars
+            ]
+        self.standalone_quote_decode = dict(standalone_quotes)
+        self.punctuation_sequences = sorted(
+            set(self.punctuation_sequences) | set(standalone_quotes),
+            key=lambda item: (-len(item[0]), item[1]),
+        )
+        # 같은 점형이면 낱말 앞에서는 여는 부호를 먼저 고른다 (⠦: “ / ?).
+        self.leading_punctuation_sequences = sorted(
+            self.punctuation_sequences,
+            key=lambda item: (-len(item[0]), item[1] not in self.OPENING_MARKS, item[1]),
         )
 
         self.apostrophe_word_suffixes = set()
@@ -417,21 +448,24 @@ class BrailleEngine:
         return self._side_stands_alone(tokens, index, -1) and self._side_stands_alone(tokens, index, 1)
 
     def _side_stands_alone(self, tokens: List[str], index: int, step: int) -> bool:
+        """UEB 2.6.1~2.6.3: 부호를 건너 빈칸·붙임표·줄표·글 끝에 닿아야 단독이다.
+        A.B.나 e.g.처럼 마침표 너머에 글자가 이어지면 단독이 아니다."""
         neighbor = index + step
-        if neighbor < 0 or neighbor >= len(tokens):
-            return True
-        token = tokens[neighbor]
-        if token.isspace():
-            return True
-        if step > 0 and self._is_apostrophe_suffix(token):
-            return True
-        if token in self.disallowed_delimiters:
+        while 0 <= neighbor < len(tokens):
+            token = tokens[neighbor]
+            if token.isspace():
+                return True
+            if step > 0 and self._is_apostrophe_suffix(token):
+                return True
+            if token in self.standing_alone_delimiters:
+                return True
+            if token in self.disallowed_delimiters:
+                return False
+            if token in self.surrounding_allowed_symbols:
+                neighbor += step
+                continue
             return False
-        if token in self.surrounding_allowed_symbols:
-            return True
-        if any(char.isalnum() for char in token):
-            return False
-        return False
+        return True
 
     def _continuation_reaches_digit(self, tokens: List[str], start: int) -> bool:
         """쉼표·소수점·쌍점·분수선은 바로 뒤 숫자까지, 숫자 빈칸은 다음 숫자만 모드를 유지한다."""
@@ -447,6 +481,7 @@ class BrailleEngine:
 
     def text_to_braille(self, text: str) -> str:
         tokens = self._token_re.findall(text)
+        two_cell_quotes = self._two_cell_quote_indexes(tokens)
         result = []
         in_numeric_mode = False
         cap_letter = self.CAP_LETTER
@@ -471,6 +506,10 @@ class BrailleEngine:
                     result.append(token)
                 else:
                     result.append(self.punctuation.get(token, self.connectors[token]))
+                    # UEB 6.5.2 (4.b ⠼⠙⠲⠰⠃): 마침표 등에 글자가 바로 붙으면 숫자 모드가 이어진다.
+                    following = tokens[index + 1] if index + 1 < len(tokens) else ""
+                    if following[:1].isalpha():
+                        in_numeric_mode = True
                 continue
 
             if in_numeric_mode and token in self.terminating_connectors:
@@ -508,6 +547,15 @@ class BrailleEngine:
                 prefix_indicator = ""
                 if came_from_numeric and not cap_indicator and braille_word and braille_word[0] in self.grade1_cells:
                     prefix_indicator = self.grade1_prefix
+                if (
+                    cap_indicator
+                    and lower in self.isolated_letters
+                    and self.letter_grade1_indicator
+                    and braille_word.startswith(self.letter_grade1_indicator)
+                ):
+                    # UEB 5.2 (J. ⠰⠠⠚⠲): 1급 점자표가 대문자 표시보다 앞에 온다.
+                    prefix_indicator = self.letter_grade1_indicator
+                    braille_word = braille_word[len(self.letter_grade1_indicator):]
                 result.append(prefix_indicator + cap_indicator + braille_word)
                 continue
 
@@ -517,9 +565,36 @@ class BrailleEngine:
                 continue
 
             in_numeric_mode = False
-            result.append(self.punctuation.get(token, token))
+            if index in two_cell_quotes:
+                result.append(self.TWO_CELL_DOUBLE_QUOTES[token])
+                continue
+            braille = self.punctuation.get(token, token)
+            if token in self.grade1_quote_chars and self._token_stands_alone(tokens, index):
+                # UEB 7.6.10: 홀로 놓인 ⠠⠦·⠠⠴는 His·Was로 읽히므로 1급 점자표를 붙인다.
+                braille = self.letter_grade1_indicator + braille
+            result.append(braille)
 
         return "".join(result)
+
+    def _two_cell_quote_indexes(self, tokens: List[str]) -> set:
+        """UEB 7.6.8: 홀로 놓인 큰따옴표와 그 짝은 두 칸 따옴표(⠘⠦ ⠘⠴)로 적는다."""
+        pairs = {}
+        opened = []
+        for index, token in enumerate(tokens):
+            if token == "“":
+                opened.append(index)
+            elif token == "”" and opened:
+                start = opened.pop()
+                pairs[start] = index
+                pairs[index] = start
+        marked = set()
+        for index, token in enumerate(tokens):
+            if token not in self.TWO_CELL_DOUBLE_QUOTES or not self._token_stands_alone(tokens, index):
+                continue
+            marked.add(index)
+            if index in pairs:
+                marked.add(pairs[index])
+        return marked
 
     def _translate_word(self, word: str, standing_alone: bool = True) -> str:
         if (
@@ -728,6 +803,10 @@ class BrailleEngine:
         return self._decode_word_token(b_token)
 
     def _strip_capital(self, token: str) -> Tuple[str, Optional[str]]:
+        grade1_cap = self.letter_grade1_indicator + self.CAP_LETTER
+        if self.letter_grade1_indicator and token.startswith(grade1_cap) and len(token) > len(grade1_cap):
+            # UEB 5.2: ⠰⠠⠃ = 1급 점자표 + 대문자 B
+            return self.letter_grade1_indicator + token[len(grade1_cap):], "letter"
         if token.startswith(self.CAP_WORD):
             return token[len(self.CAP_WORD):], "word"
         if token.startswith(self.CAP_LETTER):
@@ -744,6 +823,14 @@ class BrailleEngine:
     def _decode_word_token(self, token: str, standing_alone: bool = True) -> str:
         if standing_alone and token in self.braille_to_wordsign:
             return self.braille_to_wordsign[token]
+        if token in self.standalone_quote_decode:
+            return self.standalone_quote_decode[token]
+        bare, bare_cap = self._strip_capital(token)
+        if standing_alone and bare_cap:
+            # UEB 7.6.10: 홀로 놓인 ⠠⠦·⠠⠴는 따옴표가 아니라 His·Was
+            for sense in self.rev_groupsign_senses.get(bare, []):
+                if sense["rule"].get("standingAloneOnly"):
+                    return self._apply_capital(sense["text"], bare_cap)
         leading, core, trailing = self._peel_edge_punctuation(token)
         target = core or token
         target, cap_mode = self._strip_capital(target)
@@ -792,7 +879,7 @@ class BrailleEngine:
                 break
             if changed:
                 continue
-            for braille, char in self.punctuation_sequences:
+            for braille, char in self.leading_punctuation_sequences:
                 if len(braille) >= len(token):
                     continue
                 if token.startswith(braille) and not self._groupsign_matches(token, 0, braille):
@@ -1089,6 +1176,13 @@ class BrailleEngine:
                 if token[index] in self.rev_digits:
                     res.append(self.rev_digits[token[index]])
                     index += 1
+                    continue
+                punctuation = self._punctuation_at(token, index)
+                if punctuation:
+                    # 숫자 뒤 ⠲는 dis가 아니라 마침표다 (UEB 6.5.2: 4.b ⠼⠙⠲⠰⠃).
+                    res.append(punctuation[0])
+                    index += punctuation[1]
+                    in_num = False
                     continue
                 res.append(self._finish_as_text(token[index:]))
                 return "".join(res)
