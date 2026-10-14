@@ -113,7 +113,7 @@ class MorphemeSegmenter:
 class BrailleEngine:
     """
     UEB 규정에 따른 양방향 변환 엔진.
-    수표 모드(⠼), 1급 점자표(⠆, 2·3점), 형태소 경계 검사, 약어 우선순위를 처리합니다.
+    수표 모드(⠼), 1급 점자표(⠰, 5·6점), 형태소 경계 검사, 약어 우선순위를 처리합니다.
     """
     # 대문자표는 영어 JSON에 따로 없고, 점역과 역점역이 같은 칸을 쓴다.
     CAP_LETTER = "\u2820"
@@ -276,7 +276,7 @@ class BrailleEngine:
         bodies = "|".join(re.escape(body) for body in self.apostrophe_suffix_bodies)
         apostrophe = rf"(?:['’](?:{bodies}))?" if bodies else ""
         self._token_re = re.compile(
-            rf"[0-9]+|[a-zA-Z]+{apostrophe}|['’][a-zA-Z]+|[^\w\s]|\s"
+            rf"[0-9]+|[a-zA-Z]+{apostrophe}|['’][a-zA-Z]+|[^\w\s]|_|\s"
         )
 
     def _load_shortforms(self):
@@ -506,7 +506,7 @@ class BrailleEngine:
                         avoid_grade1_prefix=True,
                     )
                 prefix_indicator = ""
-                if came_from_numeric and braille_word and braille_word[0] in self.grade1_cells:
+                if came_from_numeric and not cap_indicator and braille_word and braille_word[0] in self.grade1_cells:
                     prefix_indicator = self.grade1_prefix
                 result.append(prefix_indicator + cap_indicator + braille_word)
                 continue

@@ -112,5 +112,27 @@
       "y": { "word": "y", "dots": [[5, 6], [1, 3, 4, 5, 6]], "unicode": "⠰⠽", "requiresGrade1": true },
       "z": { "word": "z", "dots": [[5, 6], [1, 3, 5, 6]], "unicode": "⠰⠵", "requiresGrade1": true }
     }
+  },
+
+  "capital_indicators": {
+    "category": "capital_indicator",
+    "description": "대문자 표시. 한 글자만 대문자면 대문자 기호표, 단어 전체(또는 두 글자 이상 연속)가 대문자면 대문자 단어표, 세 단어 이상이 모두 대문자면 첫 단어 앞에 대문자 구절표와 마지막 단어 뒤에 대문자 종료표를 적는다.",
+    "source": "한글 점자 규정 제28항 [붙임](PDF 26쪽), UEB 8.3~8.6절(PDF 117~124쪽)",
+    "items": {
+      "capital_letter": { "name": "대문자 기호표", "dots": [[6]], "unicode": "⠠", "example": { "print": "New York", "braille": "⠠⠝⠑⠺ ⠠⠽⠕⠗⠅" } },
+      "capital_word": { "name": "대문자 단어표", "dots": [[6], [6]], "unicode": "⠠⠠", "example": { "print": "NEW YORK", "braille": "⠠⠠⠝⠑⠺ ⠠⠠⠽⠕⠗⠅" } },
+      "capital_passage": { "name": "대문자 구절표", "dots": [[6], [6], [6]], "unicode": "⠠⠠⠠", "example": { "print": "WELCOME TO KOREA", "braille": "⠠⠠⠠⠺⠑⠇⠉⠕⠍⠑ ⠞⠕ ⠅⠕⠗⠑⠁⠠⠄" } },
+      "capital_terminator": { "name": "대문자 종료표", "dots": [[6], [3]], "unicode": "⠠⠄" }
+    }
+  },
+
+  "typeform_indicators": {
+    "category": "typeform_indicator",
+    "description": "글자체 기호표. 바로 뒤 한 글자(기호)가 이탤릭체 또는 굵은 글자임을 나타낸다.",
+    "source": "한글 점자 규정 [부록 1] 영어 일람표(PDF 214쪽), UEB 9.2절(PDF 131쪽)",
+    "items": {
+      "italic_symbol": { "name": "이탤릭체 기호표", "dots": [[4, 6], [2, 3]], "unicode": "⠨⠆" },
+      "bold_symbol": { "name": "굵은 글자체 기호표", "dots": [[4, 5], [2, 3]], "unicode": "⠘⠆" }
+    }
   }
 }

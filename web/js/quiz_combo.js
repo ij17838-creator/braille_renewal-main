@@ -689,7 +689,7 @@ function buildEnglish(data) {
   const numPrefix = numbers.numeric_indicators?.num_prefix?.unicode || '⠼';
   const digits = {};
   Object.entries(numbers.digits || {}).forEach(([k, v]) => { digits[k] = v.unicode; });
-  const grade1Indicator = numbers.grade1_indicators?.grade1_symbol?.unicode || '⠆';
+  const grade1Indicator = numbers.grade1_indicators?.grade1_symbol?.unicode || '⠰';
   const grade1Cells = new Set(Object.values(digits));
   const isolatedLetter = {};
   Object.entries(spell.isolated_letter?.items || {}).forEach(([key, item]) => {

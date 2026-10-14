@@ -576,11 +576,8 @@ class BrailleRuleValidator:
         if not token:
             return False
         first = token[0]
-        return (
-            first in self.grade1_targets
-            or first.lower() in self.grade1_targets
-            or first.upper() in self.grade1_targets
-        )
+        # 대문자는 대문자 기호표가 앞서므로 1급 점자표가 필요 없다 (UEB 6.5.2).
+        return first in self.grade1_targets
 
     def _wordsign_entry(self, lower_token: str) -> Optional[Dict[str, Any]]:
         """알파벳 단어약어는 but, can처럼 단어에만 대응한다. 한 글자 b는 철자표의 단독 글자다."""

@@ -583,7 +583,7 @@
         if (ch === ' ') open = false;
         else if (ch === '⠼') open = true;
         else if (!open) continue;
-        else if (ch === '⠆') open = false;
+        else if (ch === '⠰') open = false;
         else if (DIGIT_CELLS.has(ch) || NUMERIC_CONTINUATIONS.has(ch)) continue;
         else if (ch === '⠐' && DIGIT_CELLS.has(braille[i + 1] || '')) continue;
         else open = false;

@@ -13,8 +13,8 @@
   "grade1_indicators": {
     "grade1_symbol": {
       "name": "1급 점자표",
-      "dots": [[2, 3]],
-      "unicode": "⠆"
+      "dots": [[5, 6]],
+      "unicode": "⠰"
     }
   },
   "digits": {

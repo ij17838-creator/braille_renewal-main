@@ -878,13 +878,15 @@
         "letter": "1",
         "pattern": "⠼⠁",
         "dots": [[3, 4, 5, 6], [1]],
-        "line": "숫자 앞에는 수표를 붙입니다. 1급 점자표(2·3점)는 약어가 아닌 글자를 가릴 때 씁니다. 쉼표, 마침표 같은 문장 부호도 함께 익힙니다."
+        "line": "숫자 앞에는 수표를 붙입니다. 1급 점자표(5·6점)는 약어가 아닌 글자를 가릴 때 씁니다. 쉼표, 마침표 같은 문장 부호와 대문자 표시, 글자체 기호표도 함께 익힙니다."
       },
       "source": {
         "kind": "slice",
         "slices": [
           { "bundle": "numbers.json", "path": ["numeric_indicators"], "role": "indicator" },
           { "bundle": "numbers.json", "path": ["grade1_indicators"], "role": "indicator" },
+          { "bundle": "en_spell.json", "path": ["capital_indicators", "items"], "role": "indicator" },
+          { "bundle": "en_spell.json", "path": ["typeform_indicators", "items"], "role": "indicator" },
           {
             "bundle": "numbers.json",
             "path": ["digits"],
@@ -917,7 +919,10 @@
                 "bracket_close",
                 "hyphen",
                 "em_dash",
-                "solidus_slash"
+                "solidus_slash",
+                "ellipsis",
+                "asterisk",
+                "low_line"
               ]
             },
             "names": {
@@ -938,13 +943,16 @@
               "bracket_close": "닫는 대괄호",
               "hyphen": "붙임표",
               "em_dash": "줄표",
-              "solidus_slash": "빗금"
+              "solidus_slash": "빗금",
+              "ellipsis": "줄임표",
+              "asterisk": "별표",
+              "low_line": "아래선"
             }
           }
         ]
       },
       "skill": {
-        "read": "수표, 숫자, 1급 점자표, 문장 부호를 구분한다",
+        "read": "수표, 숫자, 1급 점자표, 대문자 표시, 문장 부호를 구분한다",
         "write": "숫자 앞에 수표를 붙이고 문장 부호를 적는다"
       }
     },
