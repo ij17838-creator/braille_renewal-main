@@ -28,4 +28,6 @@
 python tools/study_materials/build.py ko-number --skill <hwpx 스킬 폴더> --out web/materials/ko
 ```
 
-필요한 것: hwpx 스킬(report 템플릿과 build·validate 스크립트), Node Playwright(Chromium), 인터넷(구글 글꼴 Noto Sans KR).
+한글 파일의 점자 문자(⠿ 등)는 글자 대신 6점 칸 그림(PNG, 그림 설명 = 점 번호)으로 넣는다. 한글 프로그램이 점자 문자를 8점 칸(맨 아래 빈 점 2개)으로 그리는 글꼴로 대신 보여 주고, 파일 안에 넣은 글꼴은 쓰지 않기 때문이다. PDF는 원래대로 점자 문자를 둔다.
+
+필요한 것: hwpx 스킬, Pillow(그림),(report 템플릿과 build·validate 스크립트), Node Playwright(Chromium), 인터넷(구글 글꼴 Noto Sans KR).

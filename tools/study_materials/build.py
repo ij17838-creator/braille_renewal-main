@@ -74,6 +74,7 @@ def main():
                  '--section', tmp / 'section0.xml', '--title', doc_title(doc), '--creator', '점자 학습 프로그램', '--output', hwpx])
             run([sys.executable, scripts / 'fix_namespaces.py', hwpx])
             run([sys.executable, scripts / 'finalize_hwpx.py', hwpx, '--strip-linesegarray'])
+            render_hwpx.embed_images(hwpx, render_hwpx.IMAGES)
             print(run([sys.executable, scripts / 'validate.py', hwpx]).strip())
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True)
