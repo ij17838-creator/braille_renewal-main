@@ -401,6 +401,28 @@ UEB_CONTRACTION_CASES = [
     ("blowhard", "⠃⠇⠪⠓⠜⠙"),
     ("Blakeney", "⠠⠃⠇⠁⠅⠢⠑⠽"),
     ("Blindoc", "⠠⠃⠇⠔⠙⠕⠉"),
+    # 3묶음: ing·be·con·dis 위치 (UEB 10.4.3, 10.6.1, 10.6.2, 10.6.4)
+    ("ingot", "⠔⠛⠕⠞"),
+    ("Smith–Inge", "⠠⠎⠍⠊⠹⠠⠤⠠⠔⠛⠑"),
+    ("concave/convex", "⠒⠉⠁⠧⠑⠸⠌⠉⠕⠝⠧⠑⠭"),
+    ("www.living.beyond.myself.org", "⠺⠺⠺⠲⠇⠊⠧⠬⠲⠃⠑⠽⠕⠝⠙⠲⠍⠽⠎⠑⠇⠋⠲⠕⠗⠛"),
+    ("be'ave", "⠃⠑⠄⠁⠧⠑"),
+    ("dis'armony", "⠙⠊⠎⠄⠜⠍⠕⠝⠽"),
+    ("m'lord", "⠍⠄⠐⠇"),
+    ("'e 'as", "⠄⠰⠑ ⠄⠵"),
+    ("best", "⠃⠑⠌"),
+    ("been", "⠃⠑⠢"),
+    ("better", "⠃⠑⠞⠞⠻"),
+    ("begging", "⠃⠑⠶⠬"),
+    ("conch", "⠉⠕⠝⠡"),
+    ("disc", "⠙⠊⠎⠉"),
+    ("dishevel", "⠙⠊⠩⠑⠧⠑⠇"),
+    ("Conestoga", "⠠⠒⠑⠌⠕⠛⠁"),
+    ("Belg", "⠠⠃⠑⠇⠛"),
+    ("Bev", "⠠⠃⠑⠧"),
+    ("cont", "⠒⠞"),
+    ("Beethoven", "⠠⠃⠑⠑⠹⠕⠧⠢"),
+    ("become", "⠆⠉⠕⠍⠑"),
 ]
 
 

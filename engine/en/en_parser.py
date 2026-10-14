@@ -133,6 +133,12 @@ class BrailleEngine:
     # UEB 10.9.5: s를 붙여도 축어로 쓰지 않는 세 낱말 (abouts, almosts, hims)
     SHORTFORM_NO_S = ("about", "almost", "him")
     VOWELS_Y = set("aeiouy")
+    WORD_BEGINNING_SIGNS = ("ing", "be", "con", "dis")
+    OPENING_PUNCTUATION = "([{\"'“‘«"
+    WORD_BEGINNING_BREAKS = "-‐‑–—―"
+    PREFIX_ABBREVIATIONS = ("cont", "contd", "dist", "cons", "conn")
+    DIS_H_PREFIXED = ("hon", "hea", "har", "hab")
+    _word_beginning = True
     def __init__(self, base_data_dir: Optional[str] = None):
         self.base_data_dir = base_data_dir
         lexicon_path = find_data_file("lexicon_en.json", base_data_dir)
@@ -560,6 +566,7 @@ class BrailleEngine:
                     cap_indicator = cap_letter
                 lower = token.lower().replace("’", "'")
                 standing = self._token_stands_alone(tokens, index)
+                self._word_beginning = self._at_word_beginning(tokens, index)
                 apostrophe = re.match(r"^([a-z]+)('[a-z]+)$", lower)
                 if apostrophe and apostrophe.group(2) in self.apostrophe_word_suffixes:
                     stem, suffix = apostrophe.groups()
@@ -594,11 +601,23 @@ class BrailleEngine:
                     prefix_indicator = self.letter_grade1_indicator
                     braille_word = braille_word[len(self.letter_grade1_indicator):]
                 result.append(prefix_indicator + cap_indicator + braille_word)
+                self._word_beginning = True
                 continue
 
             if re.fullmatch(r"['’][A-Za-z]+", token):
                 in_numeric_mode = False
-                result.append(self._spell_chars(token.lower().replace("’", "'")))
+                lower = token.lower().replace("’", "'")
+                previous = tokens[index - 1] if index else ""
+                if previous[-1:].isalpha():
+                    # UEB 10.6.2 (dis'armony ⠙⠊⠎⠄⠜⠍⠕⠝⠽): 낱말 안 아포스트로피 뒤에도 약자를 쓰되 낱말 처음은 아니다.
+                    self._word_beginning = False
+                    word = self._contract_surface(lower[1:], whole_word=True, standing_alone=False)
+                else:
+                    # UEB 10.6.2 ('display ⠄⠲⠏⠇⠁⠽): 여는 작은따옴표 뒤는 낱말 처음이다.
+                    self._word_beginning = self._at_word_beginning(tokens, index)
+                    word = self._translate_word(lower[1:], standing_alone=self._token_stands_alone(tokens, index))
+                self._word_beginning = True
+                result.append(self._spell_chars(lower[0]) + word)
                 continue
 
             in_numeric_mode = False
@@ -699,7 +718,11 @@ class BrailleEngine:
             return self.word_to_wordsign[word]
 
         rule = self.contraction_rules.get(word) or {}
-        if word in self.standalone_contractions and not (rule.get("standingAloneOnly") and not standing_alone):
+        if (
+            word in self.standalone_contractions
+            and not (rule.get("standingAloneOnly") and not standing_alone)
+            and not (rule.get("requiresFollowingLetters") and not standing_alone)
+        ):
             return self.standalone_contractions[word]
 
         if standing_alone:
@@ -851,12 +874,50 @@ class BrailleEngine:
             return False
         if rule.get("requiresFollowingLetters") and at_end:
             return False
+        if at_start and whole_word and text[start:end] in self.WORD_BEGINNING_SIGNS:
+            # UEB 10.4.3: ing는 낱말 처음에 쓰지 않는다.
+            if text[start:end] == "ing" and self._word_beginning:
+                return False
+            # UEB 10.6.2: be·con·dis는 낱말 처음(빈칸·붙임표·대시 뒤)에서, 뒤에 글자가 올 때만 쓴다.
+            if text[start:end] != "ing" and (
+                not self._word_beginning
+                or (end < len(text) and not text[end].isalpha())
+                or not self._prefix_is_first_syllable(text, end)
+            ):
+                return False
         if rule.get("requiresPrecedingLetters") and at_start and whole_word:
             # UEB 10.8.1: 어미 약자는 앞에 글자가 있을 때만 쓴다 (낱말 맨 앞의 ⠰는 1급 점자표).
             return False
         if not rule.get("canPrecedeLetters", True) and not at_end:
             return False
         return True
+
+    def _prefix_is_first_syllable(self, text: str, end: int) -> bool:
+        """UEB 10.6.1: be·con·dis가 첫 음절일 때만 쓴다. 철자로 확실히 가려지는 경우만 본다."""
+        prefix, rest = text[:end], text[end:]
+        if text in self.PREFIX_ABBREVIATIONS:
+            return True  # UEB 10.6.4: cont(continued)·dist(district)처럼 원래 낱말에 약자를 쓰는 줄임말
+        if rest and not any(char in self.VOWELS_Y for char in rest):
+            return False  # best ⠃⠑⠌, conch ⠉⠕⠝⠡, disc ⠙⠊⠎⠉: 한 음절 낱말
+        if prefix == "be" and rest[:1] == "e":
+            return False  # been ⠃⠑⠢
+        if prefix == "be" and len(rest) > 1 and rest[0] == rest[1] and rest[0] not in self.VOWELS_Y:
+            return False  # better ⠃⠑⠞⠞⠻, belligerent ⠃⠑⠇⠇⠊⠛⠻⠢⠞, begging ⠃⠑⠶⠬
+        if prefix == "con" and re.fullmatch(r"e(s|d|y|ys)?", rest):
+            return False  # cone ⠉⠐⠕, coneys ⠉⠐⠕⠽⠎
+        if prefix == "dis" and rest[:1] == "h" and not rest.startswith(self.DIS_H_PREFIXED):
+            return False  # dish ⠙⠊⠩, dishevel ⠙⠊⠩⠑⠧⠑⠇ (dishonest ⠲⠓⠐⠕⠌는 씀)
+        return True
+
+    def _at_word_beginning(self, tokens: List[str], index: int) -> bool:
+        """UEB 10.4.3·10.6.2 붙임: 낱말 처음은 빈칸·붙임표·대시 뒤이며, 그 사이에 여는 문장부호만 올 수 있다."""
+        before = []
+        for token in reversed(tokens[:index]):
+            if not token or token.isspace():
+                break
+            before.append(token)
+        text = "".join(reversed(before)).rstrip(self.OPENING_PUNCTUATION)
+        return not text or text[-1] in self.WORD_BEGINNING_BREAKS
 
     def _leading_numeric_continuation(self, braille: str) -> bool:
         """⠐+a~j처럼 숫자 연결자로 읽히는 앞부분은 단어 약어로 두지 않는다."""
@@ -946,7 +1007,8 @@ class BrailleEngine:
             text, inner_cap = grade1
             return leading + self._apply_capital(text, cap_mode or inner_cap) + trailing
 
-        glued_apostrophe = "'" in leading or "'" in trailing
+        # UEB 2.6.2 ('e 'as ⠄⠰⠑ ⠄⠵): 앞에 붙은 아포스트로피는 단독을 막지 않는다.
+        glued_apostrophe = "'" in trailing
         if standing_alone and not glued_apostrophe and target in self.braille_to_wordsign:
             return finish(self.braille_to_wordsign[target])
         if standing_alone and not glued_apostrophe:
@@ -962,6 +1024,13 @@ class BrailleEngine:
         decoded = self._decode_contracted(
             target, allow_shortform=False, standing_alone=standing_alone
         )
+        apostrophe = self.punctuation.get("'", "")
+        if apostrophe and apostrophe in target[1:-1] and any("\u2800" <= char <= "\u28FF" for char in decoded):
+            # UEB 10.6.2 (m'lord ⠍⠄⠐⠇): 낱말 안 아포스트로피 뒤에서 다시 약자를 읽는다.
+            head, *tails = target.split(apostrophe)
+            parts = [self._decode_contracted(head, allow_shortform=False, standing_alone=standing_alone)]
+            parts += [self._decode_contracted(tail, allow_shortform=False, standing_alone=False) for tail in tails]
+            decoded = "'".join(parts)
         if core and core != token:
             return finish(decoded)
         return self._apply_capital(decoded, cap_mode)
