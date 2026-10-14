@@ -19,6 +19,8 @@ PP_PART, PP_SEC = 28, 29
 # 테두리/배경 (report 3~5 + 추가 6)
 BF_LINE, BF_HEAD, BF_SOFT = 3, 4, 6
 TEXT_WIDTH = 42520  # A4 본문 폭
+LONG_CELLS = 5  # 이만큼 긴 낱말·문장은 ●○ 그림을 넣지 않는다 (칸 너비를 넘쳐 줄이 섞이므로)
+BRAILLE_LINE = 10  # 넓은 칸에서 점자 문자 한 줄에 넣는 최대 점칸 수
 
 
 def build_header(skill):
@@ -54,6 +56,7 @@ class Section:
         self.next_id = 1000000100
         self.out = []
         self.explained_cards = False  # 표 읽는 순서 안내는 처음 한 번만
+        self.explained_long = False  # 그림 없는 긴 카드 안내도 처음 한 번만
 
     def nid(self):
         self.next_id += 1
@@ -108,6 +111,33 @@ def dot_cp(cells):
     return CP_DOT if len(cells) <= 2 else CP_DOT_S
 
 
+def is_long(cells):
+    return len(cells) >= LONG_CELLS
+
+
+def braille_lines(cells, per=BRAILLE_LINE):
+    """점자 문자를 띄어쓰기 자리에서 끊어 한 줄에 per칸 이하로 나눈다. 낱말 하나가 per칸보다 길면 그 낱말만 칸 수로 끊는다."""
+    words, w = [], []
+    for c in cells:
+        if c:
+            w.append(c)
+        elif w:
+            words.append(w)
+            w = []
+    if w:
+        words.append(w)
+    lines, cur = [], []
+    for w in words:
+        for part in chunk(w, per):
+            if cur and len(cur) + 1 + len(part) > per:
+                lines.append(cur)
+                cur = []
+            cur = cur + [[]] + part if cur else part
+    if cur:
+        lines.append(cur)
+    return [braille(l) for l in lines]
+
+
 def even(n, total=TEXT_WIDTH):
     w = [total // n] * n
     w[-1] += total - sum(w)
@@ -145,21 +175,43 @@ def write_block(s, b):
         if not s.explained_cards:
             s.add([(CP_SMALL, '표는 이름, 점 번호, 점자 문자, 점칸 그림 순서입니다. 그림의 ●는 볼록한 점, ○는 빈 자리입니다.')])
             s.explained_cards = True
-        grid = [[[(C, CP_BOLD, '이름')], [(C, CP_BOLD, '점 번호와 설명')], [(C, CP_BOLD, '점자')], [(C, CP_BOLD, '점칸 그림')]]]
+        # 짧은 점형은 이름·설명·점자·그림 4칸 표, 긴 낱말·문장은 그림 없이 점자 칸을 넓힌 3칸 표. 순서는 그대로 둔다.
+        groups = []
         for c in b['items']:
-            line = c.get('line') or dots_text(c['cells'])
-            label = ' · '.join(c['labels']) if c.get('labels') and len(c['cells']) > 1 else ''
-            pic = [(C, dot_cp(c['cells']), l) for l in dot_lines(c['cells'])] + ([(C, CP_GRAY, label)] if label else [])
-            grid.append([[(C, CP_PART, c['name'])], [(J, CP_BODY, line)], [(C, CP_DOT, braille(c['cells']))], pic])
-        h = [1500] + [3600 if len(c['cells']) > 1 else 3300 for c in b['items']]
-        s.table(grid, [6000, 15520, 6000, 15000], h, bfs=[[BF_HEAD] * 4] + [[BF_LINE] * 4] * len(b['items']), header_row=True)
+            if groups and is_long(groups[-1][-1]['cells']) == is_long(c['cells']):
+                groups[-1].append(c)
+            else:
+                groups.append([c])
+        for g in groups:
+            if is_long(g[0]['cells']):
+                if not s.explained_long:
+                    s.add([(CP_SMALL, '긴 낱말과 문장은 점칸 그림 없이 점 번호와 점자 문자로 적습니다.')])
+                    s.explained_long = True
+                grid = [[[(C, CP_BOLD, '이름')], [(C, CP_BOLD, '점 번호와 설명')], [(C, CP_BOLD, '점자')]]]
+                for c in g:
+                    line = c.get('line') or dots_text(c['cells'])
+                    grid.append([[(C, CP_PART, c['name'])], [(J, CP_BODY, line)],
+                                 [(PP_CELL_J, CP_DOT, l) for l in braille_lines(c['cells'])]])
+                h = [1500] + [3600] * len(g)
+                s.table(grid, [6000, 15520, 21000], h, bfs=[[BF_HEAD] * 3] + [[BF_LINE] * 3] * len(g), header_row=True)
+                continue
+            grid = [[[(C, CP_BOLD, '이름')], [(C, CP_BOLD, '점 번호와 설명')], [(C, CP_BOLD, '점자')], [(C, CP_BOLD, '점칸 그림')]]]
+            for c in g:
+                line = c.get('line') or dots_text(c['cells'])
+                label = ' · '.join(c['labels']) if c.get('labels') and len(c['cells']) > 1 else ''
+                pic = [(C, dot_cp(c['cells']), l) for l in dot_lines(c['cells'])] + ([(C, CP_GRAY, label)] if label else [])
+                grid.append([[(C, CP_PART, c['name'])], [(J, CP_BODY, line)], [(C, dot_cp(c['cells']), braille(c['cells']))], pic])
+            h = [1500] + [3600 if len(c['cells']) > 1 else 3300 for c in g]
+            s.table(grid, [6000, 15520, 6000, 15000], h, bfs=[[BF_HEAD] * 4] + [[BF_LINE] * 4] * len(g), header_row=True)
     elif t == 'read_ex':
         s.add([(CP_SMALL, b['hint'] + ' 칸마다 문제 번호, 점 설명, 점자 문자, 그림, 답 칸 순서입니다.')])
         k = grid_cols(max(len(c['cells']) for c in b['items']))
         items = list(enumerate(b['items'], 1))
         for row in chunk(items, k):
-            cells = [[(C, CP_SMALL, f'({i})'), (C, CP_BODY, c['name']), (C, CP_DOT, braille(c['cells']))]
-                     + [(C, dot_cp(c['cells']), l) for l in dot_lines(c['cells'])] + [(C, CP_BODY, b.get('blank', '(    )'))]
+            cells = [[(C, CP_SMALL, f'({i})'), (C, CP_BODY, c['name'])]
+                     + ([(C, CP_DOT, l) for l in braille_lines(c['cells'])] if is_long(c['cells'])
+                        else [(C, CP_DOT, braille(c['cells']))] + [(C, dot_cp(c['cells']), l) for l in dot_lines(c['cells'])])
+                     + [(C, CP_BODY, b.get('blank', '(    )'))]
                      for i, c in row]
             cells += [[]] * (k - len(row))
             s.table([cells], even(k), [7600])
@@ -169,7 +221,8 @@ def write_block(s, b):
         items = list(enumerate(b['items'], 1))
         for row in chunk(items, k):
             cells = [[(C, CP_SMALL, f'({i})'), (C, CP_PART, w['ask']), (C, CP_SMALL, f'빈 점칸 {w["cells"]}칸')]
-                     + [(C, dot_cp([[]] * w['cells']), l) for l in dot_lines([[]] * w['cells'], blank=True)]
+                     + ([] if w['cells'] >= LONG_CELLS
+                        else [(C, dot_cp([[]] * w['cells']), l) for l in dot_lines([[]] * w['cells'], blank=True)])
                      for i, w in row]
             cells += [[]] * (k - len(row))
             s.table([cells], even(k), [6000])

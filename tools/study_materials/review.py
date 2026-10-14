@@ -6,7 +6,7 @@
   1. 점형: 카드·연습 문제의 점 설명 = 점칸 = 점자 문자 (단원 파일의 규정집 대조 assert는 build()에서 다시 돈다)
   2. 정답: 문제 수와 정답 수, 쓰기 정답의 점형
   3. 읽기 연습 설명에 답이 드러나지 않는지
-  4. 화면낭독기 구조: PDF 태그·제목·쪽 수, 제목 순서, 한글 파일의 칸 안 순서(설명 → 점자 → 그림)
+  4. 화면낭독기 구조: PDF 태그·제목·쪽 수, 제목 순서, 한글 파일의 칸 안 순서(설명 → 점자 → 그림, 5칸 이상은 그림 없음)
   5. 두 파일 일치: 제목, 규정 원문, 카드, 정답이 한글 파일과 PDF에 똑같이 있는지
   6. 겉모양: 거의 빈 쪽이 없는지 (--png로 쪽 그림을 떠서 눈으로도 본다)
   7. 앱 연결: curriculum.json materials 경로의 파일이 있는지
@@ -23,6 +23,7 @@ sys.path.insert(0, str(HERE))
 from build import unit_module  # noqa: E402
 from common import POS, REPO, braille, doc_title, dots_text, unit_data  # noqa: E402
 from render_html import HANGUL_NUM  # noqa: E402
+from render_hwpx import LONG_CELLS  # noqa: E402
 
 DOTS_ONLY = re.compile(r'^[\d·점 +빈칸]+$')
 
@@ -145,9 +146,12 @@ def review(uid, skill, png=None):
     for b in blocks(doc, 'cards'):
         for c in b['items']:
             name, line, br = flat(c['name']), flat(c.get('line') or dots_text(c['cells'])), flat(braille(c['cells']))
-            m = re.search(re.escape(name) + re.escape(line) + re.escape(br) + '[●○]', fh)
+            if len(c['cells']) >= LONG_CELLS:  # 긴 낱말·문장은 그림 없이 이름 → 설명 → 점자
+                m = re.search(re.escape(name) + re.escape(line) + re.escape(br) + '(?![●○])', fh)
+            else:
+                m = re.search(re.escape(name) + re.escape(line) + re.escape(br) + '[●○]', fh)
             if not m:
-                bad(f'한글 파일 카드 「{c["name"]}」: 칸 안 순서가 이름 → 설명 → 점자 → 그림이 아님')
+                bad(f'한글 파일 카드 「{c["name"]}」: 칸 안 순서가 이름 → 설명 → 점자 (→ 그림)이 아님')
 
     # 6. 겉모양: 거의 빈 쪽
     for p in range(1, pages + 1):
