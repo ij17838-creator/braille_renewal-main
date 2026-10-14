@@ -377,9 +377,113 @@ def test_en_contraction_rules():
     print(f"{len(rules)} rules checked.")
 
 
+# UEB 약자 규칙 고치기 (중연 허락 2026-10-14). 기대값은 모두 UEB 본문 예시.
+UEB_CONTRACTION_CASES = [
+    # 1묶음: 축어로 잘못 읽히지 않게 (UEB 10.9.6~10.9.9, 5.7.2, 10.8.1)
+    ("al dente", "⠰⠁⠇ ⠙⠢⠞⠑"),
+    ("“Hm, is this Al's CD?”", "⠦⠰⠠⠓⠍⠂ ⠊⠎ ⠹ ⠰⠠⠁⠇⠄⠎ ⠰⠠⠠⠉⠙⠦⠴"),
+    ("Use the ALT key.", "⠠⠥⠎⠑ ⠮ ⠰⠠⠠⠁⠇⠞ ⠅⠑⠽⠲"),
+    ("My friends are Fr Ted and Sr Ann.", "⠠⠍⠽ ⠋⠗⠎ ⠜⠑ ⠰⠠⠋⠗ ⠠⠞⠫ ⠯ ⠠⠎⠗ ⠠⠁⠝⠝⠲"),
+    ("the Imm family", "⠮ ⠰⠠⠊⠍⠍ ⠋⠁⠍⠊⠇⠽"),
+    ("Herf gun", "⠠⠓⠑⠗⠋ ⠛⠥⠝"),
+    ("Blvd", "⠰⠠⠃⠇⠧⠙"),
+    ("LLC", "⠰⠠⠠⠇⠇⠉"),
+    ("llama", "⠇⠇⠁⠍⠁"),
+    ("Grtsamada", "⠰⠠⠛⠗⠞⠎⠁⠍⠁⠙⠁"),
+    ("ozbrl", "⠰⠰⠕⠵⠃⠗⠇"),
+    ("Dobrljin", "⠰⠰⠠⠙⠕⠃⠗⠇⠚⠊⠝"),
+    ("CD-ROM", "⠰⠠⠠⠉⠙⠤⠠⠠⠗⠕⠍"),
+    ("3 yrs 6 mths", "⠼⠉ ⠰⠽⠗⠎ ⠼⠋ ⠍⠹⠎"),
+    ("enceinte", "⠢⠉⠑⠔⠞⠑"),
+    ("lessee", "⠇⠑⠎⠎⠑⠑"),
+    # 2묶음: 모음·y 앞의 bl은 blind가 아니다 (UEB 10.9.3)
+    ("blunder", "⠃⠇⠥⠝⠙⠻"),
+    ("blowhard", "⠃⠇⠪⠓⠜⠙"),
+    ("Blakeney", "⠠⠃⠇⠁⠅⠢⠑⠽"),
+    ("Blindoc", "⠠⠃⠇⠔⠙⠕⠉"),
+    # 3묶음: ing·be·con·dis 위치 (UEB 10.4.3, 10.6.1, 10.6.2, 10.6.4)
+    ("ingot", "⠔⠛⠕⠞"),
+    ("Smith–Inge", "⠠⠎⠍⠊⠹⠠⠤⠠⠔⠛⠑"),
+    ("concave/convex", "⠒⠉⠁⠧⠑⠸⠌⠉⠕⠝⠧⠑⠭"),
+    ("www.living.beyond.myself.org", "⠺⠺⠺⠲⠇⠊⠧⠬⠲⠃⠑⠽⠕⠝⠙⠲⠍⠽⠎⠑⠇⠋⠲⠕⠗⠛"),
+    ("be'ave", "⠃⠑⠄⠁⠧⠑"),
+    ("dis'armony", "⠙⠊⠎⠄⠜⠍⠕⠝⠽"),
+    ("m'lord", "⠍⠄⠐⠇"),
+    ("'e 'as", "⠄⠰⠑ ⠄⠵"),
+    ("best", "⠃⠑⠌"),
+    ("been", "⠃⠑⠢"),
+    ("better", "⠃⠑⠞⠞⠻"),
+    ("begging", "⠃⠑⠶⠬"),
+    ("conch", "⠉⠕⠝⠡"),
+    ("disc", "⠙⠊⠎⠉"),
+    ("dishevel", "⠙⠊⠩⠑⠧⠑⠇"),
+    ("Conestoga", "⠠⠒⠑⠌⠕⠛⠁"),
+    ("Belg", "⠠⠃⠑⠇⠛"),
+    ("Bev", "⠠⠃⠑⠧"),
+    ("cont", "⠒⠞"),
+    ("Beethoven", "⠠⠃⠑⠑⠹⠕⠧⠢"),
+    ("become", "⠆⠉⠕⠍⠑"),
+    # 4묶음: 낱말 안 대문자·곧은 큰따옴표 (UEB 10.6.3, 10.6.6, 10.8.2, 10.9.4, 10.12.12)
+    ("McConnell", "⠠⠍⠉⠠⠉⠕⠝⠝⠑⠇⠇"),
+    ("O'Connor", "⠠⠕⠄⠠⠉⠕⠝⠝⠕⠗"),
+    ("MetroDisco", "⠠⠍⠑⠞⠗⠕⠠⠙⠊⠎⠉⠕"),
+    ("BeLinda", "⠠⠃⠑⠠⠇⠔⠙⠁"),
+    ("conCUR", "⠉⠕⠝⠠⠠⠉⠥⠗"),
+    ("DISlike", "⠠⠠⠙⠊⠎⠠⠄⠇⠊⠅⠑"),
+    ("BEd", "⠠⠃⠠⠫"),
+    ("SeaWorld", "⠠⠎⠑⠁⠠⠸⠺"),
+    ("TEAspoon", "⠠⠠⠞⠑⠁⠠⠄⠎⠏⠕⠕⠝"),
+    ("AttenTION!", "⠠⠁⠞⠞⠢⠠⠠⠞⠊⠕⠝⠖"),
+    ("ELesson", "⠠⠑⠠⠇⠑⠎⠎⠕⠝"),
+    ("QuickTime", "⠠⠟⠅⠠⠐⠞"),
+    ("GREATgreatGrandChildren", "⠠⠠⠛⠗⠞⠠⠄⠛⠗⠞⠠⠛⠗⠯⠠⠡⠝"),
+    ("GodChildren's", "⠠⠛⠕⠙⠠⠡⠝⠄⠎"),
+    ("StepChildren.org", "⠠⠌⠑⠏⠠⠡⠊⠇⠙⠗⠢⠲⠕⠗⠛"),
+    ("PenFriend", "⠠⠏⠢⠠⠋⠗⠊⠢⠙"),
+    ("FirstAmerica", "⠠⠋⠊⠗⠌⠠⠁⠍⠻⠊⠉⠁"),
+    ("HANDsome", "⠠⠠⠓⠯⠠⠄⠐⠎"),
+    ("founDAtion", "⠋⠳⠝⠠⠙⠠⠁⠰⠝"),
+    ("verY", "⠧⠻⠠⠽"),
+    ("“Belinda!”", "⠦⠠⠆⠇⠔⠙⠁⠖⠴"),
+    # 5묶음: 부록 1 축어 목록 낱말 (UEB 10.9.2~10.9.4, 10.9.8, 10.9.9)
+    ("aboveground", "⠁⠃⠧⠛⠗⠨⠙"),
+    ("godchildren", "⠛⠕⠙⠡⠝"),
+    ("goodafternoon", "⠛⠙⠁⠋⠝"),
+    ("repaid", "⠗⠑⠏⠙"),
+    ("suchlike", "⠎⠡⠇⠊⠅⠑"),
+    ("blinded", "⠃⠇⠔⠙⠫"),
+    ("blinding", "⠃⠇⠔⠙⠬"),
+    ("befriended", "⠆⠋⠗⠊⠢⠙⠫"),
+    ("aftereffect", "⠁⠋⠞⠻⠑⠖⠑⠉⠞"),
+    ("Greatorex", "⠠⠛⠗⠞⠕⠗⠑⠭"),
+    ("Ms Letterkenny's Littleport home.", "⠠⠍⠎ ⠠⠇⠗⠅⠢⠝⠽⠄⠎ ⠠⠇⠇⠏⠕⠗⠞ ⠓⠕⠍⠑⠲"),
+    ("Mr Letterman could've quickly rebrailled the Aftercare Newsletter.",
+     "⠠⠍⠗ ⠠⠇⠗⠍⠁⠝ ⠉⠙⠄⠧⠑ ⠟⠅⠇⠽ ⠗⠑⠃⠗⠇⠙ ⠮ ⠠⠁⠋⠉⠜⠑ ⠠⠝⠑⠺⠎⠇⠗⠲"),
+    ("I am brailling the newsletters' headlines.", "⠠⠊ ⠁⠍ ⠃⠗⠁⠊⠇⠇⠬ ⠮ ⠝⠑⠺⠎⠇⠗⠎⠄ ⠓⠂⠙⠇⠔⠑⠎⠲"),
+    ("Goodacre", "⠠⠛⠕⠕⠙⠁⠉⠗⠑"),
+    ("DeafBlind", "⠠⠙⠂⠋⠠⠃⠇"),
+    ("ABOUTface!", "⠠⠠⠁⠃⠳⠞⠠⠄⠋⠁⠉⠑⠖"),
+    ("AfterHours", "⠠⠁⠋⠞⠻⠠⠓⠳⠗⠎"),
+    ("UNSD", "⠰⠰⠠⠠⠥⠝⠎⠙"),
+    ("Marcillat-en-Combraille, France", "⠠⠍⠜⠉⠊⠇⠇⠁⠞⠤⠑⠝⠤⠠⠉⠕⠍⠃⠗⠇⠂ ⠠⠋⠗⠨⠑"),
+]
+
+
+def test_en_ueb_contraction_fixes():
+    print("\n=== UEB contraction fixes ===")
+    engine = BrailleEngine()
+    for text, expected in UEB_CONTRACTION_CASES:
+        braille = engine.text_to_braille(text)
+        back = engine.braille_to_text(braille)
+        print(f"EN {text} -> {braille} -> {back}")
+        assert braille == expected, (text, braille, expected)
+        assert back == text, (text, braille, back)
+
+
 if __name__ == "__main__":
     test_korean()
     test_english()
     test_canonical_roundtrip()
     test_homograph_conjugation()
     test_en_contraction_rules()
+    test_en_ueb_contraction_fixes()
