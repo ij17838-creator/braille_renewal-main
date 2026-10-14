@@ -21,6 +21,9 @@ from common import doc_title, file_stem  # noqa: E402
 import render_html  # noqa: E402
 import render_hwpx  # noqa: E402
 
+BRAILLE_FONT_FILE = HERE / 'fonts' / (render_hwpx.BRAILLE_FONT + '.ttf')  # make_braille_font.py로 만든다
+
+
 def unit_module(uid):
     """단원 id ko-initial → units/ko_initial.py"""
     return importlib.import_module('units.' + uid.replace('-', '_'))
@@ -74,6 +77,7 @@ def main():
                  '--section', tmp / 'section0.xml', '--title', doc_title(doc), '--creator', '점자 학습 프로그램', '--output', hwpx])
             run([sys.executable, scripts / 'fix_namespaces.py', hwpx])
             run([sys.executable, scripts / 'finalize_hwpx.py', hwpx, '--strip-linesegarray'])
+            render_hwpx.embed_braille_font(hwpx, BRAILLE_FONT_FILE)
             print(run([sys.executable, scripts / 'validate.py', hwpx]).strip())
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True)

@@ -28,4 +28,6 @@
 python tools/study_materials/build.py ko-number --skill <hwpx 스킬 폴더> --out web/materials/ko
 ```
 
+점자 문자(⠿ 등)는 한글 파일 안에 넣은 6점 글꼴 `fonts/Braille6Dot.ttf`로 그린다. 기본 글꼴에는 점자가 없어 윈도가 8점 칸(맨 아래 빈 점 2개)으로 대신 그리기 때문이다. 글꼴은 `python tools/study_materials/make_braille_font.py`로 다시 만든다(fontTools 필요).
+
 필요한 것: hwpx 스킬(report 템플릿과 build·validate 스크립트), Node Playwright(Chromium), 인터넷(구글 글꼴 Noto Sans KR).

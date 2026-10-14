@@ -13,6 +13,10 @@ from common import braille, doc_title, dots_text, lang_label, rows
 # 글자 모양 (report 템플릿 0~15 + 추가 16~19)
 CP_BODY, CP_SANS, CP_TITLE, CP_BOLD, CP_SMALL, CP_PART = 0, 1, 7, 9, 11, 13
 CP_DOT, CP_GRAY, CP_DOT_S, CP_SEC = 16, 17, 18, 19
+CP_BR, CP_BR_S = 20, 21  # 점자 문자 전용 (6점 글꼴 Braille6Dot)
+BRAILLE_FONT = 'Braille6Dot'  # make_braille_font.py가 만드는 글꼴. 한글 파일 안에 넣어 둔다 (embed_braille_font)
+BRAILLE_FONT_ITEM = 'braillefont'
+BRAILLE_RUN = re.compile(r'([\u2800-\u283f](?:[\u2800-\u283f ]*[\u2800-\u283f])?)')
 # 문단 모양 (report 템플릿 0~27 + 추가 28~29)
 PP_BODY, PP_CENTER, PP_CELL_C, PP_CELL_J, PP_RIGHT, PP_ITEM = 0, 20, 21, 22, 23, 24
 PP_PART, PP_SEC = 28, 29
@@ -36,6 +40,17 @@ def build_header(skill):
         sans.replace('id="1"', f'id="{CP_DOT_S}"', 1),
         grab('charPr', 13).replace('id="13"', f'id="{CP_SEC}"', 1).replace('height="1200"', 'height="1100"'),
     ]
+    # 점자 문자는 6점 글꼴로. 기본 글꼴에는 점자가 없어 윈도가 8점 칸(맨 아래 빈 점 2개)으로 대신 그린다.
+    fid = len(re.findall(r'<hh:font id=', re.search(r'<hh:fontface lang="HANGUL".*?</hh:fontface>', hdr, re.S).group(0)))
+    font = (f'<hh:font id="{fid}" face="{BRAILLE_FONT}" type="TTF" isEmbedded="1" binaryItemIDRef="{BRAILLE_FONT_ITEM}">'
+            '<hh:typeInfo familyType="FCAT_UNKNOWN" weight="0" proportion="0" contrast="0" strokeVariation="0" armStyle="0" '
+            'letterform="0" midline="0" xHeight="0"/></hh:font>')
+    hdr = re.sub(r'(<hh:fontface lang="[A-Z]+" fontCnt=")(\d+)(">.*?)(</hh:fontface>)',
+                 lambda m: m.group(1) + str(int(m.group(2)) + 1) + m.group(3) + font + m.group(4), hdr, flags=re.S)
+    br = re.sub(r'<hh:fontRef [^>]*/>', '<hh:fontRef ' + ' '.join(f'{k}="{fid}"' for k in
+                ('hangul', 'latin', 'hanja', 'japanese', 'other', 'symbol', 'user')) + '/>', sans)
+    add_cp += [br.replace('id="1"', f'id="{CP_BR}"', 1).replace('height="1000"', 'height="1600"'),
+               br.replace('id="1"', f'id="{CP_BR_S}"', 1)]
     hdr = hdr.replace('</hh:charProperties>', ''.join(add_cp) + '</hh:charProperties>')
     soft = grab('borderFill', 4).replace('id="4"', f'id="{BF_SOFT}"', 1).replace('#DAEEF3', '#E8F7EF')
     hdr = hdr.replace('</hh:borderFills>', soft + '</hh:borderFills>')
@@ -65,6 +80,9 @@ class Section:
     def para(self, runs, pp=PP_BODY, style=0, page_break=False):
         if isinstance(runs, str):
             runs = [(CP_BODY, runs)]
+        # 점자 문자 부분만 6점 글꼴 글자 모양으로 나눈다 (큰 점자 칸은 큰 글자, 나머지는 작은 글자)
+        runs = [(CP_BR if c == CP_DOT else CP_BR_S, x) if i % 2 else (c, x)
+                for c, t in runs for i, x in enumerate(BRAILLE_RUN.split(t) if t else [t]) if x or not t]
         r = ''.join(f'<hp:run charPrIDRef="{c}"><hp:t>{escape(t)}</hp:t></hp:run>' if t else f'<hp:run charPrIDRef="{c}"><hp:t/></hp:run>'
                     for c, t in runs)
         return (f'<hp:p id="{self.nid()}" paraPrIDRef="{pp}" styleIDRef="{style}" pageBreak="{int(page_break)}" '
@@ -275,6 +293,25 @@ def build_section(doc, skill):
             for b in sec['blocks']:
                 write_block(s, b)
     return head + first + ''.join(s.out) + '</hs:sec>'
+
+
+def embed_braille_font(hwpx, font_path):
+    """만든 한글 파일에 6점 점자 글꼴을 넣는다 (BinData + content.hpf 목록). mimetype은 맨 앞, 압축 없이 둔다."""
+    import shutil
+    import tempfile
+    import zipfile
+    href = f'BinData/{BRAILLE_FONT}.ttf'
+    item = f'<opf:item id="{BRAILLE_FONT_ITEM}" href="{href}" media-type="application/x-font-ttf" isEmbeded="1"/>'
+    tmp = tempfile.NamedTemporaryFile(suffix='.hwpx', delete=False).name
+    with zipfile.ZipFile(hwpx) as zin, zipfile.ZipFile(tmp, 'w') as zout:
+        for info in zin.infolist():
+            data = zin.read(info.filename)
+            if info.filename == 'Contents/content.hpf' and BRAILLE_FONT_ITEM not in data.decode('utf-8'):
+                data = data.decode('utf-8').replace('</opf:manifest>', item + '</opf:manifest>').encode('utf-8')
+            if info.filename != href:
+                zout.writestr(info, data)
+        zout.write(font_path, href, compress_type=zipfile.ZIP_DEFLATED)
+    shutil.move(tmp, hwpx)
 
 
 def title_of(doc):
