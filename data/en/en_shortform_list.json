@@ -1,0 +1,426 @@
+{
+  "source": "UEB Rules Third Edition 2024, Appendix 1: Shortforms List (243~252쪽)",
+  "note": "축어를 품은 긴 낱말 가운데 목록에 오른 낱말. 이 낱말과 여기에 s·'s를 붙인 꼴에서만 축어를 쓴다(10.9.2, 10.9.5). 10.9.3의 열 축어(braille, great, children, blind, first, friend, good, letter, little, quick)는 조건만 맞으면 목록에 없어도 쓴다. 영어 단원 점역기 전용.",
+  "noS": [
+    "abouts",
+    "almosts",
+    "hims"
+  ],
+  "words": {
+    "about": [
+      "aboutface",
+      "aboutfaced",
+      "aboutfacer",
+      "aboutfacing",
+      "aboutturn",
+      "aboutturned",
+      "eastabout",
+      "gadabout",
+      "hereabout",
+      "knockabout",
+      "layabout",
+      "northabout",
+      "rightabout",
+      "roundabout",
+      "roustabout",
+      "runabout",
+      "southabout",
+      "stirabout",
+      "thereabout",
+      "turnabout",
+      "walkabout",
+      "westabout",
+      "whereabout"
+    ],
+    "above": [
+      "aboveboard",
+      "aboveground",
+      "abovementioned",
+      "hereinabove"
+    ],
+    "according": [
+      "accordingly",
+      "unaccording",
+      "unaccordingly"
+    ],
+    "across": [
+      "readacross"
+    ],
+    "after": [
+      "afterbattle",
+      "afterbirth",
+      "afterbreakfast",
+      "afterburn",
+      "afterburned",
+      "afterburner",
+      "afterburning",
+      "aftercare",
+      "afterclap",
+      "aftercoffee",
+      "afterdamp",
+      "afterdark",
+      "afterdeck",
+      "afterdinner",
+      "afterflow",
+      "aftergame",
+      "afterglow",
+      "afterguard",
+      "afterhatch",
+      "afterhatches",
+      "afterhour",
+      "afterlife",
+      "afterlight",
+      "afterlives",
+      "afterlunch",
+      "afterlunches",
+      "aftermarket",
+      "aftermatch",
+      "aftermatches",
+      "aftermath",
+      "aftermeeting",
+      "aftermentioned",
+      "aftermidday",
+      "aftermidnight",
+      "aftermost",
+      "afterpain",
+      "afterparties",
+      "afterparty",
+      "afterpiece",
+      "afterplay",
+      "aftersale",
+      "afterschool",
+      "aftersensation",
+      "aftershave",
+      "aftershock",
+      "aftershow",
+      "aftershower",
+      "aftersupper",
+      "aftertaste",
+      "aftertax",
+      "aftertaxes",
+      "aftertea",
+      "aftertheater",
+      "aftertheatre",
+      "afterthought",
+      "aftertime",
+      "aftertreatment",
+      "afterword",
+      "afterwork",
+      "afterworld",
+      "hereafter",
+      "hereinafter",
+      "morningafter",
+      "thereafter",
+      "thereinafter",
+      "whereafter",
+      "whereinafter"
+    ],
+    "afternoon": [
+      "afternoontea",
+      "goodafternoon",
+      "midafternoon"
+    ],
+    "again": [
+      "hereagain",
+      "hereinagain",
+      "thereagain",
+      "thereinagain",
+      "whereagain",
+      "whereinagain"
+    ],
+    "against": [
+      "hereagainst",
+      "thereagainst",
+      "whereagainst"
+    ],
+    "before": [
+      "beforehand",
+      "beforementioned"
+    ],
+    "behind": [
+      "behindhand"
+    ],
+    "below": [
+      "belowdeck",
+      "belowground",
+      "belowmentioned"
+    ],
+    "beneath": [
+      "beneathdeck",
+      "beneathground"
+    ],
+    "between": [
+      "betweendeck",
+      "betweentime",
+      "betweenwhile"
+    ],
+    "blind": [
+      "colorblind",
+      "colorblindness",
+      "colorblindnesses",
+      "colourblind",
+      "colourblindness",
+      "colourblindnesses",
+      "deafblind",
+      "DeafBlind",
+      "deafblindness",
+      "deafblindnesses",
+      "purblind",
+      "purblindly",
+      "purblindness",
+      "purblindnesses",
+      "snowblind",
+      "snowblindness",
+      "snowblindnesses",
+      "unblindfold",
+      "unblindfolded",
+      "unblindfolding"
+    ],
+    "children": [
+      "children'swear"
+    ],
+    "conceive": [
+      "conceived",
+      "conceiver"
+    ],
+    "could": [
+      "coulda",
+      "couldest",
+      "couldn't",
+      "couldn't've",
+      "couldst",
+      "could've"
+    ],
+    "deceive": [
+      "archdeceiver",
+      "deceived",
+      "deceiver",
+      "undeceive",
+      "undeceived",
+      "undeceiver"
+    ],
+    "deceiving": [
+      "undeceiving"
+    ],
+    "declare": [
+      "declared",
+      "declarer",
+      "undeclare",
+      "undeclared"
+    ],
+    "first": [
+      "feetfirst",
+      "firstaid",
+      "firstaider",
+      "headfirst",
+      "tailfirst"
+    ],
+    "friend": [
+      "befriend",
+      "boyfriend",
+      "defriend",
+      "galfriend",
+      "gentlemanfriend",
+      "gentlemenfriends",
+      "girlfriend",
+      "guyfriend",
+      "ladyfriend",
+      "manfriend",
+      "menfriends",
+      "penfriend",
+      "schoolfriend",
+      "unfriend",
+      "unfriendlier",
+      "unfriendliest",
+      "unfriendliness",
+      "unfriendlinesses",
+      "unfriendly",
+      "womanfriend",
+      "womenfriends"
+    ],
+    "good": [
+      "feelgood",
+      "goodafternoon",
+      "gooder",
+      "goodest",
+      "goodevening",
+      "goodie",
+      "goodish",
+      "goodun",
+      "goody",
+      "goodyear",
+      "scattergood",
+      "supergood"
+    ],
+    "him": [
+      "himbo",
+      "himboes"
+    ],
+    "immediate": [
+      "immediately",
+      "immediateness"
+    ],
+    "letter": [
+      "bloodletter",
+      "chainletter",
+      "hateletter",
+      "lettered",
+      "letterer",
+      "lettering",
+      "letteropener",
+      "loveletter",
+      "newsletter",
+      "reletter",
+      "relettered",
+      "relettering",
+      "unlettered"
+    ],
+    "little": [
+      "belittle",
+      "belittled",
+      "belittlement",
+      "belittler"
+    ],
+    "much": [
+      "forasmuch",
+      "inasmuch",
+      "insomuch",
+      "muchly",
+      "muchness",
+      "overmuch"
+    ],
+    "must": [
+      "musta",
+      "mustard",
+      "mustardy",
+      "mustier",
+      "mustiest",
+      "mustily",
+      "mustiness",
+      "mustn't",
+      "mustn't've",
+      "must've",
+      "musty"
+    ],
+    "necessary": [
+      "unnecessary"
+    ],
+    "paid": [
+      "highlypaid",
+      "illpaid",
+      "lowlypaid",
+      "overpaid",
+      "poorlypaid",
+      "postpaid",
+      "prepaid",
+      "repaid",
+      "underpaid",
+      "unpaid",
+      "unrepaid",
+      "wellpaid"
+    ],
+    "perceive": [
+      "apperceive",
+      "apperceived",
+      "apperceiver",
+      "misperceive",
+      "misperceived",
+      "misperceiver",
+      "perceived",
+      "perceiver",
+      "unperceive",
+      "unperceived"
+    ],
+    "perceiving": [
+      "apperceiving",
+      "misperceiving",
+      "unperceiving"
+    ],
+    "perhaps": [
+      "perhapses"
+    ],
+    "quick": [
+      "doublequick",
+      "quicken",
+      "quickened",
+      "quickener",
+      "quickening",
+      "quicker",
+      "quickest",
+      "quickie",
+      "quickish",
+      "quickishly",
+      "quicky",
+      "superquick",
+      "unquick"
+    ],
+    "receive": [
+      "preceive",
+      "preceiver",
+      "received",
+      "receiver",
+      "receivership",
+      "unreceived"
+    ],
+    "receiving": [
+      "preceiving"
+    ],
+    "rejoice": [
+      "rejoiced",
+      "rejoiceful",
+      "rejoicefully",
+      "rejoicefulness",
+      "rejoicer",
+      "unrejoice",
+      "unrejoiced",
+      "unrejoiceful",
+      "unrejoicefully",
+      "unrejoicefulness",
+      "unrejoicer"
+    ],
+    "rejoicing": [
+      "rejoicingly",
+      "unrejoicing",
+      "unrejoicingly"
+    ],
+    "said": [
+      "aforesaid",
+      "foresaid",
+      "gainsaid",
+      "missaid",
+      "saidest",
+      "saidst",
+      "unsaid"
+    ],
+    "should": [
+      "shoulda",
+      "shouldest",
+      "shouldn't",
+      "shouldn't've",
+      "shouldst",
+      "should've"
+    ],
+    "such": [
+      "nonesuch",
+      "nonsuch",
+      "somesuch",
+      "suchlike"
+    ],
+    "together": [
+      "togetherness"
+    ],
+    "would": [
+      "'twould",
+      "'twoulda",
+      "'twouldn't",
+      "'twouldn't've",
+      "'twould've",
+      "woulda",
+      "wouldest",
+      "wouldn't",
+      "wouldn't've",
+      "wouldst",
+      "would've"
+    ]
+  }
+}

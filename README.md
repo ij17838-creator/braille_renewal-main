@@ -16,7 +16,7 @@ web/                     브라우저 게임
   css/                     공용 스타일 (mobile.css)
 data/                    점자 규칙·학습 데이터 (JSON)
   ko/                      한글: ko, ko_marks, ko_number_rules, lexicon_ko, ko_rules(규정 제1~74항 목록)
-  en/                      영어(UEB): en_spell, en_shortform, en_contractions, lexicon_en, ueb_number_rules, en_contraction_rules(UEB 약자 규칙·예외 목록)
+  en/                      영어(UEB): en_spell, en_shortform, en_contractions, lexicon_en, ueb_number_rules, en_contraction_rules(UEB 약자 규칙·예외 목록), en_shortform_list(UEB 부록 1 축어 목록 낱말, 점역기 전용)
   common/                  한/영 공통: numbers
   curriculum/              단원표·문제은행: curriculum, quiz_bank
 engine/                  파이썬 점역 엔진

@@ -132,6 +132,7 @@ class BrailleEngine:
     SHORTFORM_WORD_START = ("blind", "first", "friend", "good", "letter", "little", "quick")
     # UEB 10.9.5: s를 붙여도 축어로 쓰지 않는 세 낱말 (abouts, almosts, hims)
     SHORTFORM_NO_S = ("about", "almost", "him")
+    SHORTFORM_10_9_3 = ("braille", "great", "children", "blind", "first", "friend", "good", "letter", "little", "quick")
     VOWELS_Y = set("aeiouy")
     CAP_WORD_TERMINATOR = "\u2820\u2804"
     WORD_BEGINNING_SIGNS = ("ing", "be", "con", "dis")
@@ -336,6 +337,17 @@ class BrailleEngine:
         self.shortform_index = {}
         self.shortform_root_chars = {}
         self.shortform_letters = {}
+        self.shortform_list = {}
+        self.shortform_list_no_s = set()
+        list_path = self._find_file("en_shortform_list.json")
+        if os.path.exists(list_path):
+            with open(list_path, "r", encoding="utf-8") as f:
+                list_data = json.load(f)
+            # 낱말 → 그 낱말에 쓰는 축어들 (UEB 부록 1)
+            for sf_word, words in list_data.get("words", {}).items():
+                for listed in words:
+                    self.shortform_list.setdefault(listed, []).append(sf_word)
+            self.shortform_list_no_s = set(list_data.get("noS", []))
 
         sf_path = self._find_file("en_shortform.json")
         if not os.path.exists(sf_path):
@@ -686,6 +698,8 @@ class BrailleEngine:
                 segments[-1] += part
                 continue
             segments.append(part)
+        # UEB 10.9.4(a): 대문자 표시까지 똑같이 목록에 올라 있어야 한다 (DeafBlind).
+        listed = self._listed_shortforms(token)
         out = []
         for number, segment in enumerate(segments):
             if segment == "'":
@@ -704,7 +718,7 @@ class BrailleEngine:
             word_beginning = self._word_beginning
             if not first:
                 self._word_beginning = False
-            body = self._mixed_case_shortform(lower, first, next_letter) if standing else None
+            body = self._mixed_case_shortform(lower, first, next_letter, listed) if standing else None
             if body is None:
                 body = self._contract_surface(lower, whole_word=True, standing_alone=False)
             self._word_beginning = word_beginning
@@ -714,11 +728,14 @@ class BrailleEngine:
             first = False
         return "".join(out)
 
-    def _mixed_case_shortform(self, word: str, first: bool, next_letter: str) -> Optional[str]:
-        """UEB 10.9.4(b): 대문자가 섞인 낱말에서는 10.9.3 조건을 갖춘 축어만 쓴다 (QuickTime ⠠⠟⠅⠠⠐⠞)."""
+    def _mixed_case_shortform(self, word: str, first: bool, next_letter: str, listed: set = frozenset()) -> Optional[str]:
+        """UEB 10.9.4: 대문자가 섞인 낱말에서는 목록에 오른 낱말(DeafBlind)이거나 10.9.3 조건을 갖춘 축어만 쓴다
+        (QuickTime ⠠⠟⠅⠠⠐⠞)."""
         data = self.shortform_index.get(word)
         if not data:
             return None
+        if word in listed:
+            return data["unicode"]
         if word in self.SHORTFORM_ANYWHERE:
             return data["unicode"]
         if next_letter in self.VOWELS_Y:
@@ -747,6 +764,13 @@ class BrailleEngine:
 
         def reads_as_shortform(cells: str) -> bool:
             if cells in self.rev_shortforms:
+                return True
+            # UEB 10.9.8: 목록 낱말 등 축어를 품은 낱말로 읽히는가 (UNSD를 unsaid로)
+            composed = self._decode_composed_shortform(cells)
+            if composed is not None and composed != stem and any(
+                cells.startswith(data["unicode"]) and composed.startswith(sf_word)
+                for sf_word, data in self.shortform_index.items()
+            ):
                 return True
             # UEB 10.9.5: 축어 + s (abouts, almosts, hims는 빼고)
             base = cells[:-1]
@@ -779,6 +803,10 @@ class BrailleEngine:
                 if data["unicode"] in core and not (needs_consonant and following in self.VOWELS_Y):
                     return self.grade1_prefix * 2, letters + tail_braille
                 index = stem.find(abbr, index + 1)
+        composed = self._decode_composed_shortform(core)
+        if composed is not None and composed != stem:
+            # UEB 10.9.9 (UNSD ⠰⠰⠠⠠⠥⠝⠎⠙): 낱말 중간이 목록 낱말의 축어로 읽히면 ⠰⠰ + 글자
+            return self.grade1_prefix * 2, letters + tail_braille
         return "", braille
 
     def _translate_word(self, word: str, standing_alone: bool = True) -> str:
@@ -820,25 +848,60 @@ class BrailleEngine:
         return False
 
     def _render_shortform(self, word: str) -> Optional[str]:
+        """UEB 10.9.2: 축어는 그 낱말, s·'s를 붙인 꼴(10.9.5), 부록 1 목록 낱말, 10.9.3 조건에 맞는 낱말에만 쓴다."""
         exact = self.shortform_index.get(word)
         if exact:
             return exact["unicode"]
-        for sf_word in sorted(self.shortform_index, key=len, reverse=True):
-            data = self.shortform_index[sf_word]
-            start = 0
-            while True:
-                idx = word.find(sf_word, start)
-                if idx < 0:
-                    break
-                start = idx + 1
-                head = word[:idx]
-                tail = word[idx + len(sf_word):]
-                if not self._shortform_parts_ok(head, tail, data):
+        for suffix in ("'s", "s"):
+            stem = word[: -len(suffix)]
+            if word.endswith(suffix) and stem in self.shortform_index and stem not in self.SHORTFORM_NO_S:
+                return self.shortform_index[stem]["unicode"] + self._spell_chars(suffix)
+        return self._compose_shortforms(word, self._listed_shortforms(word))
+
+    def _listed_shortforms(self, word: str) -> set:
+        """부록 1 목록에서 이 낱말(또는 s·'s를 뗀 꼴)이 오른 축어들."""
+        found = set(self.shortform_list.get(word, ()))
+        for suffix in ("'s", "s"):
+            if word.endswith(suffix) and word not in self.shortform_list_no_s:
+                found |= set(self.shortform_list.get(word[: -len(suffix)], ()))
+        return found
+
+    def _shortform_10_9_3_ok(self, sf_word: str, word: str, index: int) -> bool:
+        """UEB 10.9.3: 목록에 없는 낱말에서 쓸 수 있는 열 축어의 조건."""
+        if sf_word in self.SHORTFORM_ANYWHERE:
+            return True
+        following = word[index + len(sf_word): index + len(sf_word) + 1]
+        if following in self.VOWELS_Y and following:
+            return False
+        if sf_word in self.SHORTFORM_ANYWHERE_BEFORE_CONSONANT:
+            return True
+        return sf_word in self.SHORTFORM_WORD_START and index == 0
+
+    def _compose_shortforms(self, word: str, listed: set) -> Optional[str]:
+        out, plain, index, used = [], "", 0, False
+        candidates = sorted(listed | set(self.SHORTFORM_10_9_3), key=len, reverse=True)
+        while index < len(word):
+            for sf_word in candidates:
+                if not word.startswith(sf_word, index):
                     continue
-                prefix = self._contract_surface(head, whole_word=False) if head else ""
-                suffix = self._contract_surface(tail, whole_word=False) if tail else ""
-                return prefix + data["unicode"] + suffix
-        return None
+                if sf_word not in listed and not self._shortform_10_9_3_ok(sf_word, word, index):
+                    continue
+                if plain:
+                    # 축어 앞 글자: 낱말 처음이면 be·con·dis를 쓸 수 있다 (belittle ⠆⠇⠇).
+                    out.append(self._contract_surface(plain, whole_word=not out, more_follows=True))
+                    plain = ""
+                out.append(self.shortform_index[sf_word]["unicode"])
+                index += len(sf_word)
+                used = True
+                break
+            else:
+                plain += word[index]
+                index += 1
+        if not used:
+            return None
+        if plain:
+            out.append(self._contract_surface(plain, whole_word=False))
+        return "".join(out)
 
     def _shortform_parts_ok(self, head: str, tail: str, data: Dict) -> bool:
         if not head and not tail:
@@ -890,8 +953,10 @@ class BrailleEngine:
         standing_alone: bool = True,
         avoid_numeric_prefix: bool = False,
         avoid_grade1_prefix: bool = False,
+        more_follows: bool = False,
     ) -> str:
-        """왼쪽부터 가장 긴 유효 약어를 고른다. 길이가 같으면 priority가 작은 쪽을 쓴다."""
+        """왼쪽부터 가장 긴 유효 약어를 고른다. 길이가 같으면 priority가 작은 쪽을 쓴다.
+        more_follows: 뒤에 축어가 이어진다 (belittle ⠆⠇⠇의 be)."""
         if not text:
             return ""
         boundaries = self._surface_boundaries(text) if whole_word else set()
@@ -908,7 +973,7 @@ class BrailleEngine:
                 if avoid_grade1_prefix and index == 0 and braille.startswith(self.grade1_prefix):
                     continue
                 if not self._print_span_ok(
-                    text, index, end, rule, whole_word, boundaries, standing_alone
+                    text, index, end, rule, whole_word, boundaries, standing_alone, more_follows
                 ):
                     continue
                 rank = (len(pattern), -priority)
@@ -931,11 +996,12 @@ class BrailleEngine:
         whole_word: bool,
         boundaries: set,
         standing_alone: bool = True,
+        more_follows: bool = False,
     ) -> bool:
         if any(start < bound < end for bound in boundaries):
             return False
         at_start = start == 0
-        at_end = end == len(text)
+        at_end = end == len(text) and not more_follows
         whole = at_start and at_end
         if rule.get("avoidWhenStandingAlone") and whole and standing_alone:
             return False
@@ -957,7 +1023,7 @@ class BrailleEngine:
             if text[start:end] != "ing" and (
                 not self._word_beginning
                 or (end < len(text) and not text[end].isalpha())
-                or not self._prefix_is_first_syllable(text, end)
+                or (not more_follows and not self._prefix_is_first_syllable(text, end))
             ):
                 return False
         if rule.get("requiresPrecedingLetters") and at_start and whole_word:
@@ -1077,6 +1143,16 @@ class BrailleEngine:
         def finish(text: str) -> str:
             return leading + self._apply_capital(text, cap_mode) + trailing
 
+        hyphen = self.punctuation.get("-", "-")
+        parts = target.split(hyphen)
+        if len(parts) > 1 and all(len(part) > 1 for part in parts) and cap_mode != "word" and not any(
+            part.endswith(self.CAP_LETTER) for part in parts[:-1]
+        ):
+            # 붙임표로 이은 낱말은 낱말마다 읽는다 (Marcillat-en-Combraille ⠉⠕⠍⠃⠗⠇).
+            words = [self._decode_word_token(part) for part in parts]
+            if not any("\u2800" <= char <= "\u28FF" for word in words for char in word):
+                return leading + self._apply_capital("-".join(words), cap_mode) + trailing
+
         mixed = self._decode_mixed_case(target, cap_mode)
         if mixed is not None:
             return leading + mixed + trailing
@@ -1098,6 +1174,10 @@ class BrailleEngine:
             shortform = self._decode_shortform_token(target)
             if shortform is None:
                 shortform = self._decode_prefixed_shortform(target)
+            if shortform is not None and self._translate_word(shortform) != target:
+                shortform = self._decode_composed_shortform(target) or shortform
+            if shortform is None:
+                shortform = self._decode_composed_shortform(target)
             if shortform is not None:
                 return finish(shortform)
         decoded = self._decode_contracted(
@@ -1114,9 +1194,11 @@ class BrailleEngine:
             return finish(decoded)
         return self._apply_capital(decoded, cap_mode)
 
-    def _decode_mixed_case(self, target: str, cap_mode: Optional[str]) -> Optional[str]:
+    def _decode_mixed_case(self, target: str, cap_mode: Optional[str], allow_any_shortform: bool = True) -> Optional[str]:
         """낱말 안 대문자 표시(⠠ ⠠⠠)와 대문자 종료표(⠠⠄)로 나눠 읽는다 (McConnell, TEAspoon)."""
         cap = self.CAP_LETTER
+        if self.punctuation.get("-", "-") in target:
+            return None  # 붙임표로 이은 낱말은 낱말마다 따로 읽는다.
         pieces = []  # (대문자 방식, 점자)
         mode, start, index = cap_mode, 0, 0
         while index < len(target):
@@ -1145,7 +1227,8 @@ class BrailleEngine:
             stem, apostrophe, suffix = braille.partition(self.punctuation.get("'", "'"))
             word = self.rev_shortforms.get(stem)
             if word and (
-                word in self.SHORTFORM_ANYWHERE
+                allow_any_shortform
+                or word in self.SHORTFORM_ANYWHERE
                 or word in self.SHORTFORM_ANYWHERE_BEFORE_CONSONANT
                 or (word in self.SHORTFORM_WORD_START and number == 0)
             ):
@@ -1155,7 +1238,13 @@ class BrailleEngine:
             if any("\u2800" <= char <= "\u28FF" for char in text):
                 return None
             out.append(self._apply_capital(text, mode))
-        return "".join(out)
+        result = "".join(out)
+        if allow_any_shortform:
+            # 목록 낱말(DeafBlind ⠠⠙⠂⠋⠠⠃⠇)은 다시 점역해 같을 때만 받는다.
+            expected = {"word": self.CAP_WORD, "letter": self.CAP_LETTER}.get(cap_mode, "") + target
+            if self._translate_mixed_case(result) != expected:
+                return self._decode_mixed_case(target, cap_mode, allow_any_shortform=False)
+        return result
 
     def _decode_grade1_letters(self, target: str) -> Optional[Tuple[str, Optional[str]]]:
         """UEB 10.9.7~10.9.9: ⠰ 뒤 글자 묶음은 축어가 아니고, ⠰⠰ 뒤는 약자 없이 글자로만 적었다."""
@@ -1261,6 +1350,53 @@ class BrailleEngine:
             if self._shortform_suffix_ok(suffix, data):
                 best = (braille, word + suffix)
         return None if best is None else best[1]
+
+    def _decode_composed_shortform(self, target: str) -> Optional[str]:
+        """부록 1 목록·10.9.3 낱말처럼 축어가 낱말 안에 든 점자를 읽는다 (⠁⠃⠧⠛⠗⠨⠙ aboveground).
+        다시 점역해 똑같은 점자가 나오는 풀이만 받는다."""
+        braille_to_word = {data["unicode"]: word for word, data in self.shortform_index.items()}
+        if not any(cells in target for cells in braille_to_word):
+            return None
+        budget = [200]
+
+        def search(index: int, pieces: List[Tuple[str, str]]) -> Optional[str]:
+            budget[0] -= 1
+            if budget[0] < 0:
+                return None
+            if index == len(target):
+                if not any(kind == "sf" for kind, _ in pieces):
+                    return None
+                words, plain, start = [], "", 0
+                prefix_signs = {braille: pattern for pattern, braille, _p, _r in self.groupsigns if pattern in ("be", "con", "dis")}
+                for kind, value in pieces:
+                    if kind == "sf":
+                        if plain and not start and plain[0] in prefix_signs:
+                            # 낱말 처음 be·con·dis 뒤에 축어 (belittle ⠆⠇⠇)
+                            words.append(prefix_signs[plain[0]])
+                            plain = plain[1:]
+                        if plain:
+                            words.append(self._decode_contracted(
+                                plain, allow_shortform=False, standing_alone=False, final_fragment=start > 0))
+                            plain = ""
+                        words.append(value)
+                        start = 1
+                    else:
+                        plain += value
+                if plain:
+                    words.append(self._decode_contracted(
+                        plain, allow_shortform=False, standing_alone=False, final_fragment=start > 0))
+                candidate = "".join(words)
+                if any("\u2800" <= char <= "\u28FF" for char in candidate):
+                    return None
+                return candidate if self._translate_word(candidate) == target else None
+            for cells in sorted(braille_to_word, key=len, reverse=True):
+                if target.startswith(cells, index):
+                    found = search(index + len(cells), pieces + [("sf", braille_to_word[cells])])
+                    if found:
+                        return found
+            return search(index + 1, pieces + [("plain", target[index])])
+
+        return search(0, [])
 
     def _decode_prefixed_shortform(self, token: str) -> Optional[str]:
         """접두사 뒤의 축어(unblind)는 글자 b+l과 점열이 같으므로, 허용된 접두일 때만 단어를 복원한다."""

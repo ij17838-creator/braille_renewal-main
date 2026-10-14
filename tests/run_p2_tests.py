@@ -445,6 +445,27 @@ UEB_CONTRACTION_CASES = [
     ("founDAtion", "⠋⠳⠝⠠⠙⠠⠁⠰⠝"),
     ("verY", "⠧⠻⠠⠽"),
     ("“Belinda!”", "⠦⠠⠆⠇⠔⠙⠁⠖⠴"),
+    # 5묶음: 부록 1 축어 목록 낱말 (UEB 10.9.2~10.9.4, 10.9.8, 10.9.9)
+    ("aboveground", "⠁⠃⠧⠛⠗⠨⠙"),
+    ("godchildren", "⠛⠕⠙⠡⠝"),
+    ("goodafternoon", "⠛⠙⠁⠋⠝"),
+    ("repaid", "⠗⠑⠏⠙"),
+    ("suchlike", "⠎⠡⠇⠊⠅⠑"),
+    ("blinded", "⠃⠇⠔⠙⠫"),
+    ("blinding", "⠃⠇⠔⠙⠬"),
+    ("befriended", "⠆⠋⠗⠊⠢⠙⠫"),
+    ("aftereffect", "⠁⠋⠞⠻⠑⠖⠑⠉⠞"),
+    ("Greatorex", "⠠⠛⠗⠞⠕⠗⠑⠭"),
+    ("Ms Letterkenny's Littleport home.", "⠠⠍⠎ ⠠⠇⠗⠅⠢⠝⠽⠄⠎ ⠠⠇⠇⠏⠕⠗⠞ ⠓⠕⠍⠑⠲"),
+    ("Mr Letterman could've quickly rebrailled the Aftercare Newsletter.",
+     "⠠⠍⠗ ⠠⠇⠗⠍⠁⠝ ⠉⠙⠄⠧⠑ ⠟⠅⠇⠽ ⠗⠑⠃⠗⠇⠙ ⠮ ⠠⠁⠋⠉⠜⠑ ⠠⠝⠑⠺⠎⠇⠗⠲"),
+    ("I am brailling the newsletters' headlines.", "⠠⠊ ⠁⠍ ⠃⠗⠁⠊⠇⠇⠬ ⠮ ⠝⠑⠺⠎⠇⠗⠎⠄ ⠓⠂⠙⠇⠔⠑⠎⠲"),
+    ("Goodacre", "⠠⠛⠕⠕⠙⠁⠉⠗⠑"),
+    ("DeafBlind", "⠠⠙⠂⠋⠠⠃⠇"),
+    ("ABOUTface!", "⠠⠠⠁⠃⠳⠞⠠⠄⠋⠁⠉⠑⠖"),
+    ("AfterHours", "⠠⠁⠋⠞⠻⠠⠓⠳⠗⠎"),
+    ("UNSD", "⠰⠰⠠⠠⠥⠝⠎⠙"),
+    ("Marcillat-en-Combraille, France", "⠠⠍⠜⠉⠊⠇⠇⠁⠞⠤⠑⠝⠤⠠⠉⠕⠍⠃⠗⠇⠂ ⠠⠋⠗⠨⠑"),
 ]
 
 
