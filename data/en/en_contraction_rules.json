@@ -1,0 +1,2871 @@
+{
+ "schema_version": 1,
+ "source": "Rules of Unified English Braille, Third Edition 2024 (Rules-of-Unified-English-Braille-2024.pdf): 2.6절, 5.7절, 10절(약자), 13.2·13.3절, 부록 1(축어 목록)",
+ "description": "UEB의 약어·약자·축어 사용 규칙과 예외 목록. 한글 점자 규정집이 이미 정한 것(제37항, 제37항 [붙임])은 data/ko/ko_rules.json에 있으므로 여기서 뺐다. 이 파일은 목록일 뿐 점역기가 읽지 않는다. 점형은 en_contractions.json, en_shortform.json, en_spell.json에 있다. 영어 단원에서만 쓴다.",
+ "precedence": "국어 문장 안의 영어 낱말은 한글 규정 제37항·[붙임]을 먼저 따른다(korean_rule 참고). 영어 모드의 영어 글에는 아래 UEB 규칙을 쓴다.",
+ "excluded_korean_overlap": [
+  {
+   "label": "제37항",
+   "pdf_page": 30,
+   "see": "data/ko/ko_rules.json#37"
+  },
+  {
+   "label": "제37항 [붙임]",
+   "pdf_page": 30,
+   "see": "data/ko/ko_rules.json#37-supplement"
+  }
+ ],
+ "kinds": {
+  "use": "쓰는 경우",
+  "limit": "쓰지 않는 경우(예외)",
+  "define": "용어 정의",
+  "guide": "점역자 지침"
+ },
+ "statuses": {
+  "implemented": "영어 점역기 결과가 UEB 예시와 같음 (90% 이상)",
+  "partial": "일부 예시만 같음 (mismatch_samples 참고)",
+  "not_implemented": "점역기가 아직 이 규칙을 따르지 않음",
+  "not_checked": "시험할 예시가 없음",
+  "guideline": "점역자 판단 지침이라 프로그램과 무관",
+  "not_applicable": "프로그램에 해당 기능이 없음"
+ },
+ "groups": {
+  "standing_alone": "홀로 쓰인 낱말(2.6절)",
+  "grade1": "약자와 헷갈림을 막는 1급 점자(5.7절)",
+  "alphabetic_wordsign": "알파벳 단어 약자(10.1)",
+  "strong_wordsign": "온칸 단어 약자(10.2)",
+  "strong_contraction": "온칸 약자 and·for·of·the·with(10.3)",
+  "strong_groupsign": "온칸 묶음 약자(10.4)",
+  "lower_wordsign": "하위 단어 약자(10.5)",
+  "lower_groupsign": "하위 묶음 약자(10.6)",
+  "lower_sign_rule": "하위 부호 규칙(10.5.4·10.6.10·10.10.10)",
+  "initial_letter": "어두 약자(10.7)",
+  "final_letter": "어미 약자(10.8)",
+  "shortform": "축어(10.9, 부록 1)",
+  "preference": "약자 고르는 순서(10.10)",
+  "bridging": "경계에 걸치는 약자(10.11)",
+  "misc": "그 밖의 경우(10.12)",
+  "word_division": "줄 끝 낱말 나누기(10.13)",
+  "foreign": "외국어 속 약자(13.2·13.3)"
+ },
+ "summary": {
+  "total": 106,
+  "partial": 52,
+  "not_implemented": 20,
+  "implemented": 9,
+  "guideline": 7,
+  "not_applicable": 18
+ },
+ "shortforms_list": {
+  "source": "UEB 부록 1 Shortforms List (PDF 271~281쪽)",
+  "note": "축어를 품은 긴 낱말 목록(aboutface, afternoontea 등). 목록 낱말 637개를 점역기로 돌려 축어 점형이 들어간 것은 207개.",
+  "status": "partial"
+ },
+ "rules": [
+  {
+   "id": "2.6.1",
+   "section": "UEB 2.6.1",
+   "pdf_page": 43,
+   "group": "standing_alone",
+   "kind": "define",
+   "text": "앞뒤가 빈칸·붙임표(-)·줄표(–)이면 그 글자(들)는 '홀로 쓰인 것'으로 본다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 15개를 프로그램 점역기로 돌려 10개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 15,
+    "same": 10
+   },
+   "korean_rule": [
+    "한글 규정 제32항(PDF 25쪽): 로마자표와 종료표 사이는 「통일영어점자 규정」에 따라 적는다. (이 부분은 한글 규정에 따로 설명이 없음)"
+   ],
+   "mismatch_samples": [
+    {
+     "text": "al",
+     "ueb": "⠰⠁⠇",
+     "program": "⠁⠇"
+    },
+    {
+     "text": "e-x-u-d-e",
+     "ueb": "⠰⠰⠑⠤⠭⠤⠥⠤⠙⠤⠑",
+     "program": "⠰⠑⠤⠰⠭⠤⠰⠥⠤⠰⠙⠤⠰⠑"
+    },
+    {
+     "text": "5-yrf-678",
+     "ueb": "⠼⠑⠤⠰⠽⠗⠋⠤⠼⠋⠛⠓",
+     "program": "⠼⠑⠤⠽⠗⠋⠤⠼⠋⠛⠓"
+    }
+   ]
+  },
+  {
+   "id": "2.6.2",
+   "section": "UEB 2.6.2",
+   "pdf_page": 44,
+   "group": "standing_alone",
+   "kind": "define",
+   "text": "앞의 빈칸·붙임표·줄표와 글자 사이에 여는 괄호, 여는 따옴표, 아포스트로피, 글자체 표시, 대문자 표시가 끼어 있어도 홀로 쓰인 것으로 본다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 17개를 프로그램 점역기로 돌려 9개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 17,
+    "same": 9
+   },
+   "korean_rule": [
+    "한글 규정 제32항(PDF 25쪽): 로마자표와 종료표 사이는 「통일영어점자 규정」에 따라 적는다. (이 부분은 한글 규정에 따로 설명이 없음)"
+   ],
+   "mismatch_samples": [
+    {
+     "text": "can",
+     "ueb": "⠨⠣⠉",
+     "program": "⠉"
+    },
+    {
+     "text": "{af",
+     "ueb": "⠸⠣⠰⠁⠋",
+     "program": "{⠁⠋"
+    },
+    {
+     "text": "“yr-123",
+     "ueb": "⠠⠶⠰⠽⠗⠤⠼⠁⠃⠉",
+     "program": "⠦⠽⠗⠤⠼⠁⠃⠉"
+    }
+   ]
+  },
+  {
+   "id": "2.6.3",
+   "section": "UEB 2.6.3",
+   "pdf_page": 45,
+   "group": "standing_alone",
+   "kind": "define",
+   "text": "글자와 뒤의 빈칸·붙임표·줄표 사이에 쉼표, 쌍반점, 쌍점, 마침표, 줄임표, 느낌표, 물음표, 닫는 괄호·따옴표, 아포스트로피, 글자체 끝 표시, 대문자 끝 표시가 끼어 있어도 홀로 쓰인 것으로 본다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 17개를 프로그램 점역기로 돌려 11개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 17,
+    "same": 11
+   },
+   "korean_rule": [
+    "한글 규정 제32항(PDF 25쪽): 로마자표와 종료표 사이는 「통일영어점자 규정」에 따라 적는다. (이 부분은 한글 규정에 따로 설명이 없음)"
+   ],
+   "mismatch_samples": [
+    {
+     "text": "{k-p}",
+     "ueb": "⠸⠣⠰⠅⠤⠰⠏⠸⠜",
+     "program": "{⠅⠤⠏}"
+    },
+    {
+     "text": "X' Y“",
+     "ueb": "⠰⠠⠭⠄ ⠰⠠⠽⠠⠶",
+     "program": "⠰⠠⠭⠄ ⠰⠠⠽⠦"
+    },
+    {
+     "text": "t'night",
+     "ueb": "⠞⠄⠝⠊⠣⠞",
+     "program": "⠞⠄⠝⠊⠛⠓⠞"
+    }
+   ]
+  },
+  {
+   "id": "2.6.4",
+   "section": "UEB 2.6.4",
+   "pdf_page": 46,
+   "group": "standing_alone",
+   "kind": "define",
+   "text": "가운데 아포스트로피가 든 낱말(it'll, can't 등 10.1.2·10.2.2·10.9.5에 맞는 것)과 가운데 대문자 표시가 든 축어 낱말(10.9.4)도 전체가 위 조건에 맞으면 홀로 쓰인 것으로 본다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 11개를 프로그램 점역기로 돌려 2개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 11,
+    "same": 2
+   },
+   "korean_rule": [
+    "한글 규정 제32항(PDF 25쪽): 로마자표와 종료표 사이는 「통일영어점자 규정」에 따라 적는다. (이 부분은 한글 규정에 따로 설명이 없음)"
+   ],
+   "mismatch_samples": [
+    {
+     "text": "X'll",
+     "ueb": "⠨⠣⠰⠠⠭⠄⠇⠇",
+     "program": "⠠⠰⠭⠄⠇⠇"
+    },
+    {
+     "text": "(Wouldn't)",
+     "ueb": "⠐⠣⠠⠺⠙⠝⠄⠞⠐⠜",
+     "program": "⠐⠣⠠⠺⠳⠇⠙⠝⠄⠞⠐⠜"
+    },
+    {
+     "text": "(greatGREATgrandmother)",
+     "ueb": "⠐⠣⠛⠗⠞⠠⠠⠛⠗⠞⠠⠄⠛⠗⠯⠐⠍⠐⠜",
+     "program": "⠐⠣⠛⠗⠂⠞⠛⠗⠂⠞⠛⠗⠯⠍⠕⠮⠗⠐⠜"
+    }
+   ]
+  },
+  {
+   "id": "5.7.1",
+   "section": "UEB 5.7.1",
+   "pdf_page": 88,
+   "group": "grade1",
+   "kind": "use",
+   "text": "알파벳 한 글자가 단어 약자(b=but 등)로 잘못 읽힐 수 있으면 그 앞에 1급 점자표 ⠰를 적는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 19개를 프로그램 점역기로 돌려 16개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 19,
+    "same": 16
+   },
+   "korean_rule": [
+    "한글 규정 제32항(PDF 25쪽): 로마자표와 종료표 사이는 「통일영어점자 규정」에 따라 적는다. (이 부분은 한글 규정에 따로 설명이 없음)"
+   ],
+   "mismatch_samples": [
+    {
+     "text": "ev-er-y-which-way",
+     "ueb": "⠑⠧⠤⠻⠤⠰⠽⠤⠱⠤⠺⠁⠽",
+     "program": "⠑⠧⠤⠑⠗⠤⠰⠽⠤⠱⠤⠺⠁⠽"
+    },
+    {
+     "text": "Did 'e 'n' Ma get to 't?",
+     "ueb": "⠠⠙⠊⠙ ⠄⠰⠑ ⠄⠰⠝⠄ ⠠⠍⠁ ⠛⠑⠞ ⠞⠕ ⠄⠰⠞⠦",
+     "program": "⠠⠙⠊⠙ ⠄⠑ ⠄⠝⠄ ⠠⠍⠁ ⠛⠑⠞ ⠞⠕ ⠄⠞⠦"
+    },
+    {
+     "text": "s-p-e-l-l-i-n-g",
+     "ueb": "⠰⠰⠎⠤⠏⠤⠑⠤⠇⠤⠇⠤⠊⠤⠝⠤⠛",
+     "program": "⠰⠎⠤⠰⠏⠤⠰⠑⠤⠰⠇⠤⠰⠇⠤⠊⠤⠰⠝⠤⠰⠛"
+    }
+   ]
+  },
+  {
+   "id": "5.7.2",
+   "section": "UEB 5.7.2",
+   "pdf_page": 89,
+   "group": "grade1",
+   "kind": "use",
+   "text": "글자 묶음이 축어(al=also, cd=could 등)나 축어를 품은 낱말로 잘못 읽힐 수 있으면 1급 점자표 ⠰(또는 1급 단어표 ⠰⠰)를 적는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 7개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 7,
+    "same": 0
+   },
+   "korean_rule": [
+    "한글 규정 제32항(PDF 25쪽): 로마자표와 종료표 사이는 「통일영어점자 규정」에 따라 적는다. (이 부분은 한글 규정에 따로 설명이 없음)"
+   ],
+   "mismatch_samples": [
+    {
+     "text": "CD-ROM",
+     "ueb": "⠰⠠⠠⠉⠙⠤⠠⠠⠗⠕⠍",
+     "program": "⠠⠠⠉⠙⠤⠠⠠⠗⠕⠍"
+    },
+    {
+     "text": "“Hm!” he mused.",
+     "ueb": "⠦⠰⠠⠓⠍⠖⠴ ⠓⠑ ⠍⠥⠎⠫⠲",
+     "program": "⠦⠠⠓⠍⠖⠴ ⠓⠑ ⠍⠥⠎⠫⠲"
+    },
+    {
+     "text": "My friends are Fr Ted and Sr Ann.",
+     "ueb": "⠠⠍⠽ ⠋⠗⠎ ⠜⠑ ⠰⠠⠋⠗ ⠠⠞⠫ ⠯ ⠠⠎⠗ ⠠⠁⠝⠝⠲",
+     "program": "⠠⠍⠽ ⠋⠗⠎ ⠜⠑ ⠠⠋⠗ ⠠⠞⠫ ⠯ ⠠⠎⠗ ⠠⠁⠝⠝⠲"
+    }
+   ]
+  },
+  {
+   "id": "10.1.1",
+   "section": "UEB 10.1.1",
+   "pdf_page": 141,
+   "group": "alphabetic_wordsign",
+   "kind": "use",
+   "text": "알파벳 단어 약자(but, can, do … as, will 23개)는 그 단어가 홀로 쓰일 때 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 25개를 프로그램 점역기로 돌려 22개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 25,
+    "same": 22
+   },
+   "korean_rule": [
+    "한글 규정 제37항(PDF 30쪽): 국어 문장 안에서 로마자표 뒤에 오는 이 단어는 약자를 쓰지 않고 풀어 쓴다."
+   ],
+   "mismatch_samples": [
+    {
+     "text": "childlike and likeness",
+     "ueb": "⠡⠊⠇⠙⠇⠊⠅⠑ ⠯ ⠇⠊⠅⠑⠰⠎",
+     "program": "⠡⠊⠇⠙⠇⠊⠅⠑ ⠯ ⠇⠊⠅⠢⠑⠎⠎"
+    },
+    {
+     "text": "www.doityourself.com",
+     "ueb": "⠺⠺⠺⠲⠙⠕⠊⠞⠽⠳⠗⠎⠑⠇⠋⠲⠉⠕⠍",
+     "program": "⠺⠺⠺⠲⠙⠕⠰⠽⠳⠗⠎⠑⠇⠋⠲⠉⠕⠍"
+    },
+    {
+     "text": "d'you",
+     "ueb": "⠙⠄⠽⠳",
+     "program": "⠙⠄⠽⠕⠥"
+    }
+   ]
+  },
+  {
+   "id": "10.1.2",
+   "section": "UEB 10.1.2",
+   "pdf_page": 143,
+   "group": "alphabetic_wordsign",
+   "kind": "use",
+   "text": "알파벳 단어 약자 뒤에 아포스트로피와 d, ll, re, s, t, ve가 붙어도(it'd, you're, can't) 전체가 홀로 쓰이면 약자를 쓴다. (more'n, you'm처럼 다른 글자가 붙으면 안 씀)",
+   "status": "implemented",
+   "note": "UEB 본문 예시 17개를 프로그램 점역기로 돌려 16개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 17,
+    "same": 16
+   },
+   "korean_rule": [
+    "한글 규정 제37항(PDF 30쪽): 국어 문장 안에서 로마자표 뒤에 오는 이 단어는 약자를 쓰지 않고 풀어 쓴다."
+   ],
+   "mismatch_samples": [
+    {
+     "text": "“You've done it!”",
+     "ueb": "⠦⠠⠽⠄⠧⠑ ⠙⠐⠕ ⠭⠖⠴",
+     "program": "⠦⠠⠽⠄⠧⠑ ⠙⠕⠝⠑ ⠭⠖⠴"
+    }
+   ]
+  },
+  {
+   "id": "10.1.3",
+   "section": "UEB 10.1.3",
+   "pdf_page": 144,
+   "group": "alphabetic_wordsign",
+   "kind": "limit",
+   "text": "글자를 하나씩 읽는 줄임말(US, IT)에는 되도록 알파벳 단어 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 4개를 프로그램 점역기로 돌려 1개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 4,
+    "same": 1
+   },
+   "mismatch_samples": [
+    {
+     "text": "US",
+     "ueb": "⠠⠠⠥⠎",
+     "program": "⠠⠠⠥"
+    },
+    {
+     "text": "IT",
+     "ueb": "⠠⠠⠊⠞",
+     "program": "⠠⠠⠭"
+    },
+    {
+     "text": "CAN Network",
+     "ueb": "⠠⠠⠉ ⠠⠝⠑⠞⠐⠺",
+     "program": "⠠⠠⠉ ⠠⠝⠑⠞⠺⠕⠗⠅"
+    }
+   ]
+  },
+  {
+   "id": "10.1.4",
+   "section": "UEB 10.1.4",
+   "pdf_page": 144,
+   "group": "alphabetic_wordsign",
+   "kind": "limit",
+   "text": "음절로 나누어 적은 낱말(but-ton)의 한 음절에는 알파벳 단어 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 3개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 3,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "but-ton",
+     "ueb": "⠃⠥⠞⠤⠞⠕⠝",
+     "program": "⠃⠤⠞⠕⠝"
+    },
+    {
+     "text": "be–have",
+     "ueb": "⠃⠑⠠⠤⠓⠁⠧⠑",
+     "program": "⠃⠑⠠⠤⠓"
+    },
+    {
+     "text": "dis as ter",
+     "ueb": "⠙⠊⠎ ⠁⠎ ⠞⠻",
+     "program": "⠙⠊⠎ ⠵ ⠞⠻"
+    }
+   ]
+  },
+  {
+   "id": "10.2.1",
+   "section": "UEB 10.2.1",
+   "pdf_page": 144,
+   "group": "strong_wordsign",
+   "kind": "use",
+   "text": "온칸 단어 약자(child, shall, this, which, out, still)는 그 단어가 홀로 쓰일 때 쓴다.",
+   "status": "implemented",
+   "note": "UEB 본문 예시 16개를 프로그램 점역기로 돌려 15개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 16,
+    "same": 15
+   },
+   "mismatch_samples": [
+    {
+     "text": "whichever",
+     "ueb": "⠱⠊⠡⠐⠑",
+     "program": "⠱⠊⠡⠑⠧⠻"
+    }
+   ]
+  },
+  {
+   "id": "10.2.2",
+   "section": "UEB 10.2.2",
+   "pdf_page": 145,
+   "group": "strong_wordsign",
+   "kind": "use",
+   "text": "온칸 단어 약자 뒤에 아포스트로피와 d, ll, re, s, t, ve가 붙어도(this'd, child's) 전체가 홀로 쓰이면 약자를 쓴다.",
+   "status": "implemented",
+   "note": "UEB 본문 예시 6개를 프로그램 점역기로 돌려 6개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 6,
+    "same": 6
+   }
+  },
+  {
+   "id": "10.3.1",
+   "section": "UEB 10.3.1",
+   "pdf_page": 146,
+   "group": "strong_contraction",
+   "kind": "use",
+   "text": "and, for, of, the, with 약자는 그 글자들이 나오는 곳 어디서나 쓴다(다른 규칙이 막지 않으면).",
+   "status": "partial",
+   "note": "UEB 본문 예시 52개를 프로그램 점역기로 돌려 35개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 52,
+    "same": 35
+   },
+   "mismatch_samples": [
+    {
+     "text": "afford",
+     "ueb": "⠁⠋⠿⠙",
+     "program": "⠁⠖⠕⠗⠙"
+    },
+    {
+     "text": "Esther",
+     "ueb": "⠠⠑⠎⠮⠗",
+     "program": "⠠⠑⠌⠓⠻"
+    },
+    {
+     "text": "grandmother",
+     "ueb": "⠛⠗⠯⠐⠍",
+     "program": "⠛⠗⠯⠍⠕⠮⠗"
+    }
+   ]
+  },
+  {
+   "id": "10.4.1",
+   "section": "UEB 10.4.1",
+   "pdf_page": 147,
+   "group": "strong_groupsign",
+   "kind": "use",
+   "text": "온칸 묶음 약자(ch gh sh th wh ed er ou ow st ing ar)는 그 글자들이 나오는 곳 어디서나 쓴다(다른 규칙이 막지 않으면).",
+   "status": "partial",
+   "note": "UEB 본문 예시 71개를 프로그램 점역기로 돌려 51개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 71,
+    "same": 51
+   },
+   "mismatch_samples": [
+    {
+     "text": "bear",
+     "ueb": "⠃⠑⠜",
+     "program": "⠆⠜"
+    },
+    {
+     "text": "ed.",
+     "ueb": "⠫⠲",
+     "program": "⠑⠙⠲"
+    },
+    {
+     "text": "e'er",
+     "ueb": "⠑⠄⠻",
+     "program": "⠑⠄⠑⠗"
+    }
+   ]
+  },
+  {
+   "id": "10.4.2",
+   "section": "UEB 10.4.2",
+   "pdf_page": 149,
+   "group": "strong_groupsign",
+   "kind": "limit",
+   "text": "ch, sh, th, wh, ou, st 묶음 약자가 홀로 놓여 단어(child, shall …)로 잘못 읽힐 수 있으면 글자를 하나씩 적는다(Sh!, St.).",
+   "status": "partial",
+   "note": "UEB 본문 예시 7개를 프로그램 점역기로 돌려 6개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 7,
+    "same": 6
+   },
+   "mismatch_samples": [
+    {
+     "text": "Wh–?",
+     "ueb": "⠠⠺⠓⠠⠤⠰⠦",
+     "program": "⠠⠺⠓⠠⠤⠦"
+    }
+   ]
+  },
+  {
+   "id": "10.4.3",
+   "section": "UEB 10.4.3",
+   "pdf_page": 150,
+   "group": "strong_groupsign",
+   "kind": "limit",
+   "text": "ing 약자는 낱말 맨 앞에는 쓰지 않는다(ingot, to-ing).",
+   "status": "partial",
+   "note": "UEB 본문 예시 13개를 프로그램 점역기로 돌려 7개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 13,
+    "same": 7
+   },
+   "mismatch_samples": [
+    {
+     "text": "SmithInge",
+     "ueb": "⠠⠎⠍⠊⠹⠠⠬⠑",
+     "program": "⠠⠎⠍⠊⠹⠬⠑"
+    },
+    {
+     "text": "ingot",
+     "ueb": "⠔⠛⠕⠞",
+     "program": "⠬⠕⠞"
+    },
+    {
+     "text": "Ingoldsby",
+     "ueb": "⠠⠔⠛⠕⠇⠙⠎⠃⠽",
+     "program": "⠠⠬⠕⠇⠙⠎⠃⠽"
+    }
+   ]
+  },
+  {
+   "id": "10.5.1",
+   "section": "UEB 10.5.1",
+   "pdf_page": 151,
+   "group": "lower_wordsign",
+   "kind": "limit",
+   "text": "be, were, his, was 약자는 홀로 쓰일 때 쓰되, 아래 점만 있는 문장 부호(따옴표, 마침표, 쉼표, 물음표, 느낌표, 붙임표, 줄표 등)에 붙으면 쓰지 않는다. 대문자 표시는 따지지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 14개를 프로그램 점역기로 돌려 12개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 14,
+    "same": 12
+   },
+   "korean_rule": [
+    "한글 규정 제37항(PDF 30쪽): 국어 문장 안에서 로마자표 뒤에 오는 이 단어는 약자를 쓰지 않고 풀어 쓴다.",
+    "한글 규정 제37항 [붙임](PDF 30쪽): be, enough, his, in, was, were는 로마자 종료표 앞에서도 풀어 쓴다."
+   ],
+   "mismatch_samples": [
+    {
+     "text": "BE ALL THAT YOU CAN BE",
+     "ueb": "⠠⠠⠠⠆ ⠁⠇⠇ ⠞ ⠽ ⠉ ⠆⠠⠄",
+     "program": "⠠⠠⠆ ⠠⠠⠁⠇⠇ ⠠⠠⠞ ⠠⠠⠽ ⠠⠠⠉ ⠠⠠⠆"
+    },
+    {
+     "text": "He is [was]; they are [were].",
+     "ueb": "⠠⠓⠑ ⠊⠎ ⠨⠣⠴⠨⠜⠆ ⠮⠽ ⠜⠑ ⠨⠣⠶⠨⠜⠲",
+     "program": "⠠⠓⠑ ⠊⠎ ⠨⠣⠺⠁⠎⠨⠜⠆ ⠮⠽ ⠜⠑ ⠨⠣⠺⠻⠑⠨⠜⠲"
+    }
+   ]
+  },
+  {
+   "id": "10.5.2",
+   "section": "UEB 10.5.2",
+   "pdf_page": 152,
+   "group": "lower_wordsign",
+   "kind": "use",
+   "text": "enough 약자는 홀로 쓰일 때 쓴다. enough's에도 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 7개를 프로그램 점역기로 돌려 6개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 7,
+    "same": 6
+   },
+   "korean_rule": [
+    "한글 규정 제37항(PDF 30쪽): 국어 문장 안에서 로마자표 뒤에 오는 이 단어는 약자를 쓰지 않고 풀어 쓴다.",
+    "한글 규정 제37항 [붙임](PDF 30쪽): be, enough, his, in, was, were는 로마자 종료표 앞에서도 풀어 쓴다."
+   ],
+   "mismatch_samples": [
+    {
+     "text": "GIVE MORE THAN ENOUGH",
+     "ueb": "⠠⠠⠠⠛⠊⠧⠑ ⠍ ⠹⠁⠝ ⠢⠠⠄",
+     "program": "⠠⠠⠛⠊⠧⠑ ⠠⠠⠍ ⠠⠠⠹⠁⠝ ⠠⠠⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.5.3",
+   "section": "UEB 10.5.3",
+   "pdf_page": 153,
+   "group": "lower_wordsign",
+   "kind": "use",
+   "text": "in 약자는 위쪽 점이 있는 칸이 그 묶음 안에 함께 있을 때만 쓴다(Come in, → i·n으로 풀어 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 15개를 프로그램 점역기로 돌려 10개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 15,
+    "same": 10
+   },
+   "korean_rule": [
+    "한글 규정 제37항(PDF 30쪽): 국어 문장 안에서 로마자표 뒤에 오는 이 단어는 약자를 쓰지 않고 풀어 쓴다.",
+    "한글 규정 제37항 [붙임](PDF 30쪽): be, enough, his, in, was, were는 로마자 종료표 앞에서도 풀어 쓴다."
+   ],
+   "mismatch_samples": [
+    {
+     "text": "GO ALL IN",
+     "ueb": "⠠⠠⠠⠛ ⠁⠇⠇ ⠔⠠⠄",
+     "program": "⠠⠠⠛ ⠠⠠⠁⠇⠇ ⠠⠠⠔"
+    },
+    {
+     "text": "<in file>",
+     "ueb": "⠈⠣⠔ ⠋⠊⠇⠑⠈⠜",
+     "program": "<⠔ ⠋⠊⠇⠑>"
+    },
+    {
+     "text": "Come in, stay in.",
+     "ueb": "⠠⠉⠕⠍⠑ ⠊⠝⠂ ⠌⠁⠽ ⠊⠝⠲",
+     "program": "⠠⠉⠕⠍⠑ ⠔⠂ ⠌⠁⠽ ⠔⠲"
+    }
+   ]
+  },
+  {
+   "id": "10.5.4",
+   "section": "UEB 10.5.4",
+   "pdf_page": 154,
+   "group": "lower_sign_rule",
+   "kind": "limit",
+   "text": "enough·in 약자가 아래 점 부호와 이어질 때, 그 묶음에 위쪽 점이 있는 칸이 하나도 없으면 마지막 하위 약자를 쓰지 않는다(아래 점만 남는 것을 막는 '하위 부호 규칙').",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 1개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 1
+   },
+   "mismatch_samples": [
+    {
+     "text": "It was enough–more than enough.",
+     "ueb": "⠠⠭ ⠴ ⠢⠠⠤⠍ ⠹⠁⠝ ⠢⠳⠣⠲",
+     "program": "⠠⠭ ⠴ ⠢⠠⠤⠍ ⠹⠁⠝ ⠢⠲"
+    },
+    {
+     "text": "“That's enough!”–in a firm voice",
+     "ueb": "⠦⠠⠞⠄⠎ ⠢⠖⠴⠠⠤⠊⠝ ⠁ ⠋⠊⠗⠍ ⠧⠕⠊⠉⠑",
+     "program": "⠦⠠⠞⠄⠎ ⠢⠖⠴⠠⠤⠔ ⠁ ⠋⠊⠗⠍ ⠧⠕⠊⠉⠑"
+    },
+    {
+     "text": "Take enough.",
+     "ueb": "⠠⠞⠁⠅⠑ ⠢⠳⠣⠲",
+     "program": "⠠⠞⠁⠅⠑ ⠢⠲"
+    }
+   ]
+  },
+  {
+   "id": "10.6.1",
+   "section": "UEB 10.6.1",
+   "pdf_page": 155,
+   "group": "lower_groupsign",
+   "kind": "use",
+   "text": "be, con, dis 하위 묶음 약자는 그 글자들이 낱말의 첫 음절일 때 쓴다(become, concept, distance; best, cone, dish는 안 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 40개를 프로그램 점역기로 돌려 24개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 40,
+    "same": 24
+   },
+   "mismatch_samples": [
+    {
+     "text": "dishonest",
+     "ueb": "⠲⠓⠐⠕⠌",
+     "program": "⠲⠓⠕⠝⠑⠌"
+    },
+    {
+     "text": "beckon",
+     "ueb": "⠃⠑⠉⠅⠕⠝",
+     "program": "⠆⠉⠅⠕⠝"
+    },
+    {
+     "text": "been",
+     "ueb": "⠃⠑⠢",
+     "program": "⠆⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.6.2",
+   "section": "UEB 10.6.2",
+   "pdf_page": 156,
+   "group": "lower_groupsign",
+   "kind": "limit",
+   "text": "be, con, dis 하위 묶음 약자는 낱말 맨 앞에서, 뒤에 글자가 이어질 때만 쓴다(McConnell, be'ave는 안 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 10개를 프로그램 점역기로 돌려 3개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 10,
+    "same": 3
+   },
+   "mismatch_samples": [
+    {
+     "text": "concave/convex",
+     "ueb": "⠒⠉⠁⠧⠑⠸⠌⠉⠕⠝⠧⠑⠭",
+     "program": "⠒⠉⠁⠧⠑⠸⠌⠒⠧⠑⠭"
+    },
+    {
+     "text": "McConnell",
+     "ueb": "⠠⠍⠉⠠⠉⠕⠝⠝⠑⠇⠇",
+     "program": "⠠⠍⠒⠕⠝⠝⠑⠇⠇"
+    },
+    {
+     "text": "O'Connor",
+     "ueb": "⠠⠕⠄⠠⠉⠕⠝⠝⠕⠗",
+     "program": "⠠⠕⠄⠉⠕⠝⠝⠕⠗"
+    }
+   ]
+  },
+  {
+   "id": "10.6.3",
+   "section": "UEB 10.6.3",
+   "pdf_page": 156,
+   "group": "lower_groupsign",
+   "kind": "limit",
+   "text": "be, con, dis 바로 뒤에 대문자 표시가 오면(BeLinda, DisCORD) 하위 묶음 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 4개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 4,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "BeLinda",
+     "ueb": "⠠⠃⠑⠠⠇⠔⠙⠁",
+     "program": "⠠⠆⠇⠔⠙⠁"
+    },
+    {
+     "text": "conCUR",
+     "ueb": "⠉⠕⠝⠠⠠⠉⠥⠗",
+     "program": "⠒⠉⠥⠗"
+    },
+    {
+     "text": "DisCORD",
+     "ueb": "⠠⠙⠊⠎⠠⠠⠉⠕⠗⠙",
+     "program": "⠠⠲⠉⠕⠗⠙"
+    }
+   ]
+  },
+  {
+   "id": "10.6.4",
+   "section": "UEB 10.6.4",
+   "pdf_page": 156,
+   "group": "lower_groupsign",
+   "kind": "use",
+   "text": "줄임말에서도 원래 낱말에 be, con, dis 약자가 쓰이고 뒤에 글자가 하나 이상 있으면 약자를 쓴다(cont=continued). 원래 낱말을 모르면 써도 된다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 9개를 프로그램 점역기로 돌려 5개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 9,
+    "same": 5
+   },
+   "mismatch_samples": [
+    {
+     "text": "BEd",
+     "ueb": "⠠⠃⠠⠫",
+     "program": "⠠⠆⠙"
+    },
+    {
+     "text": "Belg",
+     "ueb": "⠠⠃⠑⠇⠛",
+     "program": "⠠⠆⠇⠛"
+    },
+    {
+     "text": "bet",
+     "ueb": "⠃⠑⠞",
+     "program": "⠆⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.6.5",
+   "section": "UEB 10.6.5",
+   "pdf_page": 157,
+   "group": "lower_groupsign",
+   "kind": "use",
+   "text": "ea, bb, cc, ff, gg 하위 묶음 약자는 앞뒤에 모두 글자가 있을 때만 쓴다(낱말 맨 앞·맨 끝에는 안 씀: east, ebb, tea).",
+   "status": "partial",
+   "note": "UEB 본문 예시 87개를 프로그램 점역기로 돌려 69개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 87,
+    "same": 69
+   },
+   "mismatch_samples": [
+    {
+     "text": "beat",
+     "ueb": "⠃⠂⠞",
+     "program": "⠆⠁⠞"
+    },
+    {
+     "text": "begging",
+     "ueb": "⠃⠑⠶⠬",
+     "program": "⠆⠶⠬"
+    },
+    {
+     "text": "doggone",
+     "ueb": "⠙⠕⠶⠐⠕",
+     "program": "⠙⠕⠶⠕⠝⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.6.6",
+   "section": "UEB 10.6.6",
+   "pdf_page": 159,
+   "group": "lower_groupsign",
+   "kind": "limit",
+   "text": "ea, bb, cc, ff, gg 앞이나 뒤에 대문자 표시가 오면(SeaWorld, EggHead) 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "CliffSide",
+     "ueb": "⠠⠉⠇⠊⠋⠋⠠⠎⠊⠙⠑",
+     "program": "⠠⠉⠇⠊⠖⠎⠊⠙⠑"
+    },
+    {
+     "text": "EggHead",
+     "ueb": "⠠⠑⠛⠛⠠⠓⠂⠙",
+     "program": "⠠⠑⠶⠓⠂⠙"
+    },
+    {
+     "text": "MacEACHEN",
+     "ueb": "⠠⠍⠁⠉⠠⠠⠑⠁⠡⠢",
+     "program": "⠠⠍⠁⠉⠂⠡⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.6.7",
+   "section": "UEB 10.6.7",
+   "pdf_page": 160,
+   "group": "lower_groupsign",
+   "kind": "limit",
+   "text": "ea가 접두사와 나머지 부분에 걸쳐 있으면(reaction, preamble) ea 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 4개를 프로그램 점역기로 돌려 1개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 4,
+    "same": 1
+   },
+   "mismatch_samples": [
+    {
+     "text": "deactivate",
+     "ueb": "⠙⠑⠁⠉⠞⠊⠧⠁⠞⠑",
+     "program": "⠙⠂⠉⠞⠊⠧⠁⠞⠑"
+    },
+    {
+     "text": "geanticline",
+     "ueb": "⠛⠑⠁⠝⠞⠊⠉⠇⠔⠑",
+     "program": "⠛⠂⠝⠞⠊⠉⠇⠔⠑"
+    },
+    {
+     "text": "preamble",
+     "ueb": "⠏⠗⠑⠁⠍⠃⠇⠑",
+     "program": "⠏⠗⠂⠍⠃⠇⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.6.8",
+   "section": "UEB 10.6.8",
+   "pdf_page": 160,
+   "group": "lower_groupsign",
+   "kind": "use",
+   "text": "en, in 하위 묶음 약자는 그 글자들이 나오는 곳 어디서나 쓴다(다른 규칙이 막지 않으면).",
+   "status": "partial",
+   "note": "UEB 본문 예시 58개를 프로그램 점역기로 돌려 47개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 58,
+    "same": 47
+   },
+   "mismatch_samples": [
+    {
+     "text": "been",
+     "ueb": "⠃⠑⠢",
+     "program": "⠆⠢"
+    },
+    {
+     "text": "be'ind",
+     "ueb": "⠃⠑⠄⠔⠙",
+     "program": "⠆⠄⠊⠝⠙"
+    },
+    {
+     "text": "benefit",
+     "ueb": "⠃⠢⠑⠋⠊⠞",
+     "program": "⠆⠝⠑⠋⠊⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.6.9",
+   "section": "UEB 10.6.9",
+   "pdf_page": 161,
+   "group": "lower_groupsign",
+   "kind": "limit",
+   "text": "en이 홀로 쓰이면 enough로 잘못 읽히므로 en 약자를 쓰지 않는다(en route).",
+   "status": "implemented",
+   "note": "UEB 본문 예시 3개를 프로그램 점역기로 돌려 3개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 3,
+    "same": 3
+   }
+  },
+  {
+   "id": "10.6.10",
+   "section": "UEB 10.6.10",
+   "pdf_page": 162,
+   "group": "lower_sign_rule",
+   "kind": "limit",
+   "text": "하위 묶음 약자와 아래 점 문장 부호가 이어질 때 위쪽 점이 있는 칸이 하나도 없으면 마지막 하위 묶음 약자를 쓰지 않는다(bein' 등).",
+   "status": "partial",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 4개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 4
+   },
+   "mismatch_samples": [
+    {
+     "text": "bein'",
+     "ueb": "⠆⠊⠝⠄",
+     "program": "⠆⠔⠄"
+    }
+   ]
+  },
+  {
+   "id": "10.7.1",
+   "section": "UEB 10.7.1",
+   "pdf_page": 163,
+   "group": "initial_letter",
+   "kind": "use",
+   "text": "어두 약자(5점, 4·5점, 4·5·6점 + 글자)는 단어로도, 그 글자들이 나오는 곳 어디서나 쓴다(아래 개별 규정과 다른 규칙이 막지 않으면).",
+   "status": "partial",
+   "note": "UEB 본문 예시 82개를 프로그램 점역기로 돌려 41개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 82,
+    "same": 41
+   },
+   "mismatch_samples": [
+    {
+     "text": "acknowledge",
+     "ueb": "⠁⠉⠐⠅⠇⠫⠛⠑",
+     "program": "⠁⠉⠅⠝⠪⠇⠫⠛⠑"
+    },
+    {
+     "text": "affrighted",
+     "ueb": "⠁⠖⠐⠗⠫",
+     "program": "⠁⠖⠗⠊⠣⠞⠫"
+    },
+    {
+     "text": "apartheid",
+     "ueb": "⠁⠐⠏⠓⠑⠊⠙",
+     "program": "⠁⠏⠜⠮⠊⠙"
+    }
+   ]
+  },
+  {
+   "id": "10.7.2",
+   "section": "UEB 10.7.2",
+   "pdf_page": 165,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "upon, these, those, whose, there 약자는 그 낱말의 뜻이 살아 있을 때만 쓴다(therefore·thereby는 쓰고, Theresa·ethereal은 안 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 20개를 프로그램 점역기로 돌려 13개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 20,
+    "same": 13
+   },
+   "mismatch_samples": [
+    {
+     "text": "hereupon",
+     "ueb": "⠐⠓⠘⠥",
+     "program": "⠐⠓⠥⠏⠕⠝"
+    },
+    {
+     "text": "thereupon",
+     "ueb": "⠐⠮⠘⠥",
+     "program": "⠐⠮⠥⠏⠕⠝"
+    },
+    {
+     "text": "whereupon",
+     "ueb": "⠐⠱⠘⠥",
+     "program": "⠐⠱⠥⠏⠕⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.7.3",
+   "section": "UEB 10.7.3",
+   "pdf_page": 166,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "had 약자는 a가 짧은 소리일 때 쓴다(shadow는 안 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 12개를 프로그램 점역기로 돌려 9개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 12,
+    "same": 9
+   },
+   "mismatch_samples": [
+    {
+     "text": "Galahad",
+     "ueb": "⠠⠛⠁⠇⠁⠸⠓",
+     "program": "⠠⠛⠁⠇⠁⠓⠁⠙"
+    },
+    {
+     "text": "Hades",
+     "ueb": "⠠⠓⠁⠙⠑⠎",
+     "program": "⠠⠸⠓⠑⠎"
+    },
+    {
+     "text": "Hadrian",
+     "ueb": "⠠⠓⠁⠙⠗⠊⠁⠝",
+     "program": "⠠⠸⠓⠗⠊⠁⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.7.4",
+   "section": "UEB 10.7.4",
+   "pdf_page": 166,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "ever 약자는 첫 e에 강세가 있고, 앞에 e나 i가 오지 않을 때 쓴다(fever·several은 쓰고, believer·severity는 안 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 22개를 프로그램 점역기로 돌려 11개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 22,
+    "same": 11
+   },
+   "mismatch_samples": [
+    {
+     "text": "asseverate",
+     "ueb": "⠁⠎⠎⠐⠑⠁⠞⠑",
+     "program": "⠁⠎⠎⠑⠧⠻⠁⠞⠑"
+    },
+    {
+     "text": "beverage",
+     "ueb": "⠃⠐⠑⠁⠛⠑",
+     "program": "⠆⠧⠻⠁⠛⠑"
+    },
+    {
+     "text": "fever",
+     "ueb": "⠋⠐⠑",
+     "program": "⠋⠑⠧⠻"
+    }
+   ]
+  },
+  {
+   "id": "10.7.5",
+   "section": "UEB 10.7.5",
+   "pdf_page": 167,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "here, name 약자는 그 글자들이 한 음절로 소리 날 때 쓴다(adhere·sphere는 쓰고, adhered·enamel은 안 씀).",
+   "status": "partial",
+   "note": "UEB 본문 예시 20개를 프로그램 점역기로 돌려 10개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 20,
+    "same": 10
+   },
+   "mismatch_samples": [
+    {
+     "text": "adhere",
+     "ueb": "⠁⠙⠐⠓",
+     "program": "⠁⠙⠓⠻⠑"
+    },
+    {
+     "text": "atmosphere",
+     "ueb": "⠁⠞⠍⠕⠎⠏⠐⠓",
+     "program": "⠁⠞⠍⠕⠎⠏⠓⠻⠑"
+    },
+    {
+     "text": "cohere",
+     "ueb": "⠉⠕⠐⠓",
+     "program": "⠉⠕⠓⠻⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.7.6",
+   "section": "UEB 10.7.6",
+   "pdf_page": 167,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "one 약자는 한 음절로 소리 날 때, oney로 끝나는 낱말, honest·monetary와 그 파생어에 쓴다. 앞에 o가 오면(Boone, crooner) 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 41개를 프로그램 점역기로 돌려 23개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 41,
+    "same": 23
+   },
+   "mismatch_samples": [
+    {
+     "text": "acetone",
+     "ueb": "⠁⠉⠑⠞⠐⠕",
+     "program": "⠁⠉⠑⠞⠕⠝⠑"
+    },
+    {
+     "text": "atonement",
+     "ueb": "⠁⠞⠐⠕⠰⠞",
+     "program": "⠁⠞⠕⠝⠑⠰⠞"
+    },
+    {
+     "text": "baloney",
+     "ueb": "⠃⠁⠇⠐⠕⠽",
+     "program": "⠃⠁⠇⠕⠝⠑⠽"
+    }
+   ]
+  },
+  {
+   "id": "10.7.7",
+   "section": "UEB 10.7.7",
+   "pdf_page": 169,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "some 약자는 그 글자들이 기본 낱말의 한 음절을 이룰 때 쓴다(handsome은 쓰고, blossomed는 안 씀).",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 14개를 프로그램 점역기로 돌려 3개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 14,
+    "same": 3
+   },
+   "mismatch_samples": [
+    {
+     "text": "blithesome",
+     "ueb": "⠃⠇⠊⠮⠐⠎",
+     "program": "⠃⠇⠊⠮⠎⠕⠍⠑"
+    },
+    {
+     "text": "chromosome",
+     "ueb": "⠡⠗⠕⠍⠕⠐⠎",
+     "program": "⠡⠗⠕⠍⠕⠎⠕⠍⠑"
+    },
+    {
+     "text": "fearsome",
+     "ueb": "⠋⠑⠜⠐⠎",
+     "program": "⠋⠂⠗⠎⠕⠍⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.7.8",
+   "section": "UEB 10.7.8",
+   "pdf_page": 169,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "time 약자는 그 글자들이 time과 같은 소리로 날 때 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 15개를 프로그램 점역기로 돌려 8개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 15,
+    "same": 8
+   },
+   "mismatch_samples": [
+    {
+     "text": "daytime",
+     "ueb": "⠐⠙⠐⠞",
+     "program": "⠐⠙⠞⠊⠍⠑"
+    },
+    {
+     "text": "maritime",
+     "ueb": "⠍⠜⠊⠐⠞",
+     "program": "⠍⠜⠊⠞⠊⠍⠑"
+    },
+    {
+     "text": "mistimed",
+     "ueb": "⠍⠊⠎⠐⠞⠙",
+     "program": "⠍⠊⠌⠊⠍⠫"
+    }
+   ]
+  },
+  {
+   "id": "10.7.9",
+   "section": "UEB 10.7.9",
+   "pdf_page": 170,
+   "group": "initial_letter",
+   "kind": "limit",
+   "text": "under 약자는 앞에 a나 o가 오거나(flounder, laundering) un이 접두사일 때(underived)는 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 11개를 프로그램 점역기로 돌려 4개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 11,
+    "same": 4
+   },
+   "mismatch_samples": [
+    {
+     "text": "blunder",
+     "ueb": "⠃⠇⠐⠥",
+     "program": "⠃⠇⠥⠝⠙⠻"
+    },
+    {
+     "text": "misunderstand",
+     "ueb": "⠍⠊⠎⠐⠥⠌⠯",
+     "program": "⠍⠊⠎⠥⠝⠙⠻⠌⠯"
+    },
+    {
+     "text": "thundered",
+     "ueb": "⠹⠐⠥⠫",
+     "program": "⠹⠥⠝⠙⠻⠫"
+    }
+   ]
+  },
+  {
+   "id": "10.8.1",
+   "section": "UEB 10.8.1",
+   "pdf_page": 171,
+   "group": "final_letter",
+   "kind": "use",
+   "text": "어미 약자(4·6점, 5·6점 + 글자: ence ong ful tion ness ment ity ance sion less ound ount)는 앞에 글자가 있을 때 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 71개를 프로그램 점역기로 돌려 58개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 71,
+    "same": 58
+   },
+   "mismatch_samples": [
+    {
+     "text": "bastion",
+     "ueb": "⠃⠁⠎⠰⠝",
+     "program": "⠃⠁⠌⠊⠕⠝"
+    },
+    {
+     "text": "business",
+     "ueb": "⠃⠥⠎⠊⠰⠎",
+     "program": "⠃⠥⠎⠔⠑⠎⠎"
+    },
+    {
+     "text": "finesse",
+     "ueb": "⠋⠊⠰⠎⠑",
+     "program": "⠋⠔⠑⠎⠎⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.8.2",
+   "section": "UEB 10.8.2",
+   "pdf_page": 172,
+   "group": "final_letter",
+   "kind": "limit",
+   "text": "어미 약자 바로 앞에 대문자 표시가 오면(ELesson) 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "AttenTION!",
+     "ueb": "⠠⠁⠞⠞⠢⠠⠠⠞⠊⠕⠝⠖",
+     "program": "⠠⠁⠞⠞⠢⠰⠝⠖"
+    },
+    {
+     "text": "AWful",
+     "ueb": "⠠⠠⠁⠺⠠⠄⠋⠥⠇",
+     "program": "⠠⠁⠺⠰⠇"
+    },
+    {
+     "text": "ELesson",
+     "ueb": "⠠⠑⠠⠇⠑⠎⠎⠕⠝",
+     "program": "⠠⠑⠨⠎⠕⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.8.3",
+   "section": "UEB 10.8.3",
+   "pdf_page": 173,
+   "group": "final_letter",
+   "kind": "limit",
+   "text": "biscuity, dacoity, fruity, hoity-toity, rabbity에는 ity 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "biscuity",
+     "ueb": "⠃⠊⠎⠉⠥⠊⠞⠽",
+     "program": "⠃⠊⠎⠉⠥⠰⠽"
+    },
+    {
+     "text": "fruity",
+     "ueb": "⠋⠗⠥⠊⠞⠽",
+     "program": "⠋⠗⠥⠰⠽"
+    }
+   ]
+  },
+  {
+   "id": "10.8.4",
+   "section": "UEB 10.8.4",
+   "pdf_page": 173,
+   "group": "final_letter",
+   "kind": "limit",
+   "text": "en·in으로 끝나는 낱말에 여성형 ess가 붙은 경우(citizeness, heatheness)에는 ness 약자를 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 3개를 프로그램 점역기로 돌려 2개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 3,
+    "same": 2
+   },
+   "mismatch_samples": [
+    {
+     "text": "heatheness",
+     "ueb": "⠓⠂⠮⠝⠑⠎⠎",
+     "program": "⠓⠂⠮⠰⠎"
+    }
+   ]
+  },
+  {
+   "id": "10.9.1",
+   "section": "UEB 10.9.1",
+   "pdf_page": 174,
+   "group": "shortform",
+   "kind": "use",
+   "text": "축어(about, after … 75개)는 그 단어가 홀로 쓰이면 뜻이나 발음, 고유 이름 여부와 상관없이 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 9개를 프로그램 점역기로 돌려 7개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 9,
+    "same": 7
+   },
+   "mismatch_samples": [
+    {
+     "text": "above/below",
+     "ueb": "⠁⠃⠕⠧⠑⠸⠌⠃⠑⠇⠪",
+     "program": "⠁⠃⠕⠧⠑⠸⠌⠆⠇⠪"
+    },
+    {
+     "text": "www.living.beyond.myself.org",
+     "ueb": "⠺⠺⠺⠲⠇⠊⠧⠬⠲⠃⠑⠽⠕⠝⠙⠲⠍⠽⠎⠑⠇⠋⠲⠕⠗⠛",
+     "program": "⠺⠺⠺⠲⠇⠊⠧⠬⠲⠆⠽⠕⠝⠙⠲⠍⠽⠎⠑⠇⠋⠲⠕⠗⠛"
+    }
+   ]
+  },
+  {
+   "id": "10.9.2",
+   "section": "UEB 10.9.2",
+   "pdf_page": 175,
+   "group": "shortform",
+   "kind": "use",
+   "text": "더 긴 낱말 안의 축어는 그 낱말이 홀로 쓰이고, 부록 1 축어 목록에 있거나 10.9.3~10.9.5에 맞을 때만 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 28개를 프로그램 점역기로 돌려 18개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 28,
+    "same": 18
+   },
+   "mismatch_samples": [
+    {
+     "text": "aboveground",
+     "ueb": "⠁⠃⠧⠛⠗⠨⠙",
+     "program": "⠁⠃⠕⠧⠑⠛⠗⠨⠙"
+    },
+    {
+     "text": "LetterMen",
+     "ueb": "⠠⠇⠗⠠⠍⠢",
+     "program": "⠠⠇⠑⠞⠞⠻⠍⠢"
+    },
+    {
+     "text": "godchildren",
+     "ueb": "⠛⠕⠙⠡⠝",
+     "program": "⠛⠕⠙⠡⠊⠇⠙⠗⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.9.3",
+   "section": "UEB 10.9.3",
+   "pdf_page": 177,
+   "group": "shortform",
+   "kind": "use",
+   "text": "목록에 없는 낱말이라도 braille·great는 어디서나, children은 뒤에 모음·y가 없으면, blind·first·friend·good·letter·little·quick은 낱말 맨 앞이고 뒤에 모음·y가 없으면 축어를 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 16개를 프로그램 점역기로 돌려 7개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 16,
+    "same": 7
+   },
+   "mismatch_samples": [
+    {
+     "text": "Marcillat-en-Combraille, France",
+     "ueb": "⠠⠍⠜⠉⠊⠇⠇⠁⠞⠤⠑⠝⠤⠠⠉⠕⠍⠃⠗⠇⠂ ⠠⠋⠗⠨⠑",
+     "program": "⠠⠍⠜⠉⠊⠇⠇⠁⠞⠤⠑⠝⠤⠠⠉⠕⠍⠃⠗⠁⠊⠇⠇⠑⠂ ⠠⠋⠗⠨⠑"
+    },
+    {
+     "text": "greatgreatgreatgrandchildren",
+     "ueb": "⠛⠗⠞⠛⠗⠞⠛⠗⠞⠛⠗⠯⠡⠝",
+     "program": "⠛⠗⠂⠞⠛⠗⠂⠞⠛⠗⠂⠞⠛⠗⠯⠡⠊⠇⠙⠗⠢"
+    },
+    {
+     "text": "Greatorex",
+     "ueb": "⠠⠛⠗⠞⠕⠗⠑⠭",
+     "program": "⠠⠛⠗⠂⠞⠕⠗⠑⠭"
+    }
+   ]
+  },
+  {
+   "id": "10.9.4",
+   "section": "UEB 10.9.4",
+   "pdf_page": 178,
+   "group": "shortform",
+   "kind": "use",
+   "text": "가운데 대문자 표시가 든 낱말(SimBraille, StepChildren)도 목록에 있거나 10.9.3에 맞으면 축어를 쓴다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 8개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 8,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "DeafBlind",
+     "ueb": "⠠⠙⠂⠋⠠⠃⠇",
+     "program": "⠠⠙⠂⠋⠃⠇⠔⠙"
+    },
+    {
+     "text": "QuickTime",
+     "ueb": "⠠⠟⠅⠠⠐⠞",
+     "program": "⠠⠟⠅⠐⠞"
+    },
+    {
+     "text": "GREATgreatGrandChildren",
+     "ueb": "⠠⠠⠛⠗⠞⠠⠄⠛⠗⠞⠠⠛⠗⠯⠠⠡⠝",
+     "program": "⠠⠛⠗⠂⠞⠛⠗⠂⠞⠛⠗⠯⠡⠊⠇⠙⠗⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.9.5",
+   "section": "UEB 10.9.5",
+   "pdf_page": 179,
+   "group": "shortform",
+   "kind": "use",
+   "text": "축어 낱말 뒤에 s나 's가 붙어도 홀로 쓰이면 축어를 쓴다. 다만 abouts, almosts, hims는 예외로 풀어 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 7개를 프로그램 점역기로 돌려 4개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 7,
+    "same": 4
+   },
+   "mismatch_samples": [
+    {
+     "text": "belowdecks",
+     "ueb": "⠆⠇⠙⠑⠉⠅⠎",
+     "program": "⠆⠇⠪⠙⠑⠉⠅⠎"
+    },
+    {
+     "text": "hereabouts",
+     "ueb": "⠐⠓⠁⠃⠎",
+     "program": "⠐⠓⠁⠃⠳⠞⠎"
+    },
+    {
+     "text": "GodChildren's",
+     "ueb": "⠠⠛⠕⠙⠠⠡⠝⠄⠎",
+     "program": "⠠⠛⠕⠙⠡⠊⠇⠙⠗⠢⠄⠎"
+    }
+   ]
+  },
+  {
+   "id": "10.9.6",
+   "section": "UEB 10.9.6",
+   "pdf_page": 179,
+   "group": "shortform",
+   "kind": "limit",
+   "text": "묶음 약자를 쓰면 축어(또는 축어를 품은 낱말)로 잘못 읽히는 경우에는 그 묶음 약자를 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 2개를 프로그램 점역기로 돌려 1개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 2,
+    "same": 1
+   },
+   "mismatch_samples": [
+    {
+     "text": "Herf gun",
+     "ueb": "⠠⠓⠑⠗⠋ ⠛⠥⠝",
+     "program": "⠠⠓⠻⠋ ⠛⠥⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.9.7",
+   "section": "UEB 10.9.7",
+   "pdf_page": 180,
+   "group": "shortform",
+   "kind": "use",
+   "text": "홀로 쓰인 글자 묶음이 축어로 잘못 읽힐 수 있으면 앞에 1급 점자표 ⠰를 적는다(al dente → ⠰⠁⠇).",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 1개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 1,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "“Hm, is this Al's CD?”",
+     "ueb": "⠦⠰⠠⠓⠍⠂ ⠊⠎ ⠹ ⠰⠠⠁⠇⠄⠎ ⠰⠠⠠⠉⠙⠦⠴",
+     "program": "⠦⠠⠓⠍⠂ ⠊⠎ ⠹ ⠠⠁⠇⠄⠎ ⠠⠠⠉⠙⠦⠴"
+    }
+   ]
+  },
+  {
+   "id": "10.9.8",
+   "section": "UEB 10.9.8",
+   "pdf_page": 180,
+   "group": "shortform",
+   "kind": "use",
+   "text": "낱말 맨 앞의 글자 묶음이 축어를 품은 낱말로 잘못 읽힐 수 있으면 앞에 1급 점자표 ⠰를 적는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 2개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 2
+   },
+   "mismatch_samples": [
+    {
+     "text": "Blvd",
+     "ueb": "⠰⠠⠃⠇⠧⠙",
+     "program": "⠠⠃⠇⠧⠙"
+    },
+    {
+     "text": "LLC",
+     "ueb": "⠰⠠⠠⠇⠇⠉",
+     "program": "⠠⠠⠇⠇⠉"
+    },
+    {
+     "text": "Grtsamada",
+     "ueb": "⠰⠠⠛⠗⠞⠎⠁⠍⠁⠙⠁",
+     "program": "⠠⠛⠗⠞⠎⠁⠍⠁⠙⠁"
+    }
+   ]
+  },
+  {
+   "id": "10.9.9",
+   "section": "UEB 10.9.9",
+   "pdf_page": 180,
+   "group": "shortform",
+   "kind": "use",
+   "text": "낱말 중간의 글자 묶음이 축어로 잘못 읽힐 수 있으면 1급 단어표 ⠰⠰를 적고, 그 묶음 안에서는 다른 약자를 쓰지 않는다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 3개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 3,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "Dobrljin",
+     "ueb": "⠰⠰⠠⠙⠕⠃⠗⠇⠚⠊⠝",
+     "program": "⠠⠙⠕⠃⠗⠇⠚⠔"
+    },
+    {
+     "text": "ozbrl",
+     "ueb": "⠰⠰⠕⠵⠃⠗⠇",
+     "program": "⠕⠵⠃⠗⠇"
+    },
+    {
+     "text": "UNSD",
+     "ueb": "⠰⠰⠠⠠⠥⠝⠎⠙",
+     "program": "⠠⠠⠥⠝⠎⠙"
+    }
+   ]
+  },
+  {
+   "id": "10.10.1",
+   "section": "UEB 10.10.1",
+   "pdf_page": 181,
+   "group": "preference",
+   "kind": "guide",
+   "text": "묶음 약자를 고를 수 있는 길이 여럿이면 10.10.2~10.10.10의 원칙으로 고른다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음."
+  },
+  {
+   "id": "10.10.2",
+   "section": "UEB 10.10.2",
+   "pdf_page": 181,
+   "group": "preference",
+   "kind": "use",
+   "text": "칸 수가 더 적어지는 묶음 약자를 먼저 고른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 20개를 프로그램 점역기로 돌려 13개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 20,
+    "same": 13
+   },
+   "mismatch_samples": [
+    {
+     "text": "aright",
+     "ueb": "⠁⠐⠗",
+     "program": "⠜⠊⠣⠞"
+    },
+    {
+     "text": "bastion",
+     "ueb": "⠃⠁⠎⠰⠝",
+     "program": "⠃⠁⠌⠊⠕⠝"
+    },
+    {
+     "text": "dispirited",
+     "ueb": "⠙⠊⠸⠎⠫",
+     "program": "⠲⠏⠊⠗⠊⠞⠫"
+    }
+   ]
+  },
+  {
+   "id": "10.10.3",
+   "section": "UEB 10.10.3",
+   "pdf_page": 181,
+   "group": "preference",
+   "kind": "use",
+   "text": "칸을 낭비하지 않는다면 온칸 약자(and for of the with)를 먼저 고른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 17개를 프로그램 점역기로 돌려 11개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 17,
+    "same": 11
+   },
+   "mismatch_samples": [
+    {
+     "text": "afford",
+     "ueb": "⠁⠋⠿⠙",
+     "program": "⠁⠖⠕⠗⠙"
+    },
+    {
+     "text": "calisthenics",
+     "ueb": "⠉⠁⠇⠊⠎⠮⠝⠊⠉⠎",
+     "program": "⠉⠁⠇⠊⠌⠓⠢⠊⠉⠎"
+    },
+    {
+     "text": "effort",
+     "ueb": "⠑⠋⠿⠞",
+     "program": "⠑⠖⠕⠗⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.10.4",
+   "section": "UEB 10.10.4",
+   "pdf_page": 182,
+   "group": "preference",
+   "kind": "use",
+   "text": "be, con, dis가 첫 음절이면 다른 묶음 약자보다 이 하위 묶음 약자를 먼저 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 19개를 프로그램 점역기로 돌려 10개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 19,
+    "same": 10
+   },
+   "mismatch_samples": [
+    {
+     "text": "dishonesty",
+     "ueb": "⠲⠓⠐⠕⠌⠽",
+     "program": "⠲⠓⠕⠝⠑⠌⠽"
+    },
+    {
+     "text": "beach",
+     "ueb": "⠃⠂⠡",
+     "program": "⠆⠁⠡"
+    },
+    {
+     "text": "beautiful",
+     "ueb": "⠃⠂⠥⠞⠊⠰⠇",
+     "program": "⠆⠁⠥⠞⠊⠰⠇"
+    }
+   ]
+  },
+  {
+   "id": "10.10.5",
+   "section": "UEB 10.10.5",
+   "pdf_page": 182,
+   "group": "preference",
+   "kind": "use",
+   "text": "10.10.4를 빼면, 온칸 묶음 약자를 하위 묶음 약자보다 먼저 쓴다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 9개를 프로그램 점역기로 돌려 2개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 9,
+    "same": 2
+   },
+   "mismatch_samples": [
+    {
+     "text": "bacchanal",
+     "ueb": "⠃⠁⠉⠡⠁⠝⠁⠇",
+     "program": "⠃⠁⠒⠓⠁⠝⠁⠇"
+    },
+    {
+     "text": "bear",
+     "ueb": "⠃⠑⠜",
+     "program": "⠆⠜"
+    },
+    {
+     "text": "fear",
+     "ueb": "⠋⠑⠜",
+     "program": "⠋⠂⠗"
+    }
+   ]
+  },
+  {
+   "id": "10.10.6",
+   "section": "UEB 10.10.6",
+   "pdf_page": 183,
+   "group": "preference",
+   "kind": "use",
+   "text": "encea, enced, encer에서는 ence 어미 약자를 쓴다.",
+   "status": "implemented",
+   "note": "UEB 본문 예시 7개를 프로그램 점역기로 돌려 7개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 7,
+    "same": 7
+   }
+  },
+  {
+   "id": "10.10.7",
+   "section": "UEB 10.10.7",
+   "pdf_page": 183,
+   "group": "preference",
+   "kind": "use",
+   "text": "10.10.6을 빼면, 칸을 낭비하지 않는 한 온칸·하위 묶음 약자를 어두·어미 약자보다 먼저 쓴다(칸 줄이기가 더 우선).",
+   "status": "partial",
+   "note": "UEB 본문 예시 19개를 프로그램 점역기로 돌려 16개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 19,
+    "same": 16
+   },
+   "mismatch_samples": [
+    {
+     "text": "heredity",
+     "ueb": "⠓⠻⠫⠰⠽",
+     "program": "⠐⠓⠙⠰⠽"
+    },
+    {
+     "text": "onerous",
+     "ueb": "⠕⠝⠻⠳⠎",
+     "program": "⠐⠕⠗⠳⠎"
+    },
+    {
+     "text": "Parthian",
+     "ueb": "⠠⠏⠜⠹⠊⠁⠝",
+     "program": "⠠⠐⠏⠓⠊⠁⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.10.8",
+   "section": "UEB 10.10.8",
+   "pdf_page": 184,
+   "group": "preference",
+   "kind": "guide",
+   "text": "낱말의 보통 발음에 더 가깝고 낱말 모양을 흐트러뜨리지 않는 묶음 약자를 고른다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음.",
+   "check": {
+    "examples": 12,
+    "same": 6
+   },
+   "mismatch_samples": [
+    {
+     "text": "apartheid",
+     "ueb": "⠁⠐⠏⠓⠑⠊⠙",
+     "program": "⠁⠏⠜⠮⠊⠙"
+    },
+    {
+     "text": "asthma",
+     "ueb": "⠁⠎⠹⠍⠁",
+     "program": "⠁⠌⠓⠍⠁"
+    },
+    {
+     "text": "dishevelled",
+     "ueb": "⠙⠊⠩⠑⠧⠑⠇⠇⠫",
+     "program": "⠲⠓⠑⠧⠑⠇⠇⠫"
+    }
+   ]
+  },
+  {
+   "id": "10.10.9",
+   "section": "UEB 10.10.9",
+   "pdf_page": 184,
+   "group": "preference",
+   "kind": "limit",
+   "text": "발음을 크게 흐리거나 낱말을 알아보기 어렵게 만드는 묶음 약자는 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 4개를 프로그램 점역기로 돌려 3개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 4,
+    "same": 3
+   },
+   "mismatch_samples": [
+    {
+     "text": "Beethoven",
+     "ueb": "⠠⠃⠑⠑⠹⠕⠧⠢",
+     "program": "⠠⠆⠑⠹⠕⠧⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.10.10",
+   "section": "UEB 10.10.10",
+   "pdf_page": 184,
+   "group": "lower_sign_rule",
+   "kind": "limit",
+   "text": "아래 점만 있는 칸으로만 된 묶음이 되면 마지막 묶음 약자나 단어 약자를 쓰지 않는다(따옴표는 아래 점으로 봄).",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 5개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 5,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "enough–bein'",
+     "ueb": "⠢⠠⠤⠆⠊⠝⠄",
+     "program": "⠢⠠⠤⠆⠔⠄"
+    },
+    {
+     "text": "in.....",
+     "ueb": "⠊⠝⠲⠲⠲⠲⠲",
+     "program": "⠔⠲⠲⠲⠲⠲"
+    },
+    {
+     "text": "Was that in?–in bounds?",
+     "ueb": "⠠⠴ ⠞ ⠔⠦⠠⠤⠊⠝ ⠃⠨⠙⠎⠦",
+     "program": "⠠⠴ ⠞ ⠔⠦⠠⠤⠔ ⠃⠨⠙⠎⠦"
+    }
+   ]
+  },
+  {
+   "id": "10.11.1",
+   "section": "UEB 10.11.1",
+   "pdf_page": 185,
+   "group": "bridging",
+   "kind": "limit",
+   "text": "붙임표 없이 붙여 쓴 합성어에서 두 낱말 경계에 걸치는 묶음 약자는 쓰지 않는다(sweetheart의 th 등).",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 30개를 프로그램 점역기로 돌려 7개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 30,
+    "same": 7
+   },
+   "mismatch_samples": [
+    {
+     "text": "Airedale",
+     "ueb": "⠠⠁⠊⠗⠑⠙⠁⠇⠑",
+     "program": "⠠⠁⠊⠗⠫⠁⠇⠑"
+    },
+    {
+     "text": "Bighorn",
+     "ueb": "⠠⠃⠊⠛⠓⠕⠗⠝",
+     "program": "⠠⠃⠊⠣⠕⠗⠝"
+    },
+    {
+     "text": "bottleneck",
+     "ueb": "⠃⠕⠞⠞⠇⠑⠝⠑⠉⠅",
+     "program": "⠃⠕⠞⠞⠇⠢⠑⠉⠅"
+    }
+   ]
+  },
+  {
+   "id": "10.11.2",
+   "section": "UEB 10.11.2",
+   "pdf_page": 186,
+   "group": "bridging",
+   "kind": "limit",
+   "text": "h가 따로 소리 나는 경우(foghorn, anthill)에는 ch, gh, sh, th, wh 약자와 the 약자를 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 12개를 프로그램 점역기로 돌려 4개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 12,
+    "same": 4
+   },
+   "mismatch_samples": [
+    {
+     "text": "Cunnyngham",
+     "ueb": "⠠⠉⠥⠝⠝⠽⠝⠛⠓⠁⠍",
+     "program": "⠠⠉⠥⠝⠝⠽⠝⠣⠁⠍"
+    },
+    {
+     "text": "knighthood",
+     "ueb": "⠅⠝⠊⠣⠞⠓⠕⠕⠙",
+     "program": "⠅⠝⠊⠣⠹⠕⠕⠙"
+    },
+    {
+     "text": "mishandle",
+     "ueb": "⠍⠊⠎⠓⠯⠇⠑",
+     "program": "⠍⠊⠩⠯⠇⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.11.3",
+   "section": "UEB 10.11.3",
+   "pdf_page": 186,
+   "group": "bridging",
+   "kind": "use",
+   "text": "be, con, dis가 첫 음절이면 하위 묶음 약자를 쓴다(10.6.1과 같음).",
+   "status": "implemented",
+   "note": "UEB 본문 예시 10개를 프로그램 점역기로 돌려 9개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 10,
+    "same": 9
+   },
+   "mismatch_samples": [
+    {
+     "text": "dishonest",
+     "ueb": "⠲⠓⠐⠕⠌",
+     "program": "⠲⠓⠕⠝⠑⠌"
+    }
+   ]
+  },
+  {
+   "id": "10.11.4",
+   "section": "UEB 10.11.4",
+   "pdf_page": 186,
+   "group": "bridging",
+   "kind": "limit",
+   "text": "ea가 접두사와 나머지에 걸치면 ea 약자를 쓰지 않는다(10.6.7과 같음).",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 4개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 4,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "preamplifier",
+     "ueb": "⠏⠗⠑⠁⠍⠏⠇⠊⠋⠊⠻",
+     "program": "⠏⠗⠂⠍⠏⠇⠊⠋⠊⠻"
+    },
+    {
+     "text": "readjust",
+     "ueb": "⠗⠑⠁⠙⠚⠥⠌",
+     "program": "⠗⠂⠙⠚⠥⠌"
+    },
+    {
+     "text": "reappoint",
+     "ueb": "⠗⠑⠁⠏⠏⠕⠔⠞",
+     "program": "⠗⠂⠏⠏⠕⠔⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.11.5",
+   "section": "UEB 10.11.5",
+   "pdf_page": 187,
+   "group": "bridging",
+   "kind": "use",
+   "text": "위 두 경우를 빼면, 낱말을 알아보거나 발음하는 데 방해가 되지 않는 한 접두사 경계에 걸치는 묶음 약자를 쓴다. 특히 ed, en, er, of, st.",
+   "status": "partial",
+   "note": "UEB 본문 예시 79개를 프로그램 점역기로 돌려 63개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 79,
+    "same": 63
+   },
+   "mismatch_samples": [
+    {
+     "text": "Benedict",
+     "ueb": "⠠⠃⠢⠫⠊⠉⠞",
+     "program": "⠠⠆⠝⠫⠊⠉⠞"
+    },
+    {
+     "text": "aerofoil",
+     "ueb": "⠁⠻⠕⠋⠕⠊⠇",
+     "program": "⠁⠻⠷⠕⠊⠇"
+    },
+    {
+     "text": "antitype",
+     "ueb": "⠁⠝⠞⠊⠞⠽⠏⠑",
+     "program": "⠁⠝⠞⠰⠽⠏⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.11.6",
+   "section": "UEB 10.11.6",
+   "pdf_page": 189,
+   "group": "bridging",
+   "kind": "use",
+   "text": "접두사를 붙이거나 합성어를 만들면서 새로 생긴 묶음 약자는, 알아보기 어렵게 하지 않는 한 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 20개를 프로그램 점역기로 돌려 15개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 20,
+    "same": 15
+   },
+   "mismatch_samples": [
+    {
+     "text": "heartsease",
+     "ueb": "⠓⠑⠜⠞⠎⠂⠎⠑",
+     "program": "⠓⠂⠗⠞⠎⠂⠎⠑"
+    },
+    {
+     "text": "motheaten",
+     "ueb": "⠍⠕⠹⠂⠞⠢",
+     "program": "⠍⠕⠮⠁⠞⠢"
+    },
+    {
+     "text": "northeast",
+     "ueb": "⠝⠕⠗⠹⠂⠌",
+     "program": "⠝⠕⠗⠮⠁⠌"
+    }
+   ]
+  },
+  {
+   "id": "10.11.7",
+   "section": "UEB 10.11.7",
+   "pdf_page": 189,
+   "group": "bridging",
+   "kind": "use",
+   "text": "낱말과 접미사 경계에 걸치는 묶음 약자는 대체로 쓴다(알아보기 어렵게 하지 않는 한).",
+   "status": "partial",
+   "note": "UEB 본문 예시 45개를 프로그램 점역기로 돌려 39개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 45,
+    "same": 39
+   },
+   "mismatch_samples": [
+    {
+     "text": "biscuity",
+     "ueb": "⠃⠊⠎⠉⠥⠊⠞⠽",
+     "program": "⠃⠊⠎⠉⠥⠰⠽"
+    },
+    {
+     "text": "Chisholm",
+     "ueb": "⠠⠡⠊⠎⠓⠕⠇⠍",
+     "program": "⠠⠡⠊⠩⠕⠇⠍"
+    },
+    {
+     "text": "fruity",
+     "ueb": "⠋⠗⠥⠊⠞⠽",
+     "program": "⠋⠗⠥⠰⠽"
+    }
+   ]
+  },
+  {
+   "id": "10.11.8",
+   "section": "UEB 10.11.8",
+   "pdf_page": 190,
+   "group": "bridging",
+   "kind": "use",
+   "text": "낱말 끝의 ea, bb, cc, ff, gg라도 뒤에 접미사가 붙거나 합성어 앞 낱말이면 하위 묶음 약자를 쓴다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 8개를 프로그램 점역기로 돌려 7개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 8,
+    "same": 7
+   },
+   "mismatch_samples": [
+    {
+     "text": "teatime",
+     "ueb": "⠞⠂⠐⠞",
+     "program": "⠞⠂⠞⠊⠍⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.11.9",
+   "section": "UEB 10.11.9",
+   "pdf_page": 191,
+   "group": "bridging",
+   "kind": "use",
+   "text": "이중모음과 이웃 글자에 걸치는 묶음 약자는 대체로 쓴다(이중모음이 합자로 인쇄된 경우는 빼고).",
+   "status": "implemented",
+   "note": "UEB 본문 예시 21개를 프로그램 점역기로 돌려 20개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 21,
+    "same": 20
+   },
+   "mismatch_samples": [
+    {
+     "text": "Betws-y-Coed",
+     "ueb": "⠠⠃⠑⠞⠺⠎⠤⠰⠽⠤⠠⠉⠕⠫",
+     "program": "⠠⠆⠞⠺⠎⠤⠰⠽⠤⠠⠉⠕⠫"
+    }
+   ]
+  },
+  {
+   "id": "10.12.1",
+   "section": "UEB 10.12.1",
+   "pdf_page": 191,
+   "group": "misc",
+   "kind": "limit",
+   "text": "줄임말·머리글자에서 글자를 하나씩 읽는다고 알 수 있으면 약자를 쓰지 않는다. 확실하지 않으면 쓴다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 11개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 11,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "WHO",
+     "ueb": "⠠⠠⠺⠓⠕",
+     "program": "⠠⠠⠱⠕"
+    },
+    {
+     "text": "OED",
+     "ueb": "⠠⠠⠕⠑⠙",
+     "program": "⠠⠠⠕⠫"
+    },
+    {
+     "text": "CH6-1234",
+     "ueb": "⠠⠠⠉⠓⠼⠋⠤⠼⠁⠃⠉⠙",
+     "program": "⠠⠠⠡⠼⠋⠤⠼⠁⠃⠉⠙"
+    }
+   ]
+  },
+  {
+   "id": "10.12.2",
+   "section": "UEB 10.12.2",
+   "pdf_page": 192,
+   "group": "misc",
+   "kind": "use",
+   "text": "10.12.1을 빼면 줄임말·머리글자에도 약자를 쓰되, 5.7.1·5.7.2와 10.1~10.11을 따른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 37개를 프로그램 점역기로 돌려 26개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 37,
+    "same": 26
+   },
+   "mismatch_samples": [
+    {
+     "text": "AFofL",
+     "ueb": "⠠⠁⠠⠋⠷⠠⠇",
+     "program": "⠠⠁⠋⠷⠇"
+    },
+    {
+     "text": "BEd",
+     "ueb": "⠠⠃⠠⠫",
+     "program": "⠠⠆⠙"
+    },
+    {
+     "text": "ed.",
+     "ueb": "⠫⠲",
+     "program": "⠑⠙⠲"
+    }
+   ]
+  },
+  {
+   "id": "10.12.3",
+   "section": "UEB 10.12.3",
+   "pdf_page": 194,
+   "group": "misc",
+   "kind": "use",
+   "text": "글 속에 들어 있는 이메일·웹 주소·파일 이름에는 약자를 쓴다. 따로 줄을 잡은 프로그램 코드는 약자 없이 적는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 12개를 프로그램 점역기로 돌려 4개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 12,
+    "same": 4
+   },
+   "mismatch_samples": [
+    {
+     "text": "braille_it_better@learn.org",
+     "ueb": "⠃⠗⠁⠊⠇⠇⠑⠨⠤⠊⠞⠨⠤⠃⠑⠞⠞⠻⠈⠁⠇⠑⠜⠝⠲⠕⠗⠛",
+     "program": "⠃⠗⠁⠊⠇⠇⠑⠨⠤⠊⠞⠨⠤⠆⠞⠞⠻⠈⠁⠇⠂⠗⠝⠲⠕⠗⠛"
+    },
+    {
+     "text": "http://www.99chances.com",
+     "ueb": "⠓⠞⠞⠏⠒⠸⠌⠸⠌⠺⠺⠺⠲⠼⠊⠊⠰⠄⠡⠨⠑⠎⠲⠉⠕⠍",
+     "program": "⠓⠞⠞⠏⠒⠸⠌⠸⠌⠺⠺⠺⠲⠼⠊⠊⠡⠨⠑⠎⠲⠉⠕⠍"
+    },
+    {
+     "text": "c:\\brailledocuments\\letters.txt",
+     "ueb": "⠉⠒⠸⠡⠃⠗⠁⠊⠇⠇⠑⠙⠕⠉⠥⠰⠞⠎⠸⠡⠇⠑⠞⠞⠻⠎⠲⠞⠭⠞",
+     "program": "⠉⠒\\⠃⠗⠁⠊⠇⠇⠫⠕⠉⠥⠰⠞⠎\\⠇⠑⠞⠞⠻⠎⠲⠞⠭⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.12.4",
+   "section": "UEB 10.12.4",
+   "pdf_page": 195,
+   "group": "misc",
+   "kind": "use",
+   "text": "사투리 낱말도 약자 규칙 10.1~10.11을 따른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 19개를 프로그램 점역기로 돌려 13개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 19,
+    "same": 13
+   },
+   "mismatch_samples": [
+    {
+     "text": "coulda",
+     "ueb": "⠉⠙⠁",
+     "program": "⠉⠳⠇⠙⠁"
+    },
+    {
+     "text": "somers",
+     "ueb": "⠎⠕⠍⠻⠎",
+     "program": "⠐⠎⠗⠎"
+    },
+    {
+     "text": "'stracted",
+     "ueb": "⠄⠌⠗⠁⠉⠞⠫",
+     "program": "⠄⠎⠞⠗⠁⠉⠞⠑⠙"
+    }
+   ]
+  },
+  {
+   "id": "10.12.5",
+   "section": "UEB 10.12.5",
+   "pdf_page": 196,
+   "group": "misc",
+   "kind": "use",
+   "text": "낱말 조각은 인쇄된 대로 적고 약자 규칙을 따른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 16개를 프로그램 점역기로 돌려 11개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 16,
+    "same": 11
+   },
+   "mismatch_samples": [
+    {
+     "text": "-in",
+     "ueb": "⠤⠊⠝",
+     "program": "⠤⠔"
+    },
+    {
+     "text": "-ed",
+     "ueb": "⠤⠫",
+     "program": "⠤⠑⠙"
+    },
+    {
+     "text": "-ar",
+     "ueb": "⠤⠜",
+     "program": "⠤⠁⠗"
+    }
+   ]
+  },
+  {
+   "id": "10.12.6",
+   "section": "UEB 10.12.6",
+   "pdf_page": 196,
+   "group": "misc",
+   "kind": "guide",
+   "text": "발음·음절에 따른 약자 규칙은 낱말을 알거나 사전에서 확인할 수 있을 때 적용하는 모범 방법이다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음.",
+   "check": {
+    "examples": 10,
+    "same": 4
+   },
+   "mismatch_samples": [
+    {
+     "text": "Bighorn",
+     "ueb": "⠠⠃⠊⠛⠓⠕⠗⠝",
+     "program": "⠠⠃⠊⠣⠕⠗⠝"
+    },
+    {
+     "text": "Hades",
+     "ueb": "⠠⠓⠁⠙⠑⠎",
+     "program": "⠠⠸⠓⠑⠎"
+    },
+    {
+     "text": "Newhaven",
+     "ueb": "⠠⠝⠑⠺⠓⠁⠧⠢",
+     "program": "⠠⠝⠑⠱⠁⠧⠢"
+    }
+   ]
+  },
+  {
+   "id": "10.12.7",
+   "section": "UEB 10.12.7",
+   "pdf_page": 197,
+   "group": "misc",
+   "kind": "guide",
+   "text": "낯선 낱말이라 발음·음절을 알기 어려우면 점역자가 판단해도 되고, 점역 프로그램의 결과를 따라도 된다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음.",
+   "check": {
+    "examples": 10,
+    "same": 3
+   },
+   "mismatch_samples": [
+    {
+     "text": "or]",
+     "ueb": "⠠⠃⠻⠑⠁",
+     "program": "⠕⠗⠨⠜"
+    },
+    {
+     "text": "or]",
+     "ueb": "⠠⠊⠐⠕",
+     "program": "⠕⠗⠨⠜"
+    },
+    {
+     "text": "or]",
+     "ueb": "⠠⠎⠊⠍⠐⠕",
+     "program": "⠕⠗⠨⠜"
+    }
+   ]
+  },
+  {
+   "id": "10.12.8",
+   "section": "UEB 10.12.8",
+   "pdf_page": 197,
+   "group": "misc",
+   "kind": "guide",
+   "text": "10.12.7은 특히 고유 이름, 줄임말, 지어낸 낱말, 영어화한 외래어에 해당한다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음."
+  },
+  {
+   "id": "10.12.9",
+   "section": "UEB 10.12.9",
+   "pdf_page": 197,
+   "group": "misc",
+   "kind": "guide",
+   "text": "어느 경우든 한 점역물 안에서는 같은 방식으로 일관되게 적는다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음."
+  },
+  {
+   "id": "10.12.10",
+   "section": "UEB 10.12.10",
+   "pdf_page": 197,
+   "group": "misc",
+   "kind": "guide",
+   "text": "이 지침 때문에 같은 낱말이 점역물마다 다르게 적힐 수 있음을 인정한다.",
+   "status": "guideline",
+   "note": "점역자가 판단할 때 따르는 지침. 프로그램이 따로 할 일은 없음."
+  },
+  {
+   "id": "10.12.11",
+   "section": "UEB 10.12.11",
+   "pdf_page": 197,
+   "group": "misc",
+   "kind": "use",
+   "text": "혀 짧은 소리로 적은 낱말도 기본 약자 규칙을 따른다.",
+   "status": "implemented",
+   "note": "UEB 본문 예시 2개를 프로그램 점역기로 돌려 2개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 2,
+    "same": 2
+   }
+  },
+  {
+   "id": "10.12.12",
+   "section": "UEB 10.12.12",
+   "pdf_page": 198,
+   "group": "misc",
+   "kind": "use",
+   "text": "낱말 안에 문장 부호나 표시가 끼어 있으면 인쇄된 대로 적고 기본 약자 규칙을 따른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 32개를 프로그램 점역기로 돌려 18개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 32,
+    "same": 18
+   },
+   "mismatch_samples": [
+    {
+     "text": "verY",
+     "ueb": "⠧⠻⠠⠽",
+     "program": "⠧"
+    },
+    {
+     "text": "grandEST",
+     "ueb": "⠛⠗⠯⠠⠠⠑⠌",
+     "program": "⠛⠗⠯⠑⠌"
+    },
+    {
+     "text": "THIRSTy",
+     "ueb": "⠠⠠⠹⠊⠗⠌⠠⠄⠽",
+     "program": "⠠⠹⠊⠗⠌⠽"
+    }
+   ]
+  },
+  {
+   "id": "10.12.13",
+   "section": "UEB 10.12.13",
+   "pdf_page": 199,
+   "group": "misc",
+   "kind": "use",
+   "text": "글자가 빠진 낱말은 인쇄된 대로 적고 1급 점자(5절)와 약자 규칙을 따른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 7개를 프로그램 점역기로 돌려 6개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 7,
+    "same": 6
+   },
+   "mismatch_samples": [
+    {
+     "text": "S—",
+     "ueb": "⠰⠠⠎⠐⠠⠤",
+     "program": "⠰⠠⠎⠠⠤"
+    }
+   ]
+  },
+  {
+   "id": "10.12.14",
+   "section": "UEB 10.12.14",
+   "pdf_page": 199,
+   "group": "misc",
+   "kind": "use",
+   "text": "말을 더듬거나 흐리거나 소리를 흉내 낸 낱말도 기본 약자 규칙을 따른다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 18개를 프로그램 점역기로 돌려 15개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 18,
+    "same": 15
+   },
+   "mismatch_samples": [
+    {
+     "text": "as-s-s-s",
+     "ueb": "⠵⠤⠰⠰⠎⠤⠎⠤⠎",
+     "program": "⠵⠤⠰⠎⠤⠰⠎⠤⠰⠎"
+    },
+    {
+     "text": "hm",
+     "ueb": "⠰⠓⠍",
+     "program": "⠓⠍"
+    },
+    {
+     "text": "lllittle",
+     "ueb": "⠰⠇⠇⠇⠊⠞⠞⠇⠑",
+     "program": "⠇⠇⠇⠊⠞⠞⠇⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.12.15",
+   "section": "UEB 10.12.15",
+   "pdf_page": 200,
+   "group": "misc",
+   "kind": "use",
+   "text": "철자를 하나씩 불러 준 낱말은 인쇄된 대로 적고 1급 점자(5절)와 대문자(8절) 규칙을 따른다.",
+   "status": "not_implemented",
+   "note": "UEB 본문 예시 4개를 프로그램 점역기로 돌려 0개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 4,
+    "same": 0
+   },
+   "mismatch_samples": [
+    {
+     "text": "Take the dog for a w-a-l-k.",
+     "ueb": "⠠⠞⠁⠅⠑ ⠮ ⠙⠕⠛ ⠿ ⠁ ⠰⠰⠺⠤⠁⠤⠇⠤⠅⠲",
+     "program": "⠠⠞⠁⠅⠑ ⠮ ⠙⠕⠛ ⠿ ⠁ ⠰⠺⠤⠁⠤⠰⠇⠤⠰⠅⠲"
+    },
+    {
+     "text": "w-i-n-d-o-w",
+     "ueb": "⠰⠰⠺⠤⠊⠤⠝⠤⠙⠤⠕⠤⠺",
+     "program": "⠰⠺⠤⠊⠤⠰⠝⠤⠰⠙⠤⠕⠤⠰⠺"
+    },
+    {
+     "text": "M-a-c-L-e-a-n",
+     "ueb": "⠰⠰⠠⠍⠤⠁⠤⠉⠤⠠⠇⠤⠑⠤⠁⠤⠝",
+     "program": "⠰⠠⠍⠤⠁⠤⠰⠉⠤⠰⠠⠇⠤⠰⠑⠤⠁⠤⠰⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.12.16",
+   "section": "UEB 10.12.16",
+   "pdf_page": 200,
+   "group": "misc",
+   "kind": "use",
+   "text": "말을 더듬어 반복한 낱말은 인쇄된 대로 적고 1급 점자와 약자 규칙을 따른다.",
+   "status": "implemented",
+   "note": "UEB 본문 예시 26개를 프로그램 점역기로 돌려 25개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 26,
+    "same": 25
+   },
+   "mismatch_samples": [
+    {
+     "text": "s-s-s-s-super-st-stition",
+     "ueb": "⠰⠰⠎⠤⠎⠤⠎⠤⠎⠤⠰⠄⠎⠥⠏⠻⠤⠎⠞⠤⠌⠊⠰⠝",
+     "program": "⠰⠎⠤⠰⠎⠤⠰⠎⠤⠰⠎⠤⠎⠥⠏⠻⠤⠎⠞⠤⠌⠊⠰⠝"
+    }
+   ]
+  },
+  {
+   "id": "10.12.17",
+   "section": "UEB 10.12.17",
+   "pdf_page": 201,
+   "group": "misc",
+   "kind": "limit",
+   "text": "음절로 나누어 적은 낱말은 기본 약자 규칙을 따르되, 한 음절에 알파벳 단어 약자를 쓰지 않는다.",
+   "status": "partial",
+   "note": "UEB 본문 예시 13개를 프로그램 점역기로 돌려 9개가 UEB와 같게 나옴.",
+   "check": {
+    "examples": 13,
+    "same": 9
+   },
+   "mismatch_samples": [
+    {
+     "text": "for-ev-er-more",
+     "ueb": "⠿⠤⠑⠧⠤⠻⠤⠍⠕⠗⠑",
+     "program": "⠿⠤⠑⠧⠤⠑⠗⠤⠍"
+    },
+    {
+     "text": "not-with-stand-ing",
+     "ueb": "⠝⠕⠞⠤⠾⠤⠌⠯⠤⠔⠛",
+     "program": "⠝⠤⠾⠤⠌⠯⠤⠔⠛"
+    },
+    {
+     "text": "al-be-it",
+     "ueb": "⠰⠁⠇⠤⠃⠑⠤⠊⠞",
+     "program": "⠁⠇⠤⠃⠑⠤⠭"
+    }
+   ]
+  },
+  {
+   "id": "10.13.1",
+   "section": "UEB 10.13.1",
+   "pdf_page": 202,
+   "group": "word_division",
+   "kind": "use",
+   "text": "줄 끝에서 낱말을 나눌 때는 음절 사이에서 나누며, 그 때문에 약자를 못 쓰게 되어도 괜찮다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "anteroom",
+     "ueb": "⠁⠝⠞⠑⠤",
+     "program": "⠁⠝⠞⠻⠕⠕⠍"
+    },
+    {
+     "text": "bandanna",
+     "ueb": "⠃⠁⠝⠤",
+     "program": "⠃⠯⠁⠝⠝⠁"
+    },
+    {
+     "text": "Catherine",
+     "ueb": "⠠⠉⠁⠹⠤",
+     "program": "⠠⠉⠁⠮⠗⠔⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.13.2",
+   "section": "UEB 10.13.2",
+   "pdf_page": 202,
+   "group": "word_division",
+   "kind": "use",
+   "text": "붙임표가 있는 낱말을 그 붙임표에서 나누면 원래 점자 모양을 유지한다. 아래 점만 남게 되면 하위 단어 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "about-face",
+     "ueb": "⠁⠃⠤",
+     "program": "⠁⠃⠤⠋⠁⠉⠑"
+    },
+    {
+     "text": "air-conditioned",
+     "ueb": "⠁⠊⠗⠤",
+     "program": "⠁⠊⠗⠤⠒⠙⠊⠰⠝⠫"
+    },
+    {
+     "text": "Aix-en-Provence",
+     "ueb": "⠠⠁⠊⠭⠤⠑⠝⠤",
+     "program": "⠠⠁⠊⠭⠤⠑⠝⠤⠠⠏⠗⠕⠧⠰⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.13.3",
+   "section": "UEB 10.13.3",
+   "pdf_page": 203,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄을 나눈 낱말의 일부에는 홀로 있는 것처럼 보여도 알파벳·온칸 단어 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "childlike",
+     "ueb": "⠡⠊⠇⠙⠤",
+     "program": "⠡⠊⠇⠙⠇⠊⠅⠑"
+    },
+    {
+     "text": "everything",
+     "ueb": "⠐⠑⠽⠤",
+     "program": "⠐⠑⠽⠹⠬"
+    },
+    {
+     "text": "furthermore",
+     "ueb": "⠋⠥⠗⠮⠗⠤",
+     "program": "⠋⠥⠗⠮⠗⠍⠕⠗⠑"
+    }
+   ]
+  },
+  {
+   "id": "10.13.4",
+   "section": "UEB 10.13.4",
+   "pdf_page": 204,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄을 나눠 ing가 줄 맨 앞에 오면 ing 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "meningitis",
+     "ueb": "⠍⠢⠤",
+     "program": "⠍⠢⠬⠊⠞⠊⠎"
+    },
+    {
+     "text": "nightingale",
+     "ueb": "⠝⠊⠣⠞⠤",
+     "program": "⠝⠊⠣⠞⠬⠁⠇⠑"
+    },
+    {
+     "text": "showering.)",
+     "ueb": "⠩⠪⠻⠤",
+     "program": "⠩⠪⠻⠬⠲⠐⠜"
+    }
+   ]
+  },
+  {
+   "id": "10.13.5",
+   "section": "UEB 10.13.5",
+   "pdf_page": 204,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄을 나눈 낱말에서도 하위 부호 규칙(위쪽 점 칸이 있어야 함)을 지킨다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "“Comin'?”",
+     "ueb": "⠦⠠⠉⠕⠍⠤",
+     "program": "⠦⠠⠉⠕⠍⠔⠄⠦⠴"
+    },
+    {
+     "text": "(Disentangle",
+     "ueb": "⠐⠣⠠⠲⠢⠤",
+     "program": "⠐⠣⠠⠲⠢⠞⠁⠝⠛⠇⠑"
+    },
+    {
+     "text": "disinherit",
+     "ueb": "⠲⠊⠝⠤",
+     "program": "⠲⠔⠓⠻⠊⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.13.6",
+   "section": "UEB 10.13.6",
+   "pdf_page": 205,
+   "group": "word_division",
+   "kind": "use",
+   "text": "줄표로 이어진 낱말은 줄표 앞이나 뒤에서 줄을 나눌 수 있다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "always—except",
+     "ueb": "⠁⠇⠺",
+     "program": "⠁⠇⠺⠠⠤⠑⠭⠉⠑⠏⠞"
+    },
+    {
+     "text": "or]",
+     "ueb": "⠁⠇⠺⠠⠤",
+     "program": "⠕⠗⠨⠜"
+    }
+   ]
+  },
+  {
+   "id": "10.13.7",
+   "section": "UEB 10.13.7",
+   "pdf_page": 205,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄표 앞뒤의 be, were, his, was에는 줄이 바뀌어 떨어져 있어도 하위 단어 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "korean_rule": [
+    "한글 규정 제37항 [붙임](PDF 30쪽): be, enough, his, in, was, were는 로마자 종료표 앞에서도 풀어 쓴다."
+   ]
+  },
+  {
+   "id": "10.13.8",
+   "section": "UEB 10.13.8",
+   "pdf_page": 205,
+   "group": "word_division",
+   "kind": "use",
+   "text": "줄표와 함께 쓴 enough, in은 줄이 바뀌어도 약자 모양을 유지하되 하위 부호 규칙을 따른다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음."
+  },
+  {
+   "id": "10.13.9",
+   "section": "UEB 10.13.9",
+   "pdf_page": 205,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄을 나눌 때 be, con, dis가 붙임표 앞에 오거나 새 줄 맨 앞에 오면 하위 묶음 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "bacon",
+     "ueb": "⠃⠁⠤",
+     "program": "⠃⠁⠉⠕⠝"
+    },
+    {
+     "text": "“Disgusting!”",
+     "ueb": "⠦⠠⠙⠊⠎⠤",
+     "program": "⠦⠠⠲⠛⠥⠌⠬⠖⠴"
+    },
+    {
+     "text": "disobedient",
+     "ueb": "⠲⠕⠤",
+     "program": "⠲⠕⠃⠫⠊⠢⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.13.10",
+   "section": "UEB 10.13.10",
+   "pdf_page": 206,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄을 나눌 때 ea, bb, cc, ff, gg가 붙임표 앞에 오거나 새 줄 맨 앞에 오면 하위 묶음 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "eggnog",
+     "ueb": "⠑⠛⠛⠤",
+     "program": "⠑⠶⠝⠕⠛"
+    },
+    {
+     "text": "motheaten",
+     "ueb": "⠍⠕⠹⠤",
+     "program": "⠍⠕⠮⠁⠞⠢"
+    },
+    {
+     "text": "peanut",
+     "ueb": "⠏⠑⠁⠤",
+     "program": "⠏⠂⠝⠥⠞"
+    }
+   ]
+  },
+  {
+   "id": "10.13.11",
+   "section": "UEB 10.13.11",
+   "pdf_page": 206,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "줄을 나눈 낱말의 새 줄 맨 앞에는 어미 약자를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "carefully",
+     "ueb": "⠉⠜⠑⠤",
+     "program": "⠉⠜⠑⠰⠇⠇⠽"
+    },
+    {
+     "text": "CEMENT.)",
+     "ueb": "⠠⠠⠉⠑⠤",
+     "program": "⠠⠠⠉⠑⠰⠞⠲⠐⠜"
+    },
+    {
+     "text": "confusion?",
+     "ueb": "⠒⠋⠥⠤",
+     "program": "⠒⠋⠥⠨⠝⠦"
+    }
+   ]
+  },
+  {
+   "id": "10.13.12",
+   "section": "UEB 10.13.12",
+   "pdf_page": 207,
+   "group": "word_division",
+   "kind": "limit",
+   "text": "축어는 줄 사이에서 나누지 않는다. 축어를 품은 낱말은 나누어도 축어 사용 여부를 원래대로 유지한다.",
+   "status": "not_applicable",
+   "note": "프로그램은 한 줄 안에서만 보여 주고 줄 끝에서 낱말을 나누지 않으므로 해당 없음.",
+   "mismatch_samples": [
+    {
+     "text": "aboveground",
+     "ueb": "⠁⠃⠧⠤",
+     "program": "⠁⠃⠕⠧⠑⠛⠗⠨⠙"
+    },
+    {
+     "text": "afterimage",
+     "ueb": "⠁⠋⠞⠻⠤",
+     "program": "⠁⠋⠞⠻⠊⠍⠁⠛⠑"
+    },
+    {
+     "text": "befriending.“",
+     "ueb": "⠆⠋⠗⠊⠢⠙⠤",
+     "program": "⠆⠋⠗⠊⠢⠙⠬⠲⠦"
+    }
+   ]
+  },
+  {
+   "id": "13.2.1",
+   "section": "UEB 13.2.1",
+   "pdf_page": 228,
+   "group": "foreign",
+   "kind": "limit",
+   "text": "외국어로 보는 낱말·구절·문단에는(그 안의 영어 낱말까지) 약자를 쓰지 않는다. 다만 그 나라 점자 기관의 지침이 있으면 달리 할 수 있다.",
+   "status": "not_applicable",
+   "note": "영어 모드에는 외국어 구절을 따로 표시하는 기능이 없으므로 해당 없음."
+  },
+  {
+   "id": "13.2.2",
+   "section": "UEB 13.2.2",
+   "pdf_page": 230,
+   "group": "foreign",
+   "kind": "limit",
+   "text": "약자 없이 적은 외국어 부분에는 1급 점자표를 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "영어 모드에는 외국어 구절을 따로 표시하는 기능이 없으므로 해당 없음."
+  },
+  {
+   "id": "13.2.3",
+   "section": "UEB 13.2.3",
+   "pdf_page": 230,
+   "group": "foreign",
+   "kind": "use",
+   "text": "영어화한 낱말·구절·고유 이름·호칭에는 UEB 약자를 쓰되, 발음이나 구조를 지나치게 흐리는 약자는 쓰지 않는다.",
+   "status": "not_applicable",
+   "note": "영어 모드에는 외국어 구절을 따로 표시하는 기능이 없으므로 해당 없음."
+  },
+  {
+   "id": "13.3.1",
+   "section": "UEB 13.3.1",
+   "pdf_page": 230,
+   "group": "foreign",
+   "kind": "use",
+   "text": "그리스어에서 온 낱말의 sth에서는 st 대신 th(또는 the) 약자를 쓴다.",
+   "status": "not_applicable",
+   "note": "영어 모드에는 외국어 구절을 따로 표시하는 기능이 없으므로 해당 없음."
+  },
+  {
+   "id": "13.3.2",
+   "section": "UEB 13.3.2",
+   "pdf_page": 230,
+   "group": "foreign",
+   "kind": "use",
+   "text": "스칸디나비아어에서 온 낱말의 aar(å)에서는 ar 약자를 쓴다.",
+   "status": "not_applicable",
+   "note": "영어 모드에는 외국어 구절을 따로 표시하는 기능이 없으므로 해당 없음."
+  },
+  {
+   "id": "13.3.3",
+   "section": "UEB 13.3.3",
+   "pdf_page": 230,
+   "group": "foreign",
+   "kind": "limit",
+   "text": "웨일스어에서 온 낱말의 edd에서는 ed 약자를 쓰지 않고, off에서는 of 대신 ff 약자를 쓴다.",
+   "status": "not_applicable",
+   "note": "영어 모드에는 외국어 구절을 따로 표시하는 기능이 없으므로 해당 없음."
+  }
+ ]
+}
