@@ -125,6 +125,14 @@ class BrailleEngine:
     # UEB 10.5.1: 아래 점만 쓰는 부호(따옴표 포함)에 붙으면 이 약자를 쓰지 않고 풀어 쓴다.
     LOWER_WORDSIGN_WORDS = {"be", "were", "his", "was"}
     UPPER_DOTS = 0x01 | 0x08  # 1점, 4점
+    # UEB 10.9.3: 축어 목록에 없는 긴 낱말에서도 쓰는 축어. (b) children은 뒤에 모음·y가 없을 때,
+    # (c)의 일곱 개는 낱말 맨 앞이고 뒤에 모음·y가 없을 때만 축어로 읽는다.
+    SHORTFORM_ANYWHERE = ("braille", "great")
+    SHORTFORM_ANYWHERE_BEFORE_CONSONANT = ("children",)
+    SHORTFORM_WORD_START = ("blind", "first", "friend", "good", "letter", "little", "quick")
+    # UEB 10.9.5: s를 붙여도 축어로 쓰지 않는 세 낱말 (abouts, almosts, hims)
+    SHORTFORM_NO_S = ("about", "almost", "him")
+    VOWELS_Y = set("aeiouy")
     def __init__(self, base_data_dir: Optional[str] = None):
         self.base_data_dir = base_data_dir
         lexicon_path = find_data_file("lexicon_en.json", base_data_dir)
@@ -320,6 +328,7 @@ class BrailleEngine:
         self.rev_shortforms = {}
         self.shortform_index = {}
         self.shortform_root_chars = {}
+        self.shortform_letters = {}
 
         sf_path = self._find_file("en_shortform.json")
         if not os.path.exists(sf_path):
@@ -335,8 +344,9 @@ class BrailleEngine:
         for section_name, bucket in buckets.items():
             section = sf_data.get(section_name) or {}
             section_rule = section.get("rule") or {}
-            for _key, item in (section.get("items") or {}).items():
+            for key, item in (section.get("items") or {}).items():
                 word = item["word"].lower()
+                self.shortform_letters[word] = key.lower()
                 specified = "allowedSuffixes" in item
                 suffixes = item.get("allowedSuffixes", section_rule.get("allowedSuffixes", []))
                 bucket[word] = item["unicode"]
@@ -571,6 +581,8 @@ class BrailleEngine:
                 prefix_indicator = ""
                 if came_from_numeric and not cap_indicator and braille_word and braille_word[0] in self.grade1_cells:
                     prefix_indicator = self.grade1_prefix
+                elif standing and not came_from_numeric:
+                    prefix_indicator, braille_word = self._avoid_shortform_reading(lower, braille_word)
                 if (
                     cap_indicator
                     and lower in self.isolated_letters
@@ -619,6 +631,60 @@ class BrailleEngine:
             if index in pairs:
                 marked.add(pairs[index])
         return marked
+
+    def _avoid_shortform_reading(self, word: str, braille: str) -> Tuple[str, str]:
+        """축어가 아닌 글자 묶음이 축어로 읽히지 않게 한다. (1급 표시, 고친 점자)를 돌려준다.
+        UEB 10.9.6: 묶음 약자 때문에 축어와 같아지면 그 약자를 쓰지 않고 글자로 적는다 (mst, shd).
+        UEB 10.9.7·5.7.2: 홀로 쓰인 글자 묶음이 축어와 같으면 앞에 1급 점자표 ⠰ (al, hm, CD).
+        UEB 10.9.8: 낱말 맨 앞이 축어를 품은 낱말로 읽히면 앞에 ⠰ (Blvd, LLC).
+        UEB 10.9.9: 낱말 중간이 축어로 읽히면 앞에 1급 단어표 ⠰⠰를 적고 약자를 쓰지 않는다 (ozbrl)."""
+        stem, tail = word, ""
+        apostrophe = re.match(r"^([a-z]+)('[a-z]+)$", word)
+        if apostrophe and apostrophe.group(2) in self.apostrophe_word_suffixes:
+            stem, tail = apostrophe.groups()
+        if not stem.isalpha() or stem in self.shortform_index:
+            return "", braille
+        tail_braille = self._spell_chars(tail)
+        if tail and not braille.endswith(tail_braille):
+            return "", braille
+        core = braille[: len(braille) - len(tail_braille)]
+        letters = self._spell_chars(stem)
+
+        def reads_as_shortform(cells: str) -> bool:
+            if cells in self.rev_shortforms:
+                return True
+            # UEB 10.9.5: 축어 + s (abouts, almosts, hims는 빼고)
+            base = cells[:-1]
+            return (
+                cells.endswith(self.spelling.get("s", "\0"))
+                and base in self.rev_shortforms
+                and self.rev_shortforms[base] not in self.SHORTFORM_NO_S
+                and stem != self.rev_shortforms[base] + "s"
+            )
+
+        if reads_as_shortform(core):
+            if core != letters and not reads_as_shortform(letters):
+                return "", letters + tail_braille
+            return self.grade1_prefix, letters + tail_braille
+        for sf_word in self.SHORTFORM_WORD_START + self.SHORTFORM_ANYWHERE + self.SHORTFORM_ANYWHERE_BEFORE_CONSONANT:
+            abbr = self.shortform_letters.get(sf_word)
+            data = self.shortform_index.get(sf_word)
+            if not abbr or not data or sf_word in stem:
+                continue
+            needs_consonant = sf_word not in self.SHORTFORM_ANYWHERE
+            if core.startswith(data["unicode"]) and stem.startswith(abbr):
+                following = stem[len(abbr):len(abbr) + 1]
+                if following and not (needs_consonant and following in self.VOWELS_Y):
+                    return self.grade1_prefix, braille
+            if sf_word in self.SHORTFORM_WORD_START:
+                continue
+            index = stem.find(abbr, 1)
+            while index > 0:
+                following = stem[index + len(abbr):index + len(abbr) + 1]
+                if data["unicode"] in core and not (needs_consonant and following in self.VOWELS_Y):
+                    return self.grade1_prefix * 2, letters + tail_braille
+                index = stem.find(abbr, index + 1)
+        return "", braille
 
     def _translate_word(self, word: str, standing_alone: bool = True) -> str:
         if (
@@ -779,6 +845,9 @@ class BrailleEngine:
             return False
         if rule.get("requiresFollowingLetters") and at_end:
             return False
+        if rule.get("requiresPrecedingLetters") and at_start and whole_word:
+            # UEB 10.8.1: 어미 약자는 앞에 글자가 있을 때만 쓴다 (낱말 맨 앞의 ⠰는 1급 점자표).
+            return False
         if not rule.get("canPrecedeLetters", True) and not at_end:
             return False
         return True
@@ -827,6 +896,10 @@ class BrailleEngine:
         return self._decode_word_token(b_token)
 
     def _strip_capital(self, token: str) -> Tuple[str, Optional[str]]:
+        grade1_cap_word = self.letter_grade1_indicator + self.CAP_WORD
+        if self.letter_grade1_indicator and token.startswith(grade1_cap_word) and len(token) > len(grade1_cap_word):
+            # UEB 5.8.1: ⠰⠠⠠ = 1급 점자표 + 대문자 단어표 (CD ⠰⠠⠠⠉⠙)
+            return self.letter_grade1_indicator + token[len(grade1_cap_word):], "word"
         grade1_cap = self.letter_grade1_indicator + self.CAP_LETTER
         if self.letter_grade1_indicator and token.startswith(grade1_cap) and len(token) > len(grade1_cap):
             # UEB 5.2: ⠰⠠⠃ = 1급 점자표 + 대문자 B
@@ -862,6 +935,11 @@ class BrailleEngine:
         def finish(text: str) -> str:
             return leading + self._apply_capital(text, cap_mode) + trailing
 
+        grade1 = self._decode_grade1_letters(target)
+        if grade1 is not None:
+            text, inner_cap = grade1
+            return leading + self._apply_capital(text, cap_mode or inner_cap) + trailing
+
         glued_apostrophe = "'" in leading or "'" in trailing
         if standing_alone and not glued_apostrophe and target in self.braille_to_wordsign:
             return finish(self.braille_to_wordsign[target])
@@ -881,6 +959,51 @@ class BrailleEngine:
         if core and core != token:
             return finish(decoded)
         return self._apply_capital(decoded, cap_mode)
+
+    def _decode_grade1_letters(self, target: str) -> Optional[Tuple[str, Optional[str]]]:
+        """UEB 10.9.7~10.9.9: ⠰ 뒤 글자 묶음은 축어가 아니고, ⠰⠰ 뒤는 약자 없이 글자로만 적었다."""
+        g1 = self.grade1_prefix
+        if not g1 or not target.startswith(g1):
+            return None
+        word_mode = target.startswith(g1 * 2)
+        rest = target[len(g1) * (2 if word_mode else 1):]
+        rest, cap_mode = self._strip_capital(rest)
+        hyphen = self.punctuation.get("-", "-")
+        cut = rest.find(hyphen)
+        if cut > 0 and rest[cut - 1] == self.CAP_LETTER:
+            return None  # 줄표(⠠⠤)는 원래 방식대로 읽는다.
+        if hyphen in rest and not word_mode:
+            # Al-Azar ⠰⠠⠁⠇⠤⠠⠁⠵⠜: 1급 점자표는 붙임표 앞 낱말에만 걸린다.
+            head, _, tail = rest.partition(hyphen)
+            first = self._decode_grade1_letters(g1 + head)
+            if first is None or not tail:
+                return None
+            return first[0] + "-" + self._decode_word_token(tail), cap_mode
+        letter_of = {braille: char for char, braille in self.spelling.items() if char.isalpha() and len(braille) == 1}
+        if len(rest) < 2 or rest[0] not in letter_of or g1 in rest or hyphen in rest:
+            return None
+        if word_mode:
+            letters = []
+            for cell in rest:
+                if cell in letter_of:
+                    letters.append(letter_of[cell])
+                    continue
+                if cell == self.CAP_LETTER:
+                    letters.append(None)  # 다음 글자를 대문자로
+                    continue
+                return None
+            out = []
+            upper_next = False
+            for char in letters:
+                if char is None:
+                    upper_next = True
+                    continue
+                out.append(char.upper() if upper_next else char)
+                upper_next = False
+            return "".join(out), cap_mode
+        first = letter_of[rest[0]]
+        tail = self._decode_contracted(rest[1:], allow_shortform=False, final_fragment=True)
+        return first + tail, cap_mode
 
     def _peel_edge_punctuation(self, token: str) -> Tuple[str, str, str]:
         """뒤쪽 부호를 먼저 떼어 his. / his?처럼 약어와 같은 칸이 부호로 읽히지 않게 한다."""

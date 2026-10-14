@@ -217,6 +217,7 @@
       "priority": 60,
       "rule": {
         "canStandAlone": false,
+        "requiresPrecedingLetters": true,
         "canFollowLetters": true,
         "canPrecedeLetters": true,
         "allowPunctuation": true,
