@@ -333,6 +333,17 @@ def test_canonical_roundtrip():
         assert braille == expected, (text, braille, expected)
         assert back == text, (text, braille, back)
 
+    # UEB에서 가져온 영어 묶음은 영어 단원에서만 쓴다 (중연 결정, 2026-10-14).
+    with open(find_data_file("curriculum.json"), "r", encoding="utf-8") as f:
+        curriculum = json.load(f)
+    ueb_bundles = {"en_spell.json", "en_shortform.json", "en_contractions.json", "ueb_number_rules.json"}
+    for unit in curriculum["units"]:
+        if unit.get("lang") == "en":
+            continue
+        for item in (unit.get("source") or {}).get("slices", []):
+            assert item.get("bundle") not in ueb_bundles, (unit["id"], item.get("bundle"))
+            assert (item.get("prefix") or {}).get("bundle") not in ueb_bundles, unit["id"]
+
     print("Canonical checks passed.")
 
 

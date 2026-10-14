@@ -23,6 +23,13 @@ const BUNDLE_NAMES = new Set([
   'ueb_number_rules.json'
 ]);
 
+const UEB_BUNDLES = new Set([
+  'en_spell.json',
+  'en_shortform.json',
+  'en_contractions.json',
+  'ueb_number_rules.json'
+]);
+
 async function readJson(name) {
   const url = dataUrl(name);
   try {
@@ -61,7 +68,8 @@ export function cardsFor(unit, data) {
   if (unit.source?.kind === 'static') {
     return (unit.source.cards || []).map(staticCard);
   }
-  const slices = unit.source?.slices || [];
+  // UEB에서 가져온 영어 묶음은 영어 단원에서만 쓴다. 한글 단원은 한글 점자 규정만 따른다.
+  const slices = (unit.source?.slices || []).filter((slice) => unit.lang === 'en' || !UEB_BUNDLES.has(slice.bundle));
   const cards = [];
   for (const slice of slices) cards.push(...cardsFromSlice(slice, data));
   return cards;
@@ -300,6 +308,9 @@ function symbolCards(node, slice) {
       const step = makeStep(item.char, brailleDots(item.braille), item.braille);
       const card = makeCard({ letter: item.char, steps: [step], kind: 'mark' });
       card.line = `${word}(${item.char})의 점형은 ${card.dotText}입니다.`;
+      // 한글 규정 제33항: 한글과 점형이 다른 부호(, : ; ―)는 한글 문장 안에서 한글 점자로 적는다.
+      const note = (slice.notes || {})[item.name];
+      if (note) card.line += ` ${note}`;
       return card;
     });
 }
