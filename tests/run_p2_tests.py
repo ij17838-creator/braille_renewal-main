@@ -423,6 +423,28 @@ UEB_CONTRACTION_CASES = [
     ("cont", "⠒⠞"),
     ("Beethoven", "⠠⠃⠑⠑⠹⠕⠧⠢"),
     ("become", "⠆⠉⠕⠍⠑"),
+    # 4묶음: 낱말 안 대문자·곧은 큰따옴표 (UEB 10.6.3, 10.6.6, 10.8.2, 10.9.4, 10.12.12)
+    ("McConnell", "⠠⠍⠉⠠⠉⠕⠝⠝⠑⠇⠇"),
+    ("O'Connor", "⠠⠕⠄⠠⠉⠕⠝⠝⠕⠗"),
+    ("MetroDisco", "⠠⠍⠑⠞⠗⠕⠠⠙⠊⠎⠉⠕"),
+    ("BeLinda", "⠠⠃⠑⠠⠇⠔⠙⠁"),
+    ("conCUR", "⠉⠕⠝⠠⠠⠉⠥⠗"),
+    ("DISlike", "⠠⠠⠙⠊⠎⠠⠄⠇⠊⠅⠑"),
+    ("BEd", "⠠⠃⠠⠫"),
+    ("SeaWorld", "⠠⠎⠑⠁⠠⠸⠺"),
+    ("TEAspoon", "⠠⠠⠞⠑⠁⠠⠄⠎⠏⠕⠕⠝"),
+    ("AttenTION!", "⠠⠁⠞⠞⠢⠠⠠⠞⠊⠕⠝⠖"),
+    ("ELesson", "⠠⠑⠠⠇⠑⠎⠎⠕⠝"),
+    ("QuickTime", "⠠⠟⠅⠠⠐⠞"),
+    ("GREATgreatGrandChildren", "⠠⠠⠛⠗⠞⠠⠄⠛⠗⠞⠠⠛⠗⠯⠠⠡⠝"),
+    ("GodChildren's", "⠠⠛⠕⠙⠠⠡⠝⠄⠎"),
+    ("StepChildren.org", "⠠⠌⠑⠏⠠⠡⠊⠇⠙⠗⠢⠲⠕⠗⠛"),
+    ("PenFriend", "⠠⠏⠢⠠⠋⠗⠊⠢⠙"),
+    ("FirstAmerica", "⠠⠋⠊⠗⠌⠠⠁⠍⠻⠊⠉⠁"),
+    ("HANDsome", "⠠⠠⠓⠯⠠⠄⠐⠎"),
+    ("founDAtion", "⠋⠳⠝⠠⠙⠠⠁⠰⠝"),
+    ("verY", "⠧⠻⠠⠽"),
+    ("“Belinda!”", "⠦⠠⠆⠇⠔⠙⠁⠖⠴"),
 ]
 
 

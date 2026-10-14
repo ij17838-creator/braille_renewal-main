@@ -133,6 +133,7 @@ class BrailleEngine:
     # UEB 10.9.5: s를 붙여도 축어로 쓰지 않는 세 낱말 (abouts, almosts, hims)
     SHORTFORM_NO_S = ("about", "almost", "him")
     VOWELS_Y = set("aeiouy")
+    CAP_WORD_TERMINATOR = "\u2820\u2804"
     WORD_BEGINNING_SIGNS = ("ing", "be", "con", "dis")
     OPENING_PUNCTUATION = "([{\"'“‘«"
     WORD_BEGINNING_BREAKS = "-‐‑–—―"
@@ -519,6 +520,8 @@ class BrailleEngine:
         return False
 
     def text_to_braille(self, text: str) -> str:
+        # 곧은 큰따옴표(")는 놓인 자리로 여는·닫는 따옴표를 가린다 (UEB 예시 "Belinda!" ⠦⠠⠆⠇⠔⠙⠁⠖⠴).
+        text = re.sub(r'(^|(?<=[\s(\[{]))"', "“", text).replace('"', "”")
         tokens = self._token_re.findall(text)
         two_cell_quotes = self._two_cell_quote_indexes(tokens)
         result = []
@@ -554,6 +557,13 @@ class BrailleEngine:
             if in_numeric_mode and token in self.terminating_connectors:
                 result.append(self.terminating_connectors[token])
                 in_numeric_mode = False
+                continue
+
+            if re.match(r"^[A-Za-z]+(?:['’][A-Za-z]+)?$", token) and self._has_interior_capital(token):
+                in_numeric_mode = False
+                self._word_beginning = self._at_word_beginning(tokens, index)
+                result.append(self._translate_mixed_case(token, standing=self._token_stands_alone(tokens, index)))
+                self._word_beginning = True
                 continue
 
             if re.match(r"^[A-Za-z]+(?:['’][A-Za-z]+)?$", token):
@@ -611,7 +621,10 @@ class BrailleEngine:
                 if previous[-1:].isalpha():
                     # UEB 10.6.2 (dis'armony ⠙⠊⠎⠄⠜⠍⠕⠝⠽): 낱말 안 아포스트로피 뒤에도 약자를 쓰되 낱말 처음은 아니다.
                     self._word_beginning = False
-                    word = self._contract_surface(lower[1:], whole_word=True, standing_alone=False)
+                    if token[1:].islower():
+                        word = self._contract_surface(lower[1:], whole_word=True, standing_alone=False)
+                    else:
+                        word = self._translate_mixed_case(token[1:], first=False, standing=False)  # O'Connor ⠠⠕⠄⠠⠉⠕⠝⠝⠕⠗
                 else:
                     # UEB 10.6.2 ('display ⠄⠲⠏⠇⠁⠽): 여는 작은따옴표 뒤는 낱말 처음이다.
                     self._word_beginning = self._at_word_beginning(tokens, index)
@@ -651,6 +664,68 @@ class BrailleEngine:
             if index in pairs:
                 marked.add(pairs[index])
         return marked
+
+    def _has_interior_capital(self, token: str) -> bool:
+        return bool(re.search(r"[a-z]['’]?[A-Z]|[A-Z]['’]?[A-Z]+['’]?[a-z]|[A-Z]['’][A-Z]", token))
+
+    def _translate_mixed_case(self, token: str, first: bool = True, standing: bool = True) -> str:
+        """UEB 10.12.12: 낱말 안 대문자 표시가 있어도 기본 약자 규칙을 따른다. 대문자 표시 뒤에서는
+        be·con·dis(10.6.3)·ea 등(10.6.6)·어미 약자(10.8.2)를 쓰지 않고, 축어는 10.9.3 조건일 때만 쓴다(10.9.4)."""
+        token = token.replace("’", "'")
+        parts = []
+        for part in re.findall(r"[A-Z]+|[a-z]+|'", token):
+            if part.isupper() and len(part) == 2 and token.find(part) + 2 < len(token) and token[token.find(part) + 2].islower():
+                parts.extend([part[0], part[1]])
+            else:
+                parts.append(part)
+        segments = []
+        for part in parts:
+            if part.islower() and segments and len(segments[-1]) == 1 and segments[-1].isupper():
+                # 대문자 한 글자 뒤 소문자는 같은 덩이 (Connell, Ed). 두 글자 대문자 뒤 소문자면 첫 글자만 뗀다
+                # (ELesson ⠠⠑⠠⠇⠑⠎⠎⠕⠝, BEd ⠠⠃⠠⠫). 세 글자 이상이면 대문자 단어+종료표 (TEAspoon ⠠⠠⠞⠑⠁⠠⠄⠎⠏⠕⠕⠝).
+                segments[-1] += part
+                continue
+            segments.append(part)
+        out = []
+        for number, segment in enumerate(segments):
+            if segment == "'":
+                out.append(self._spell_chars("'"))
+                first = False
+                continue
+            lower = segment.lower()
+            following = "".join(segments[number + 1:]).replace("'", "")
+            next_letter = following[:1].lower()
+            if segment.isupper() and len(segment) > 1:
+                cap = self.CAP_WORD
+            elif segment[0].isupper():
+                cap = self.CAP_LETTER
+            else:
+                cap = ""
+            word_beginning = self._word_beginning
+            if not first:
+                self._word_beginning = False
+            body = self._mixed_case_shortform(lower, first, next_letter) if standing else None
+            if body is None:
+                body = self._contract_surface(lower, whole_word=True, standing_alone=False)
+            self._word_beginning = word_beginning
+            out.append(cap + body)
+            if cap == self.CAP_WORD and following[:1].islower():
+                out.append(self.CAP_WORD_TERMINATOR)
+            first = False
+        return "".join(out)
+
+    def _mixed_case_shortform(self, word: str, first: bool, next_letter: str) -> Optional[str]:
+        """UEB 10.9.4(b): 대문자가 섞인 낱말에서는 10.9.3 조건을 갖춘 축어만 쓴다 (QuickTime ⠠⠟⠅⠠⠐⠞)."""
+        data = self.shortform_index.get(word)
+        if not data:
+            return None
+        if word in self.SHORTFORM_ANYWHERE:
+            return data["unicode"]
+        if next_letter in self.VOWELS_Y:
+            return None
+        if word in self.SHORTFORM_ANYWHERE_BEFORE_CONSONANT or (word in self.SHORTFORM_WORD_START and first):
+            return data["unicode"]
+        return None
 
     def _avoid_shortform_reading(self, word: str, braille: str) -> Tuple[str, str]:
         """축어가 아닌 글자 묶음이 축어로 읽히지 않게 한다. (1급 표시, 고친 점자)를 돌려준다.
@@ -1002,6 +1077,10 @@ class BrailleEngine:
         def finish(text: str) -> str:
             return leading + self._apply_capital(text, cap_mode) + trailing
 
+        mixed = self._decode_mixed_case(target, cap_mode)
+        if mixed is not None:
+            return leading + mixed + trailing
+
         grade1 = self._decode_grade1_letters(target)
         if grade1 is not None:
             text, inner_cap = grade1
@@ -1034,6 +1113,49 @@ class BrailleEngine:
         if core and core != token:
             return finish(decoded)
         return self._apply_capital(decoded, cap_mode)
+
+    def _decode_mixed_case(self, target: str, cap_mode: Optional[str]) -> Optional[str]:
+        """낱말 안 대문자 표시(⠠ ⠠⠠)와 대문자 종료표(⠠⠄)로 나눠 읽는다 (McConnell, TEAspoon)."""
+        cap = self.CAP_LETTER
+        pieces = []  # (대문자 방식, 점자)
+        mode, start, index = cap_mode, 0, 0
+        while index < len(target):
+            if not target.startswith(cap, index):
+                index += 1
+                continue
+            following = target[index + 1:index + 2]
+            if following in ("⠤", "⠦", "⠴") or not following:
+                return None
+            pieces.append((mode, target[start:index]))
+            if target.startswith(self.CAP_WORD_TERMINATOR, index):
+                mode, index = None, index + 2
+            elif target.startswith(self.CAP_WORD, index):
+                mode, index = "word", index + 2
+            else:
+                mode, index = "letter", index + 1
+            start = index
+        if not pieces:
+            return None
+        pieces.append((mode, target[start:]))
+        out = []
+        for number, (mode, braille) in enumerate(pieces):
+            if not braille:
+                continue
+            text = None
+            stem, apostrophe, suffix = braille.partition(self.punctuation.get("'", "'"))
+            word = self.rev_shortforms.get(stem)
+            if word and (
+                word in self.SHORTFORM_ANYWHERE
+                or word in self.SHORTFORM_ANYWHERE_BEFORE_CONSONANT
+                or (word in self.SHORTFORM_WORD_START and number == 0)
+            ):
+                text = word + (apostrophe and "'" + self._decode_contracted(suffix, allow_shortform=False, standing_alone=False))
+            if text is None:
+                text = self._decode_contracted(braille, allow_shortform=False, standing_alone=False)
+            if any("\u2800" <= char <= "\u28FF" for char in text):
+                return None
+            out.append(self._apply_capital(text, mode))
+        return "".join(out)
 
     def _decode_grade1_letters(self, target: str) -> Optional[Tuple[str, Optional[str]]]:
         """UEB 10.9.7~10.9.9: ⠰ 뒤 글자 묶음은 축어가 아니고, ⠰⠰ 뒤는 약자 없이 글자로만 적었다."""
