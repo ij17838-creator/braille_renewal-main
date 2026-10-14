@@ -396,6 +396,11 @@ UEB_CONTRACTION_CASES = [
     ("3 yrs 6 mths", "⠼⠉ ⠰⠽⠗⠎ ⠼⠋ ⠍⠹⠎"),
     ("enceinte", "⠢⠉⠑⠔⠞⠑"),
     ("lessee", "⠇⠑⠎⠎⠑⠑"),
+    # 2묶음: 모음·y 앞의 bl은 blind가 아니다 (UEB 10.9.3)
+    ("blunder", "⠃⠇⠥⠝⠙⠻"),
+    ("blowhard", "⠃⠇⠪⠓⠜⠙"),
+    ("Blakeney", "⠠⠃⠇⠁⠅⠢⠑⠽"),
+    ("Blindoc", "⠠⠃⠇⠔⠙⠕⠉"),
 ]
 
 

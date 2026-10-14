@@ -354,6 +354,7 @@ class BrailleEngine:
                     bucket[word] = {"unicode": item["unicode"], "suffixes": list(suffixes)}
                 self.rev_shortforms[item["unicode"]] = word
                 self.shortform_index[word] = {
+                    "word": word,
                     "unicode": item["unicode"],
                     "rule": section_rule,
                     "allowedSuffixes": set(suffixes),
@@ -763,6 +764,11 @@ class BrailleEngine:
         if suffix in allowed and (rule.get("allowSuffix") or specified):
             return True
         if allow_open_compound and rule.get("allowCompound") and suffix and suffix not in self.closed_affixes:
+            # UEB 10.9.3 (b)(c): 목록에 없는 긴 낱말에서는 뒤에 모음·y가 오면 축어로 쓰지 않는다
+            # (blunder는 blind+under가 아니다). braille·great는 어디서나 쓴다.
+            sf_word = data.get("word", "")
+            if sf_word not in self.SHORTFORM_ANYWHERE and suffix[0] in self.VOWELS_Y:
+                return False
             return True
         return False
 
