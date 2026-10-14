@@ -14,6 +14,7 @@ const DATA_DIRS = {
   'en_contractions.json': 'en',
   'lexicon_en.json': 'en',
   'ueb_number_rules.json': 'en',
+  'en_contraction_rules.json': 'en',
   'numbers.json': 'common',
   'curriculum.json': 'curriculum',
   'quiz_bank.json': 'curriculum'

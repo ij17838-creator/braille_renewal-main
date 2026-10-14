@@ -336,7 +336,7 @@ def test_canonical_roundtrip():
     # UEB에서 가져온 영어 묶음은 영어 단원에서만 쓴다 (중연 결정, 2026-10-14).
     with open(find_data_file("curriculum.json"), "r", encoding="utf-8") as f:
         curriculum = json.load(f)
-    ueb_bundles = {"en_spell.json", "en_shortform.json", "en_contractions.json", "ueb_number_rules.json"}
+    ueb_bundles = {"en_spell.json", "en_shortform.json", "en_contractions.json", "ueb_number_rules.json", "en_contraction_rules.json"}
     for unit in curriculum["units"]:
         if unit.get("lang") == "en":
             continue
@@ -347,8 +347,39 @@ def test_canonical_roundtrip():
     print("Canonical checks passed.")
 
 
+def test_en_contraction_rules():
+    """en_contraction_rules.json: UEB 약어·약자·축어 사용 규칙과 예외 목록 (영어 단원 전용)."""
+    print("\n=== UEB contraction rule catalog ===")
+    with open(find_data_file("en_contraction_rules.json"), "r", encoding="utf-8") as f:
+        data = json.load(f)
+    rules = data["rules"]
+    ids = [rule["id"] for rule in rules]
+    assert len(ids) == len(set(ids)), "규칙 번호가 겹침"
+    assert data["summary"]["total"] == len(rules)
+    for rule in rules:
+        assert rule["status"] in data["statuses"], rule["id"]
+        assert rule["kind"] in data["kinds"], rule["id"]
+        assert rule["group"] in data["groups"], rule["id"]
+        assert 41 <= rule["pdf_page"] <= 285, rule["id"]
+        assert rule["text"].strip(), rule["id"]
+    # 한글 규정집 제37항·[붙임]은 ko_rules.json에 있으므로 이 목록에 다시 넣지 않는다.
+    with open(find_data_file("ko_rules.json"), "r", encoding="utf-8") as f:
+        ko_ids = {rule["id"] for rule in json.load(f)["rules"]}
+    for item in data["excluded_korean_overlap"]:
+        assert item["see"].split("#")[1] in ko_ids, item
+    # 목록일 뿐이므로 점역기는 이 파일을 읽지 않는다 (점역 결과가 바뀌지 않음).
+    engine_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "engine")
+    for root, _, files in os.walk(engine_dir):
+        for name in files:
+            if name.endswith(".py"):
+                with open(os.path.join(root, name), encoding="utf-8") as handle:
+                    assert "en_contraction_rules" not in handle.read(), name
+    print(f"{len(rules)} rules checked.")
+
+
 if __name__ == "__main__":
     test_korean()
     test_english()
     test_canonical_roundtrip()
     test_homograph_conjugation()
+    test_en_contraction_rules()

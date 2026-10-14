@@ -27,7 +27,8 @@ const UEB_BUNDLES = new Set([
   'en_spell.json',
   'en_shortform.json',
   'en_contractions.json',
-  'ueb_number_rules.json'
+  'ueb_number_rules.json',
+  'en_contraction_rules.json'
 ]);
 
 async function readJson(name) {
