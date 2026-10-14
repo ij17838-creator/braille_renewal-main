@@ -5,24 +5,29 @@ hwpx 스킬의 report 템플릿(header.xml, section0.xml)을 바탕으로 쓰고
   - 부분 제목은 '개요 1', 절 제목은 '개요 2' → 한글 개요 보기·낭독기 제목 이동
   - 표 머리행 표시, 칸 안에서는 설명 → 점자 문자 → ●○ 그림 순서로 읽힌다
 """
+import hashlib
 import re
 from xml.sax.saxutils import escape
 
-from common import braille, doc_title, dots_text, lang_label, rows
+from common import braille, doc_title, dots_of, dots_text, lang_label, rows
 
 # 글자 모양 (report 템플릿 0~15 + 추가 16~19)
 CP_BODY, CP_SANS, CP_TITLE, CP_BOLD, CP_SMALL, CP_PART = 0, 1, 7, 9, 11, 13
 CP_DOT, CP_GRAY, CP_DOT_S, CP_SEC = 16, 17, 18, 19
-CP_BR, CP_BR_S = 20, 21  # 점자 문자 전용 (6점 글꼴 Braille6Dot)
-BRAILLE_FONT = 'Braille6Dot'  # make_braille_font.py가 만드는 글꼴. 한글 파일 안에 넣어 둔다 (embed_braille_font)
-BRAILLE_FONT_ITEM = 'braillefont'
-BRAILLE_RUN = re.compile(r'([\u2800-\u283f](?:[\u2800-\u283f ]*[\u2800-\u283f])?)')
 # 문단 모양 (report 템플릿 0~27 + 추가 28~29)
 PP_BODY, PP_CENTER, PP_CELL_C, PP_CELL_J, PP_RIGHT, PP_ITEM = 0, 20, 21, 22, 23, 24
 PP_PART, PP_SEC = 28, 29
 # 테두리/배경 (report 3~5 + 추가 6)
 BF_LINE, BF_HEAD, BF_SOFT = 3, 4, 6
 TEXT_WIDTH = 42520  # A4 본문 폭
+# 점자 문자(⠿ 등)는 글자 대신 6점 칸 그림으로 넣는다. 한글 프로그램은 점자 문자를 8점 칸(맨 아래 빈 점 2개)으로
+# 그리는 글꼴로 대신 보여 주고, 파일 안에 넣은 글꼴은 쓰지 않기 때문이다 (2026-10-14 중연님 화면으로 확인).
+BRAILLE_RUN = re.compile(r'([\u2800-\u283f](?:[\u2800-\u283f ]*[\u2800-\u283f])?)')
+CELL_W, CELL_H = 640, 780       # 점칸 하나의 크기 (그림 단위)
+DOT_X, DOT_Y = (170, 420), (140, 390, 640)
+R_FILL, R_RING, RING = 92, 88, 26
+PIC_SCALE = {16: 1.6}           # 글자 모양별 그림 배율 (큰 점자 칸). 나머지는 1.1
+IMAGES = {}                     # build_section이 채운다: 그림 id → PNG 바이트
 LONG_CELLS = 5  # 이만큼 긴 낱말·문장은 ●○ 그림을 넣지 않는다 (칸 너비를 넘쳐 줄이 섞이므로)
 BRAILLE_LINE = 10  # 넓은 칸에서 점자 문자 한 줄에 넣는 최대 점칸 수
 
@@ -40,17 +45,6 @@ def build_header(skill):
         sans.replace('id="1"', f'id="{CP_DOT_S}"', 1),
         grab('charPr', 13).replace('id="13"', f'id="{CP_SEC}"', 1).replace('height="1200"', 'height="1100"'),
     ]
-    # 점자 문자는 6점 글꼴로. 기본 글꼴에는 점자가 없어 윈도가 8점 칸(맨 아래 빈 점 2개)으로 대신 그린다.
-    fid = len(re.findall(r'<hh:font id=', re.search(r'<hh:fontface lang="HANGUL".*?</hh:fontface>', hdr, re.S).group(0)))
-    font = (f'<hh:font id="{fid}" face="{BRAILLE_FONT}" type="TTF" isEmbedded="1" binaryItemIDRef="{BRAILLE_FONT_ITEM}">'
-            '<hh:typeInfo familyType="FCAT_UNKNOWN" weight="0" proportion="0" contrast="0" strokeVariation="0" armStyle="0" '
-            'letterform="0" midline="0" xHeight="0"/></hh:font>')
-    hdr = re.sub(r'(<hh:fontface lang="[A-Z]+" fontCnt=")(\d+)(">.*?)(</hh:fontface>)',
-                 lambda m: m.group(1) + str(int(m.group(2)) + 1) + m.group(3) + font + m.group(4), hdr, flags=re.S)
-    br = re.sub(r'<hh:fontRef [^>]*/>', '<hh:fontRef ' + ' '.join(f'{k}="{fid}"' for k in
-                ('hangul', 'latin', 'hanja', 'japanese', 'other', 'symbol', 'user')) + '/>', sans)
-    add_cp += [br.replace('id="1"', f'id="{CP_BR}"', 1).replace('height="1000"', 'height="1600"'),
-               br.replace('id="1"', f'id="{CP_BR_S}"', 1)]
     hdr = hdr.replace('</hh:charProperties>', ''.join(add_cp) + '</hh:charProperties>')
     soft = grab('borderFill', 4).replace('id="4"', f'id="{BF_SOFT}"', 1).replace('#DAEEF3', '#E8F7EF')
     hdr = hdr.replace('</hh:borderFills>', soft + '</hh:borderFills>')
@@ -80,13 +74,47 @@ class Section:
     def para(self, runs, pp=PP_BODY, style=0, page_break=False):
         if isinstance(runs, str):
             runs = [(CP_BODY, runs)]
-        # 점자 문자 부분만 6점 글꼴 글자 모양으로 나눈다 (큰 점자 칸은 큰 글자, 나머지는 작은 글자)
-        runs = [(CP_BR if c == CP_DOT else CP_BR_S, x) if i % 2 else (c, x)
-                for c, t in runs for i, x in enumerate(BRAILLE_RUN.split(t) if t else [t]) if x or not t]
-        r = ''.join(f'<hp:run charPrIDRef="{c}"><hp:t>{escape(t)}</hp:t></hp:run>' if t else f'<hp:run charPrIDRef="{c}"><hp:t/></hp:run>'
-                    for c, t in runs)
+        r = ''
+        for c, t in runs:
+            if not t:
+                r += f'<hp:run charPrIDRef="{c}"><hp:t/></hp:run>'
+                continue
+            for i, x in enumerate(BRAILLE_RUN.split(t)):
+                if i % 2 == 0:
+                    if x:
+                        r += f'<hp:run charPrIDRef="{c}"><hp:t>{escape(x)}</hp:t></hp:run>'
+                    continue
+                # 점자 부분: 낱말마다 그림 하나, 띄어쓰기는 글자로 두어 줄바꿈이 낱말 사이에서만 일어나게
+                for j, w in enumerate(x.split(' ')):
+                    if j:
+                        r += f'<hp:run charPrIDRef="{c}"><hp:t> </hp:t></hp:run>'
+                    if w:
+                        r += f'<hp:run charPrIDRef="{c}">{self.braille_pic(w, PIC_SCALE.get(c, 1.1))}</hp:run>'
         return (f'<hp:p id="{self.nid()}" paraPrIDRef="{pp}" styleIDRef="{style}" pageBreak="{int(page_break)}" '
                 f'columnBreak="0" merged="0">{r}</hp:p>')
+
+    def braille_pic(self, word, scale):
+        """점자 낱말 → 글자처럼 놓이는 6점 칸 그림. 그림 설명에는 점 번호를 적어 화면낭독기가 읽게 한다."""
+        key = 'braille' + hashlib.md5(word.encode('utf-8')).hexdigest()[:12]
+        if key not in IMAGES:
+            IMAGES[key] = braille_png(word)
+        w, h = round(CELL_W * len(word) * scale), round(CELL_H * scale)
+        desc = '점자 그림: ' + dots_text([dots_of(ch) for ch in word])
+        pid = self.nid()
+        return (f'<hp:pic id="{pid}" zOrder="0" numberingType="PICTURE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" '
+                f'dropcapstyle="None" href="" groupLevel="0" instid="{pid}" reverse="0">'
+                f'<hp:offset x="0" y="0"/><hp:orgSz width="{w}" height="{h}"/><hp:curSz width="{w}" height="{h}"/>'
+                f'<hp:flip horizontal="0" vertical="0"/><hp:rotationInfo angle="0" centerX="{w // 2}" centerY="{h // 2}" rotateimage="1"/>'
+                '<hp:renderingInfo><hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/>'
+                '<hc:scaMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/></hp:renderingInfo>'
+                f'<hp:imgRect><hc:pt0 x="0" y="0"/><hc:pt1 x="{w}" y="0"/><hc:pt2 x="{w}" y="{h}"/><hc:pt3 x="0" y="{h}"/></hp:imgRect>'
+                f'<hp:imgClip left="0" right="{w}" top="0" bottom="{h}"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>'
+                f'<hp:imgDim dimwidth="{w}" dimheight="{h}"/>'
+                f'<hc:img binaryItemIDRef="{key}" bright="0" contrast="0" effect="REAL_PIC" alpha="0"/><hp:effects/>'
+                f'<hp:sz width="{w}" widthRelTo="ABSOLUTE" height="{h}" heightRelTo="ABSOLUTE" protect="0"/>'
+                '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" '
+                'horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>'
+                f'<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:shapeComment>{escape(desc)}</hp:shapeComment></hp:pic>')
 
     def add(self, *args, **kw):
         self.out.append(self.para(*args, **kw))
@@ -123,6 +151,46 @@ def dot_lines(cells, blank=False):
     """●○ 그림 3줄. 칸 사이는 넓게 띄운다. 빈 점칸 []은 띄어쓰기 자리로 비워 두고, blank=True(쓰기 연습)면 ○로 그린다."""
     return ['  '.join(f'{"●" if a else "○"} {"●" if b else "○"}' if c or blank else '   ' for c, (a, b) in [(c, rows(c)[r]) for c in cells])
             for r in range(3)]
+
+
+def braille_png(word, px=0.2):
+    """점자 낱말 → PNG. 칸마다 2열 3줄, 볼록한 점은 ●, 빈 자리는 ○."""
+    import io
+    from PIL import Image, ImageDraw
+    ss = 4  # 크게 그린 뒤 줄여 테두리를 매끄럽게
+    k = px * ss
+    im = Image.new('RGB', (round(CELL_W * len(word) * k), round(CELL_H * k)), 'white')
+    d = ImageDraw.Draw(im)
+    for i, ch in enumerate(word):
+        dots = dots_of(ch)
+        for n in range(1, 7):
+            cx, cy = (i * CELL_W + DOT_X[(n - 1) // 3]) * k, DOT_Y[(n - 1) % 3] * k
+            if n in dots:
+                d.ellipse([cx - R_FILL * k, cy - R_FILL * k, cx + R_FILL * k, cy + R_FILL * k], fill='black')
+            else:
+                d.ellipse([cx - R_RING * k, cy - R_RING * k, cx + R_RING * k, cy + R_RING * k], outline='black', width=round(RING * k))
+    im = im.resize((im.width // ss, im.height // ss), Image.LANCZOS).convert('L').quantize(8)  # 회색 8단계로 작게
+    buf = io.BytesIO()
+    im.save(buf, 'PNG', optimize=True)
+    return buf.getvalue()
+
+
+def embed_images(hwpx, images):
+    """만든 한글 파일에 점자 그림을 넣는다 (BinData/<id>.png + content.hpf 목록). mimetype은 맨 앞에 그대로 둔다."""
+    import shutil
+    import tempfile
+    import zipfile
+    items = ''.join(f'<opf:item id="{k}" href="BinData/{k}.png" media-type="image/png" isEmbeded="1"/>' for k in images)
+    tmp = tempfile.NamedTemporaryFile(suffix='.hwpx', delete=False).name
+    with zipfile.ZipFile(hwpx) as zin, zipfile.ZipFile(tmp, 'w') as zout:
+        for info in zin.infolist():
+            data = zin.read(info.filename)
+            if info.filename == 'Contents/content.hpf':
+                data = data.decode('utf-8').replace('</opf:manifest>', items + '</opf:manifest>').encode('utf-8')
+            zout.writestr(info, data)
+        for k, png in images.items():
+            zout.writestr(f'BinData/{k}.png', png, compress_type=zipfile.ZIP_STORED)
+    shutil.move(tmp, hwpx)
 
 
 def dot_cp(cells):
@@ -281,6 +349,7 @@ def build_section(doc, skill):
     first = first.replace('</hp:ctrl>', '</hp:ctrl><hp:ctrl><hp:pageNum pos="BOTTOM_CENTER" formatType="DIGIT" sideChar="-"/></hp:ctrl>', 1)
     head = tpl[:tpl.index('<hp:p id="1000000001"')]
 
+    IMAGES.clear()
     s = Section()
     u = doc
     s.add([(CP_SANS, f'{lang_label(u)} 점자 {u["num"]}단원 · {u["part"]}')])
@@ -293,25 +362,6 @@ def build_section(doc, skill):
             for b in sec['blocks']:
                 write_block(s, b)
     return head + first + ''.join(s.out) + '</hs:sec>'
-
-
-def embed_braille_font(hwpx, font_path):
-    """만든 한글 파일에 6점 점자 글꼴을 넣는다 (BinData + content.hpf 목록). mimetype은 맨 앞, 압축 없이 둔다."""
-    import shutil
-    import tempfile
-    import zipfile
-    href = f'BinData/{BRAILLE_FONT}.ttf'
-    item = f'<opf:item id="{BRAILLE_FONT_ITEM}" href="{href}" media-type="application/x-font-ttf" isEmbeded="1"/>'
-    tmp = tempfile.NamedTemporaryFile(suffix='.hwpx', delete=False).name
-    with zipfile.ZipFile(hwpx) as zin, zipfile.ZipFile(tmp, 'w') as zout:
-        for info in zin.infolist():
-            data = zin.read(info.filename)
-            if info.filename == 'Contents/content.hpf' and BRAILLE_FONT_ITEM not in data.decode('utf-8'):
-                data = data.decode('utf-8').replace('</opf:manifest>', item + '</opf:manifest>').encode('utf-8')
-            if info.filename != href:
-                zout.writestr(info, data)
-        zout.write(font_path, href, compress_type=zipfile.ZIP_DEFLATED)
-    shutil.move(tmp, hwpx)
 
 
 def title_of(doc):

@@ -14,6 +14,7 @@
 import argparse
 import re
 import subprocess
+import zipfile
 import sys
 from pathlib import Path
 
@@ -21,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from build import unit_module  # noqa: E402
-from common import POS, REPO, braille, doc_title, dots_text, unit_data  # noqa: E402
+from common import POS, REPO, braille, doc_title, dots_of, dots_text, unit_data  # noqa: E402
 from render_html import HANGUL_NUM  # noqa: E402
 from render_hwpx import LONG_CELLS  # noqa: E402
 
@@ -135,21 +136,37 @@ def review(uid, skill, png=None):
     must += [x for b in blocks(doc, 'table') for r in [b['head']] + b['rows'] for c in r for x in c.split()]
     must += [w['ask'] for w in writes]
     must += [v for _, v in next(blocks(doc, 'answers'))['items']]
+    # 한글 파일의 점자 문자는 6점 칸 그림(그림 설명 = 점 번호)으로 들어 있다
+    with zipfile.ZipFile(hwpx) as z:
+        sec_xml = z.read('Contents/section0.xml').decode('utf-8')
+        names = set(z.namelist())
+    # 그림 설명을 문서 순서대로 이어 붙인다 (긴 낱말은 여러 그림으로 나뉘므로 이어진 상태로 찾는다)
+    pics = ' + '.join(re.findall(r'<hp:shapeComment>점자 그림: ([^<]*)</hp:shapeComment>', sec_xml))
+    for ref in set(re.findall(r'binaryItemIDRef="([^"]+)"', sec_xml)):
+        if f'BinData/{ref}.png' not in names:
+            bad(f'한글 파일: 점자 그림 {ref}가 파일 안에 없음')
+    if re.search('[\u2800-\u28ff]', sec_xml):
+        bad('한글 파일: 그림으로 바꾸지 않은 점자 문자가 남아 있음 (8점 칸으로 보임)')
     for text in must:
         t = flat(text)
         if t not in fp:
             bad(f'PDF에 없음: {text[:40]}')
-        if t not in fh:
+        for w in re.findall('[\u2800-\u283f]+', text):
+            if dots_text([dots_of(ch) for ch in w]) not in pics:
+                bad(f'한글 파일에 점자 그림 없음: {w}')
+        rest = flat(re.sub('[\u2800-\u283f]+', '', text))
+        if rest and rest not in fh:
             bad(f'한글 파일에 없음: {text[:40]}')
 
     # 4. 한글 파일 카드 칸 안 순서: 이름 → 점 번호 → 점자 → 그림
     for b in blocks(doc, 'cards'):
         for c in b['items']:
-            name, line, br = flat(c['name']), flat(c.get('line') or dots_text(c['cells'])), flat(braille(c['cells']))
-            if len(c['cells']) >= LONG_CELLS:  # 긴 낱말·문장은 그림 없이 이름 → 설명 → 점자
-                m = re.search(re.escape(name) + re.escape(line) + re.escape(br) + '(?![●○])', fh)
+            name, line = flat(c['name']), flat(re.sub('[\u2800-\u283f]+', '', c.get('line') or dots_text(c['cells'])))
+            # 점자 문자는 그림이라 글로 뽑히지 않는다: 이름 → 설명 → (점자 그림) → ●○ 그림
+            if len(c['cells']) >= LONG_CELLS:  # 긴 낱말·문장은 ●○ 그림 없음
+                m = re.search(re.escape(name) + re.escape(line) + '(?![●○])', fh)
             else:
-                m = re.search(re.escape(name) + re.escape(line) + re.escape(br) + '[●○]', fh)
+                m = re.search(re.escape(name) + re.escape(line) + '[●○]', fh)
             if not m:
                 bad(f'한글 파일 카드 「{c["name"]}」: 칸 안 순서가 이름 → 설명 → 점자 (→ 그림)이 아님')
 
