@@ -991,6 +991,10 @@
       "skill": {
         "read": "한 칸 약어를 단어로 읽는다",
         "write": "그 단어를 한 칸 약어로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-word.hwpx",
+        "pdf": "materials/en/en-word.pdf"
       }
     },
     {
@@ -1019,6 +1023,10 @@
       "skill": {
         "read": "온칸 약자 점형을 단어로 읽는다",
         "write": "그 단어를 온칸 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-strong-word.hwpx",
+        "pdf": "materials/en/en-strong-word.pdf"
       }
     },
     {
@@ -1047,6 +1055,10 @@
       "skill": {
         "read": "온칸 묶음 약자 점형을 철자 묶음으로 읽는다",
         "write": "그 철자 묶음을 온칸 묶음 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-strong-group.hwpx",
+        "pdf": "materials/en/en-strong-group.pdf"
       }
     },
     {
@@ -1075,6 +1087,10 @@
       "skill": {
         "read": "하위 약자 점형을 단어나 철자 묶음으로 읽는다",
         "write": "그 단어나 철자 묶음을 하위 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-lower.hwpx",
+        "pdf": "materials/en/en-lower.pdf"
       }
     },
     {

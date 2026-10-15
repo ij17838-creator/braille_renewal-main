@@ -108,3 +108,53 @@ def check_reg_signs():
 
 check_reg_signs()
 assert braille(cells_of('⠠⠠')) == '⠠⠠'
+
+
+STANDING_ALONE = ('「홀로 쓰인다」는 낱말 앞뒤가 띄어쓰기, 붙임표, 줄표라는 뜻입니다. 그 사이에 따옴표, 괄호, 마침표 같은 흔한 문장 부호가 '
+                  '끼어 있어도 홀로 쓰인 것으로 봅니다 (UEB 2.6절, UEB 규정집 15쪽).')
+
+
+def contraction_doc(unit_id, *, table, groups, look_alike, examples, example_note, read, write,
+                    rules, rule_src, bullets, checks, extra_learn=None, name=None):
+    """약자 단원의 공통 틀.
+
+    table: UEB 규정집 표 {글: 점자}. 앱 카드와 똑같아야 한다.
+    groups: [(절 제목, [카드 글…], 설명)]  look_alike: [([카드 또는 (단원id, 글)…], 설명)]
+    examples: UEB 규정집 보기·연습 낱말 {글: 점자}. 엔진이 똑같이 적어야 한다.
+    """
+    from common import app_cards, standard_doc, unit_data
+    u = unit_data(unit_id)
+    cards = {c['letter']: c['dots'] for c in app_cards(unit_id)}
+    assert set(cards) == set(table), sorted(set(cards) ^ set(table))
+    for k, br in table.items():
+        assert cards[k] == cells_of(br), k
+    assert sorted(k for _, ks, _ in groups for k in ks) == sorted(cards), '모든 카드가 한 번씩 묶음에 들어가야 함'
+    check_ueb(examples)
+    for t in read + write:
+        en_cells(t)
+    name = name or (lambda k: k)
+
+    def card(k):
+        if isinstance(k, tuple):  # 다른 단원의 카드
+            uid, key = k
+            other = {c['letter']: c for c in app_cards(uid)}[key]
+            label = f'{other["letter"]} ({ {"en-letter": "알파벳", "en-sign": "부호"}.get(uid, "약자") })'
+            return {'name': label, 'cells': other['dots'], 'labels': None, 'line': dots_text(other['dots'])}
+        return {'name': name(k), 'cells': cards[k], 'labels': None, 'line': dots_text(cards[k])}
+
+    learn = [{'title': t, 'blocks': [{'t': 'p', 'text': note}, {'t': 'cards', 'items': [card(k) for k in ks]}]} for t, ks, note in groups]
+    learn += extra_learn or []
+    learn.append({'title': '헷갈리기 쉬운 점형', 'blocks': [
+        {'t': 'cards', 'caption': cap, 'items': [card(k) for k in ks]} for ks, cap in look_alike]})
+    learn.append({'title': '낱말에서 써 보기', 'blocks': [
+        {'t': 'p', 'text': example_note},
+        {'t': 'cards', 'items': [word_card(t) for t in examples]}]})
+    practice = [
+        {'title': '읽기 연습: 무엇이라고 썼을까요?', 'blocks': [
+            {'t': 'read_ex', 'hint': '점형이나 점 번호를 보고, 영어 낱말을 괄호에 쓰세요. 「빈칸」은 띄어쓰기입니다.', 'blank': '(              )',
+             'items': read_items(read)}]},
+        {'title': '쓰기 연습: 약자를 써서 점자로 적어 보세요', 'blocks': [
+            {'t': 'write_ex', 'hint': '배운 약자를 쓰면 칸 수가 줄어듭니다. 빈 점칸 수에 맞게 적으세요.', 'items': write_items(write)}]},
+    ]
+    return standard_doc(u, rules=rules, rule_src=rule_src, key=u['teach']['line'], intro_bullets=bullets,
+                        learn=learn, practice=practice, checks=checks, answers=answers(read, write))
