@@ -381,17 +381,6 @@
           </div>
         </div>
 
-        <!-- 2. 블록 모드 -->
-        <div id="block-dock" class="hidden flex-col gap-2 max-w-md mx-auto text-center">
-          <div class="flex items-center justify-between px-1">
-            <span class="text-xs font-bold text-slate-500">단서 블록을 순서대로 선택하세요</span>
-            <button id="btn-reset-blocks" class="text-[11px] text-rose-500 hover:underline font-bold">다시 선택</button>
-          </div>
-          <div id="detective-block-pool" class="flex flex-wrap justify-center gap-2 p-2 min-h-[48px] bg-white/60 rounded-xl border border-slate-200"></div>
-          <button id="btn-verify-block" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">
-            증거 제출 및 판정
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -700,7 +689,6 @@
     let commitTimer = 0;
     let rejectTimer = 0;
     let currentInputBraille = "";
-    let assembledBlocks = [];
 
     function renderCurrentQuiz() {
       const q = quizList[currentQuizIndex];
@@ -708,7 +696,6 @@
 
       stage.allowNext();
       currentInputBraille = "";
-      assembledBlocks = [];
       resetEntryState();
       document.getElementById('sentence-card').classList.remove('answer-correct', 'answer-wrong');
 
@@ -724,7 +711,6 @@
 
       document.getElementById('user-input-dots').innerHTML = "";
       document.getElementById('keyboard-dock').classList.remove('hidden');
-      document.getElementById('block-dock').classList.add('hidden');
 
       const said = describeForSpeech(q.target_text || '', appState.lang);
       const lead = stage.firstQuestionLead();
@@ -734,38 +720,6 @@
       } else {
         speak(said);
       }
-    }
-
-    function renderBlockPool(blocks) {
-      const pool = document.getElementById('detective-block-pool');
-      pool.innerHTML = "";
-      
-      blocks.forEach((b) => {
-        const btn = document.createElement('button');
-        btn.className = "glass-button px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600";
-        btn.textContent = b;
-        btn.onclick = () => {
-          assembledBlocks.push(b);
-          btn.disabled = true;
-          btn.classList.add('opacity-40');
-          updateBlockSlotDisplay();
-          speak(b);
-        };
-        pool.appendChild(btn);
-      });
-    }
-
-    function updateBlockSlotDisplay() {
-      const inner = document.getElementById('blank-inner-text');
-      if (!inner) return;
-      inner.textContent = assembledBlocks.length > 0 ? assembledBlocks.join("") : "[ 단서 블록 선택 ]";
-    }
-
-    function resetBlockSelection() {
-      assembledBlocks = [];
-      updateBlockSlotDisplay();
-      const q = quizList[currentQuizIndex];
-      if (q && q.blocks) renderBlockPool(q.blocks);
     }
 
     // 6. 점형 입력
@@ -993,7 +947,6 @@
       if (stage.canAnswer()) commitSpace();
     };
     document.getElementById('btn-key-clear').onclick = eraseCurrentCell;
-    document.getElementById('btn-reset-blocks').onclick = resetBlockSelection;
 
     function advanceQuiz() {
       currentQuizIndex++;
@@ -1057,7 +1010,6 @@
     }
 
         document.getElementById('btn-verify-investigation').onclick = verifyAnswer;
-    document.getElementById('btn-verify-block').onclick = verifyAnswer;
     document.getElementById('btn-replay-clue').onclick = () => {
       const q = quizList[currentQuizIndex];
       if (q) speak(describeForSpeech(q.target_text || '', appState.lang));

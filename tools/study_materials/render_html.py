@@ -2,7 +2,7 @@
 import re
 from html import escape as _escape
 
-from common import POS, braille, doc_title, dots_text, lang_label, rows
+from common import POS, braille, doc_title, dots_text, lang_label
 
 HANGUL_NUM = '가나다라마바사아자차카타파하'
 

@@ -33,15 +33,19 @@ const UEB_BUNDLES = new Set([
 
 async function readJson(name) {
   const url = dataUrl(name);
-  try {
-    const { readFileSync } = await import('node:fs');
-    const { fileURLToPath } = await import('node:url');
-    return JSON.parse(readFileSync(fileURLToPath(url), 'utf8'));
-  } catch {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(name);
-    return res.json();
+  // 브라우저에서는 node:fs를 부르면 콘솔에 빨간 오류가 남으므로 노드에서만 시도한다.
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    try {
+      const { readFileSync } = await import('node:fs');
+      const { fileURLToPath } = await import('node:url');
+      return JSON.parse(readFileSync(fileURLToPath(url), 'utf8'));
+    } catch {
+      // 파일로 못 읽으면 아래 fetch로 넘어간다.
+    }
   }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(name);
+  return res.json();
 }
 
 const table = await readJson('curriculum.json');
