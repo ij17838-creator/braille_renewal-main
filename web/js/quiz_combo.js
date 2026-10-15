@@ -327,6 +327,12 @@ function buildKorean(data) {
     };
   });
 
+  // 쌍받침·겹받침 = 앞 받침 + 뒤 받침 (ko_parser.py DOUBLE_JONG_SPLIT과 같다. 받침 ㅆ은 따로 약자가 있어 넣지 않는다)
+  const DOUBLE_JONG_SPLIT = {
+    'ㄲ': ['ㄱ', 'ㄱ'], 'ㄳ': ['ㄱ', 'ㅅ'], 'ㄵ': ['ㄴ', 'ㅈ'], 'ㄶ': ['ㄴ', 'ㅎ'], 'ㄺ': ['ㄹ', 'ㄱ'], 'ㄻ': ['ㄹ', 'ㅁ'],
+    'ㄼ': ['ㄹ', 'ㅂ'], 'ㄽ': ['ㄹ', 'ㅅ'], 'ㄾ': ['ㄹ', 'ㅌ'], 'ㄿ': ['ㄹ', 'ㅍ'], 'ㅀ': ['ㄹ', 'ㅎ'], 'ㅄ': ['ㅂ', 'ㅅ']
+  };
+
   function translateSyllable(ch, nextCh, afterNumber, rest) {
     const parts = decompose(ch);
     if (!parts) return null;
@@ -399,6 +405,18 @@ function buildKorean(data) {
       }
       labels.push(`초성 ${baseCho} + 모음·받침 약자`);
       return { braille: head + tenser + (choMap[baseCho] || '') + vc[`${jung}|${jong}`], label: labels.join(', ') };
+    }
+
+    // 제15항 [붙임] (규정집 11~12쪽): 쌍받침·겹받침의 앞 받침이 '모음+받침' 약자를 이루면 약자 뒤에 남은 받침을 적는다 (얽 = 얼 + ㄱ).
+    const split = DOUBLE_JONG_SPLIT[jong];
+    if (split && vc[`${jung}|${split[0]}`] && jongMap[split[1]]) {
+      const abbr = vc[`${jung}|${split[0]}`] + jongMap[split[1]];
+      if (baseCho === 'ㅇ') {
+        labels.push(`제15항 [붙임]: 모음·받침 약자 + 받침 ${split[1]}`);
+        return { braille: head + tenser + abbr, label: labels.join(', ') };
+      }
+      labels.push(`제15항 [붙임]: 초성 ${baseCho} + 모음·받침 약자 + 받침 ${split[1]}`);
+      return { braille: head + tenser + (choMap[baseCho] || '') + abbr, label: labels.join(', ') };
     }
 
     const choB = baseCho === 'ㅇ' ? '' : (choMap[baseCho] || '');
@@ -646,6 +664,8 @@ function buildEnglish(data) {
 
   const wholeWords = alphaWords.map(item => ({ ...item }));
   const groups = [];
+  // 첫 글자 약자(under ⠐⠥ 등) 낱말. 이 점역기는 낱말 안의 첫 글자 약자를 쓰지 않으므로 출제 거르기에 쓴다.
+  const initialLetterTexts = [];
 
   (contractions.groups || []).forEach(group => {
     const type = group.type || '';
@@ -664,7 +684,10 @@ function buildEnglish(data) {
       if (group.rule?.requiresSurroundingLetters) where = 'medial';
       else if (type === 'prefix_groupsign') where = 'prefix';
       else if (type === 'final_contractions') where = 'final';
-      else if (type === 'initial_contractions') return;
+      else if (type === 'initial_contractions') {
+        initialLetterTexts.push(text);
+        return;
+      }
       groups.push({
         text,
         unicode: item.unicode,
@@ -814,6 +837,23 @@ function buildEnglish(data) {
     return greedy(lower);
   }
 
+  // 무작위로 만든 낱말 중 이 점역기가 UEB대로 적지 못하는 것은 문제로 내지 않는다(중연 2026-10-15 결정).
+  // - UEB 10.7.1 (UEB PDF 163쪽): 첫 글자 약자는 낱말 안에서도 쓴다 (underworld ⠐⠥⠸⠺).
+  // - UEB 10.9.3 (UEB PDF 177쪽): blind·first 등 축어 뒤가 모음이나 y이면 축어를 쓰지 않는다 (blinded).
+  function beyondTranslator(text) {
+    const lower = String(text || '').toLowerCase();
+    if (initialLetterTexts.some(item => item !== lower && lower.includes(item))) return true;
+    for (const key of shortformByWord.keys()) {
+      if (key === lower) continue;
+      let at = lower.indexOf(key);
+      while (at >= 0) {
+        if (/[aeiouy]/.test(lower[at + key.length] || '')) return true;
+        at = lower.indexOf(key, at + 1);
+      }
+    }
+    return false;
+  }
+
   function pack(chunks, rule) {
     const parts = [];
     let braille = '';
@@ -850,6 +890,7 @@ function buildEnglish(data) {
       if (own && own.unicode) {
         return pack([{ text: own.word, role: 'shortform', label: '축어' }], '축어');
       }
+      if (beyondTranslator(surface)) return null;
       return pack([
         { text: item.word, role: 'shortform', label: '축어' },
         { text: suffix, role: 'suffix', label: `어미 ${suffix}` }
@@ -881,6 +922,7 @@ function buildEnglish(data) {
       }
       chunks.push({ text: stem, role: 'root', label: `어근 ${stem}` });
       if (useSuffix) chunks.push({ text: suffix, role: 'suffix', label: `어미 ${suffix}` });
+      if (beyondTranslator(chunks.map(chunk => chunk.text).join(''))) return null;
       return pack(chunks, '형태소 결합');
     }
     if (recipe === 'number') {
