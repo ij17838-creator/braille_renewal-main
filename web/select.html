@@ -467,7 +467,8 @@
     // 3. 오디오 합성기 (Tone.js & Web Speech API)
     let synthAudio, sfxCorrect, sfxWrong;
     async function initAudio() {
-      if (synthAudio) return;
+      // 소리 라이브러리를 못 불러온 컴퓨터(인터넷 끊김 등)에서는 소리 없이 진행한다.
+      if (synthAudio || typeof Tone === 'undefined') return;
       await Tone.start();
       synthAudio = new Tone.PolySynth(Tone.Synth).toDestination();
       sfxCorrect = new Tone.Synth({ oscillator: { type: "triangle" } }).toDestination();
@@ -813,33 +814,6 @@
       if (theme === 'yellow') return 'hc-yellow';
       if (theme === 'bw') return 'hc-white-black';
       return theme;
-    }
-
-    function applySettings(cfg) {
-      if (!cfg) return;
-      if (cfg.lang) state.lang = cfg.lang;
-      if (cfg.level) state.level = cfg.level;
-
-      const b = document.body;
-      b.classList.remove("text-scale-large", "text-scale-xlarge");
-      
-      const theme = normalizeTheme(cfg.contrastTheme);
-      if (theme && theme !== 'off') {
-        document.documentElement.setAttribute('data-theme', theme);
-      } else {
-        document.documentElement.removeAttribute('data-theme');
-      }
-
-      if (cfg.textScale === "large") b.classList.add("text-scale-large");
-      if (cfg.textScale === "xlarge") b.classList.add("text-scale-xlarge");
-      if (cfg.accessibleFont) b.classList.add("accessible-font");
-
-      if (cfg.dotScale) {
-        b.classList.remove("dot-scale-1x", "dot-scale-15x", "dot-scale-2x");
-        b.classList.add(`dot-scale-${cfg.dotScale}`);
-      }
-
-      document.getElementById('label-level-mode').textContent = `형태소 결합 · ${state.lang} · 4지선다`;
     }
 
     // 9. 취약점 모달 대시보드

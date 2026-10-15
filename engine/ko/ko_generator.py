@@ -6,10 +6,7 @@ from typing import Dict, Any, List, Optional, Tuple, Set
 from engine.data_paths import find_data_file
 from engine.ko.ko_syntax_analyzer import BrailleRuleValidator
 
-try:
-    from ko_parser import KoreanBrailleEngine
-except ImportError:
-    KoreanBrailleEngine = None
+from engine.ko.ko_parser import KoreanBrailleEngine
 
 # =====================================================================
 # 한글 음절 분해 / 결합 유틸리티

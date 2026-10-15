@@ -437,7 +437,8 @@
     // 2. 오디오 엔진
     let synthAudio, sfxCorrect, sfxWrong;
     async function initAudio() {
-      if (synthAudio) return;
+      // 소리 라이브러리를 못 불러온 컴퓨터(인터넷 끊김 등)에서는 소리 없이 진행한다.
+      if (synthAudio || typeof Tone === 'undefined') return;
       await Tone.start();
       synthAudio = new Tone.PolySynth(Tone.Synth).toDestination();
       sfxCorrect = new Tone.Synth({ oscillator: { type: "triangle" } }).toDestination();

@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import unicodedata
 from typing import Dict, List, Optional, Tuple
 
 from engine.data_paths import find_data_file
@@ -141,6 +142,28 @@ class BrailleEngine:
     PREFIX_ABBREVIATIONS = ("cont", "contd", "dist", "cons", "conn")
     DIS_H_PREFIXED = ("hon", "hea", "har", "hab")
     _word_beginning = True
+    # UEB 4.2 Modifiers (UEB PDF 74~75쪽): 꾸밈표는 꾸미는 글자 앞에 적는다 (café ⠉⠁⠋⠘⠌⠑).
+    MODIFIERS = {
+        "\u0338": "\u2808\u2821",  # solidus overlay ⠈⠡
+        "\u0335": "\u2808\u2812",  # horizontal stroke ⠈⠒
+        "\u0306": "\u2808\u282c",  # breve ⠈⠬
+        "\u0304": "\u2808\u2824",  # macron ⠈⠤
+        "\u0327": "\u2818\u282f",  # cedilla ⠘⠯
+        "\u0300": "\u2818\u2821",  # grave ⠘⠡
+        "\u0302": "\u2818\u2829",  # circumflex ⠘⠩
+        "\u030a": "\u2818\u282b",  # ring ⠘⠫
+        "\u0303": "\u2818\u283b",  # tilde ⠘⠻
+        "\u0308": "\u2818\u2812",  # diaeresis ⠘⠒
+        "\u0301": "\u2818\u280c",  # acute ⠘⠌
+        "\u030c": "\u2818\u282c",  # caron ⠘⠬
+    }
+    # 나누어지지 않는 글자: 빗금·가로줄이 그어진 글자 (Bjørnson ⠠⠃⠚⠈⠡⠕⠗⠝⠎⠕⠝, Białka ⠠⠃⠊⠁⠈⠡⠇⠅⠁, Ħaġar ⠠⠈⠒⠓…)
+    STROKED_LETTERS = {"ø": ("o", "\u0338"), "ł": ("l", "\u0338"), "đ": ("d", "\u0335"), "ħ": ("h", "\u0335")}
+    # UEB 4.3 Ligatured letters: 이어 쓴 글자는 두 글자 사이에 ⠘⠖ (Cœur ⠠⠉⠕⠘⠖⠑⠥⠗)
+    LIGATURES = {"æ": ("a", "e"), "œ": ("o", "e")}
+    LIGATURE_SIGN = "\u2818\u2816"
+    ACCENTED_WORD = r"[A-Za-z]*[\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u024f][A-Za-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u024f]*"
+
     def __init__(self, base_data_dir: Optional[str] = None):
         self.base_data_dir = base_data_dir
         lexicon_path = find_data_file("lexicon_en.json", base_data_dir)
@@ -325,8 +348,9 @@ class BrailleEngine:
     def _build_token_pattern(self):
         bodies = "|".join(re.escape(body) for body in self.apostrophe_suffix_bodies)
         apostrophe = rf"(?:['’](?:{bodies}))?" if bodies else ""
+        # 꾸밈 글자가 든 낱말은 한 덩이로 받고, 점역할 수 없는 글자(², Ω 등)는 지우지 않고 그대로 남긴다.
         self._token_re = re.compile(
-            rf"[0-9]+|[a-zA-Z]+{apostrophe}|['’][a-zA-Z]+|[^\w\s]|_|\s"
+            rf"{self.ACCENTED_WORD}|[0-9]+|[a-zA-Z]+{apostrophe}|['’][a-zA-Z]+|[^\w\s]|_|\s|\S"
         )
 
     def _load_shortforms(self):
@@ -545,7 +569,7 @@ class BrailleEngine:
             if not token:
                 continue
 
-            if token.isdigit():
+            if token.isascii() and token.isdigit():
                 prefix = "" if in_numeric_mode else self.num_prefix
                 in_numeric_mode = True
                 result.append(prefix + "".join(self.digits[digit] for digit in token))
@@ -569,6 +593,13 @@ class BrailleEngine:
             if in_numeric_mode and token in self.terminating_connectors:
                 result.append(self.terminating_connectors[token])
                 in_numeric_mode = False
+                continue
+
+            if re.fullmatch(self.ACCENTED_WORD, token):
+                in_numeric_mode = False
+                self._word_beginning = self._at_word_beginning(tokens, index)
+                result.append(self._translate_modified_word(token))
+                self._word_beginning = True
                 continue
 
             if re.match(r"^[A-Za-z]+(?:['’][A-Za-z]+)?$", token) and self._has_interior_capital(token):
@@ -656,6 +687,56 @@ class BrailleEngine:
             result.append(braille)
 
         return "".join(result)
+
+    def _modified_letter(self, char: str) -> Optional[str]:
+        """꾸밈 글자 한 자의 점자 (UEB 4.2, 4.3). 대문자면 대문자 표시를 꾸밈표 앞에 둔다 (4.2.2, Étienne ⠠⠘⠌⠑).
+        UEB에 정해진 꾸밈표가 없는 글자는 None."""
+        lower = char.lower()
+        cap = self.CAP_LETTER if char != lower else ""
+        if lower in self.LIGATURES:
+            if cap:
+                return None
+            first, second = self.LIGATURES[lower]
+            return self.spelling[first] + self.LIGATURE_SIGN + self.spelling[second]
+        if lower in self.STROKED_LETTERS:
+            base, mark = self.STROKED_LETTERS[lower]
+            return cap + self.MODIFIERS[mark] + self.spelling[base]
+        parts = unicodedata.normalize("NFD", lower)
+        base, marks = parts[:1], parts[1:]
+        if len(marks) != 1 or marks not in self.MODIFIERS or base not in self.spelling:
+            return None
+        return cap + self.MODIFIERS[marks] + self.spelling[base]
+
+    def _translate_modified_word(self, token: str) -> str:
+        """꾸밈 글자가 든 낱말 (UEB 4.2). 꾸밈 글자는 약자에 들어가지 않고(4.2.4, blessèd ⠃⠨⠎⠘⠡⠑⠙),
+        나머지 글자는 보통 약자 규칙을 따른다. 낱말 전체가 대문자면 대문자 단어표를 쓴다(4.2.3, AOÛT ⠠⠠⠁⠕⠘⠩⠥⠞)."""
+        letters = [char for char in token if char.isalpha()]
+        all_caps = len(letters) > 1 and all(char.isupper() for char in letters)
+        if not all_caps and any(char.isupper() for char in token[1:]):
+            # 낱말 가운데 대문자는 글자마다 대문자 표시를 붙여 풀어 적는다.
+            out = []
+            for char in token:
+                if char.isascii():
+                    out.append((self.CAP_LETTER if char.isupper() else "") + self.spelling.get(char.lower(), char))
+                else:
+                    out.append(self._modified_letter(char) or char)
+            return "".join(out)
+        lower = token.lower()
+        braille = self._contract_surface(lower, whole_word=True, standing_alone=False)
+        for char in sorted(set(lower) - set("abcdefghijklmnopqrstuvwxyz"), key=len):
+            braille = braille.replace(char, self._modified_letter(char) or char)
+        if all_caps:
+            return self.CAP_WORD + braille
+        if token[0].isupper():
+            if token[0].isascii():
+                return self.CAP_LETTER + braille
+            # 꾸밈 글자의 대문자 표시는 꾸밈표 앞에 이미 들어갔다.
+            first = self._modified_letter(token[0])
+            if first:
+                lowered = self._modified_letter(token[0].lower())
+                return first + braille[len(lowered):] if braille.startswith(lowered) else self.CAP_LETTER + braille
+            return token[0] + braille[1:]
+        return braille
 
     def _two_cell_quote_indexes(self, tokens: List[str]) -> set:
         """UEB 7.6.8: 홀로 놓인 큰따옴표와 그 짝은 두 칸 따옴표(⠘⠦ ⠘⠴)로 적는다."""
@@ -1042,6 +1123,8 @@ class BrailleEngine:
             return False  # best ⠃⠑⠌, conch ⠉⠕⠝⠡, disc ⠙⠊⠎⠉: 한 음절 낱말
         if prefix == "be" and rest[:1] == "e":
             return False  # been ⠃⠑⠢
+        if prefix == "be" and rest.startswith("au"):
+            return False  # beau ⠃⠂⠥ (UEB 4.2.4 보기), beautiful ⠃⠂⠥⠞⠊⠰⠇ (UEB 10.10.4): beau가 한 음절
         if prefix == "be" and len(rest) > 1 and rest[0] == rest[1] and rest[0] not in self.VOWELS_Y:
             return False  # better ⠃⠑⠞⠞⠻, belligerent ⠃⠑⠇⠇⠊⠛⠻⠢⠞, begging ⠃⠑⠶⠬
         if prefix == "con" and re.fullmatch(r"e(s|d|y|ys)?", rest):

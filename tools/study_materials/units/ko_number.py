@@ -3,7 +3,7 @@
 규정집의 보기는 점자 글꼴(#=수표, a~j=숫자 1~0)로 실려 있어, 아래 RULE_EXAMPLES에 그대로 옮기고
 저장소 numbers.json의 점형과 같은지 확인한다.
 """
-from common import braille, dots_of, dots_text, load_json, standard_doc, unit_data
+from common import braille, dots_text, load_json, standard_doc, unit_data
 
 UNIT_ID = 'ko-number'
 ASCII = {'#': [3, 4, 5, 6], 'a': [1], 'b': [1, 2], 'c': [1, 4], 'd': [1, 4, 5], 'e': [1, 5],
