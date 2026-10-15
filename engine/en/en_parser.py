@@ -1123,6 +1123,8 @@ class BrailleEngine:
             return False  # best ⠃⠑⠌, conch ⠉⠕⠝⠡, disc ⠙⠊⠎⠉: 한 음절 낱말
         if prefix == "be" and rest[:1] == "e":
             return False  # been ⠃⠑⠢
+        if prefix == "be" and rest.startswith("au"):
+            return False  # beau ⠃⠂⠥ (UEB 4.2.4 보기), beautiful ⠃⠂⠥⠞⠊⠰⠇ (UEB 10.10.4): beau가 한 음절
         if prefix == "be" and len(rest) > 1 and rest[0] == rest[1] and rest[0] not in self.VOWELS_Y:
             return False  # better ⠃⠑⠞⠞⠻, belligerent ⠃⠑⠇⠇⠊⠛⠻⠢⠞, begging ⠃⠑⠶⠬
         if prefix == "con" and re.fullmatch(r"e(s|d|y|ys)?", rest):

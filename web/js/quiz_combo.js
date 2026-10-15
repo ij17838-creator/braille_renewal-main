@@ -812,6 +812,8 @@ function buildEnglish(data) {
         if (group.where === 'medial' && (atStart || atEnd)) continue;
         if (group.avoidStandingAlone && atStart && atEnd) continue;
         if (group.where === 'prefix' && !(atStart && !atEnd)) continue;
+        // UEB 10.6.1: be가 첫 음절이 아니면 쓰지 않는다. beau·beautiful ⠃⠂⠥⠞⠊⠰⠇ (UEB 10.10.4)
+        if (group.text === 'be' && lower.startsWith('au', i + 2)) continue;
         if (group.where === 'final' && !(atEnd && (!atStart || opts.finalAtStart))) continue;
         matched = group;
         break;
