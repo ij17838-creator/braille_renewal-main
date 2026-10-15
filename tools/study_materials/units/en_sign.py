@@ -58,6 +58,7 @@ def build():
     for t, a in CAP_EXAMPLES.items():
         assert en_cells(t) == reg_cells(a), t
     check_ueb(GRADE1_EXAMPLES)
+    assert en_cells(CAP_PASSAGE[0]) == reg_cells(CAP_PASSAGE[1])  # 대문자 구절표·종료표
     assert len(raw) == 39
     # 안내 문장에 적은 사실 확인
     assert all(len(cards[m]) == 1 and not set(cards[m][0]) & {1, 4} for m in '.?!')

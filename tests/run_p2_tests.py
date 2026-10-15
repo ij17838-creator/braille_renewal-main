@@ -466,6 +466,14 @@ UEB_CONTRACTION_CASES = [
     ("AfterHours", "⠠⠁⠋⠞⠻⠠⠓⠳⠗⠎"),
     ("UNSD", "⠰⠰⠠⠠⠥⠝⠎⠙"),
     ("Marcillat-en-Combraille, France", "⠠⠍⠜⠉⠊⠇⠇⠁⠞⠤⠑⠝⠤⠠⠉⠕⠍⠃⠗⠇⠂ ⠠⠋⠗⠨⠑"),
+    # 대문자 구절표·종료표: 한글 점자 제28항 [붙임], UEB 8.5~8.6
+    ("WELCOME TO KOREA", "⠠⠠⠠⠺⠑⠇⠉⠕⠍⠑ ⠞⠕ ⠅⠕⠗⠑⠁⠠⠄"),
+    ("A SELF-MADE MAN", "⠠⠠⠠⠁ ⠎⠑⠇⠋⠤⠍⠁⠙⠑ ⠍⠁⠝⠠⠄"),
+    ("STOP RUNNING NOW! It's dangerous.", "⠠⠠⠠⠌⠕⠏ ⠗⠥⠝⠝⠬ ⠝⠪⠖⠠⠄ ⠠⠭⠄⠎ ⠙⠁⠝⠛⠻⠳⠎⠲"),
+    ("Go to point A. BUT NOT YET!", "⠠⠛ ⠞⠕ ⠏⠕⠔⠞ ⠠⠁⠲ ⠠⠠⠠⠃ ⠝ ⠽⠑⠞⠖⠠⠄"),
+    ("He shouted “I WILL NOT!”", "⠠⠓⠑ ⠩⠳⠞⠫ ⠦⠠⠠⠠⠊ ⠺ ⠝⠖⠠⠄⠴"),
+    ("FOR SALE: 1975 FIREBIRD", "⠠⠠⠠⠿ ⠎⠁⠇⠑⠒ ⠼⠁⠊⠛⠑ ⠋⠊⠗⠑⠃⠊⠗⠙⠠⠄"),
+    ("NEW YORK", "⠠⠠⠝⠑⠺ ⠠⠠⠽⠕⠗⠅"),
 ]
 
 

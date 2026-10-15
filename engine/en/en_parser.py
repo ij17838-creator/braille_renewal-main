@@ -136,6 +136,10 @@ class BrailleEngine:
     SHORTFORM_10_9_3 = ("braille", "great", "children", "blind", "first", "friend", "good", "letter", "little", "quick")
     VOWELS_Y = set("aeiouy")
     CAP_WORD_TERMINATOR = "\u2820\u2804"
+    # 한글 점자 제28항 [붙임]·UEB 8.5: 세 낱말 이상이 모두 대문자면 첫 낱말 앞에 대문자 구절표,
+    # 마지막 낱말 뒤에 대문자 종료표를 적는다 (WELCOME TO KOREA ⠠⠠⠠⠺⠑⠇⠉⠕⠍⠑ ⠞⠕ ⠅⠕⠗⠑⠁⠠⠄).
+    CAP_PASSAGE = "\u2820\u2820\u2820"
+    PASSAGE_CLOSERS = {"”": "“", "’": "‘", ")": "(", "]": "["}
     WORD_BEGINNING_SIGNS = ("ing", "be", "con", "dis")
     OPENING_PUNCTUATION = "([{\"'“‘«"
     WORD_BEGINNING_BREAKS = "-‐‑–—―"
@@ -555,6 +559,68 @@ class BrailleEngine:
             index += 1
         return False
 
+    def _capital_passages(self, tokens: List[str]) -> Tuple[set, set, set]:
+        """대문자 구절: 띄어쓰기로 나눈 덩이 가운데 대문자 낱말 덩이가 셋 이상 이어진 곳.
+
+        돌려주는 것: 구절 안 낱말 토큰 번호, 구절표를 붙일 첫 낱말 번호, 종료표를 뒤에 붙일 토큰 번호.
+        숫자·부호만 있는 덩이는 구절 안에 들어갈 수 있지만 셈하지 않는다 (UEB 8.5.2, FOR SALE: 1975 FIREBIRD).
+        구절 끝의 부호는 종료표 앞에 두되, 구절 밖에서 연 따옴표·괄호를 닫는 부호는 종료표 뒤에 둔다 (UEB 8.6.2).
+        """
+        chunks, current = [], []
+        for i, tok in enumerate(tokens):
+            if tok.isspace():
+                if current:
+                    chunks.append(current)
+                current = []
+            else:
+                current.append(i)
+        if current:
+            chunks.append(current)
+
+        def kind(chunk):
+            words = [i for i in chunk if re.search(r"[A-Za-z]", tokens[i])]
+            if not words:
+                return "neutral" if all(not re.search(r"\w", tokens[i]) or tokens[i].isdigit() for i in chunk) else "other"
+            if any(tokens[i].isdigit() for i in chunk):
+                return "other"  # H2O처럼 글자와 숫자가 섞인 덩이는 구절로 묶지 않는다
+            for i in words:
+                tok = tokens[i]
+                if not re.fullmatch(r"[A-Z]+(?:['’][A-Z]+)?", tok):
+                    return "other"
+            return "caps"
+
+        kinds = [kind(c) for c in chunks]
+        inside, firsts, ends = set(), set(), set()
+        n = 0
+        while n < len(chunks):
+            if kinds[n] != "caps":
+                n += 1
+                continue
+            last, count, m = n, 0, n
+            while m < len(chunks) and kinds[m] in ("caps", "neutral"):
+                if kinds[m] == "caps":
+                    last, count = m, count + 1
+                m += 1
+                if tokens[chunks[m - 1][-1]] in ".!?…":
+                    break  # 문장이 끝나면 구절도 끊는다 (UEB 8.5.4, ABC. A BBC ⠠⠠⠁⠃⠉⠲ ⠠⠁ ⠠⠠⠃⠃⠉)
+            if count >= 3:
+                span = [i for c in chunks[n:last + 1] for i in c]
+                words = [i for i in span if re.search(r"[A-Za-z]", tokens[i])]
+                inside.update(words)
+                firsts.add(words[0])
+                opened = [tokens[i] for i in span if i > words[0] and tokens[i] in self.PASSAGE_CLOSERS.values()]
+                end = words[-1]
+                for i in chunks[last][chunks[last].index(end) + 1:]:
+                    opener = self.PASSAGE_CLOSERS.get(tokens[i])
+                    if opener:
+                        if opener not in opened:
+                            break
+                        opened.remove(opener)
+                    end = i
+                ends.add(end)
+            n = last + 1
+        return inside, firsts, ends
+
     def text_to_braille(self, text: str) -> str:
         # 곧은 큰따옴표(")는 놓인 자리로 여는·닫는 따옴표를 가린다 (UEB 예시 "Belinda!" ⠦⠠⠆⠇⠔⠙⠁⠖⠴).
         text = re.sub(r'(^|(?<=[\s(\[{]))"', "“", text).replace('"', "”")
@@ -564,8 +630,11 @@ class BrailleEngine:
         in_numeric_mode = False
         cap_letter = self.CAP_LETTER
         cap_word = self.CAP_WORD
+        passage_words, passage_starts, passage_ends = self._capital_passages(tokens)
 
         for index, token in enumerate(tokens):
+            if index - 1 in passage_ends:
+                result.append(self.CAP_WORD_TERMINATOR)
             if not token:
                 continue
 
@@ -602,7 +671,8 @@ class BrailleEngine:
                 self._word_beginning = True
                 continue
 
-            if re.match(r"^[A-Za-z]+(?:['’][A-Za-z]+)?$", token) and self._has_interior_capital(token):
+            if (re.match(r"^[A-Za-z]+(?:['’][A-Za-z]+)?$", token) and self._has_interior_capital(token)
+                    and index not in passage_words):
                 in_numeric_mode = False
                 self._word_beginning = self._at_word_beginning(tokens, index)
                 result.append(self._translate_mixed_case(token, standing=self._token_stands_alone(tokens, index)))
@@ -617,6 +687,8 @@ class BrailleEngine:
                     cap_indicator = cap_word
                 elif token[0].isupper():
                     cap_indicator = cap_letter
+                if index in passage_words:
+                    cap_indicator = self.CAP_PASSAGE if index in passage_starts else ""
                 lower = token.lower().replace("’", "'")
                 standing = self._token_stands_alone(tokens, index)
                 self._word_beginning = self._at_word_beginning(tokens, index)
@@ -686,6 +758,8 @@ class BrailleEngine:
                 braille = self.letter_grade1_indicator + braille
             result.append(braille)
 
+        if len(tokens) - 1 in passage_ends:
+            result.append(self.CAP_WORD_TERMINATOR)
         return "".join(result)
 
     def _modified_letter(self, char: str) -> Optional[str]:
@@ -1171,7 +1245,31 @@ class BrailleEngine:
                 return False
         return False
 
+    def _expand_capital_passages(self, braille_str: str) -> str:
+        """대문자 구절표 ⠠⠠⠠ ~ 대문자 종료표 ⠠⠄를 낱말마다 대문자 단어표 ⠠⠠로 풀어 읽는다."""
+        out, rest = [], braille_str
+        while True:
+            m = re.search(r"(?:^|(?<=[\s]))([\u2800-\u28FF]*?)" + self.CAP_PASSAGE, rest)
+            if not m:
+                out.append(rest)
+                return "".join(out)
+            end = rest.find(self.CAP_WORD_TERMINATOR, m.end())
+            if end < 0:
+                out.append(rest)
+                return "".join(out)
+            out.append(rest[:m.start()])
+            body = rest[m.start():end].replace(self.CAP_PASSAGE, self.CAP_WORD, 1)
+            parts = re.split(r"(\s+)", body)
+            for k in range(2, len(parts), 2):
+                lead = re.match(r"^(?:\u2810\u2823|\u2828\u2823|\u2820\u2826|\u2826)*", parts[k]).group(0)
+                word = parts[k][len(lead):]
+                if word and not word.startswith(self.num_prefix):
+                    parts[k] = lead + self.CAP_WORD + word
+            out.append("".join(parts))
+            rest = rest[end + len(self.CAP_WORD_TERMINATOR):]
+
     def braille_to_text(self, braille_str: str) -> str:
+        braille_str = self._expand_capital_passages(braille_str)
         tokens = re.findall(r"[\u2800-\u28FF]+|[^\u2800-\u28FF]+", braille_str)
         result = []
         for token in tokens:
