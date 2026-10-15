@@ -1119,6 +1119,10 @@
       "skill": {
         "read": "어두·어미 묶음 약자 점형을 읽는다",
         "write": "그 단어나 철자를 어두·어미 묶음 약자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-initial-final.hwpx",
+        "pdf": "materials/en/en-initial-final.pdf"
       }
     },
     {
@@ -1144,6 +1148,10 @@
       "skill": {
         "read": "축어 점형을 단어로 읽는다",
         "write": "그 단어를 축어로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-shortform.hwpx",
+        "pdf": "materials/en/en-shortform.pdf"
       }
     },
     {
@@ -1166,6 +1174,10 @@
       "skill": {
         "read": "짧은 영어 문장의 점자를 말로 읽는다",
         "write": "짧은 영어 문장을 점자로 적는다"
+      },
+      "materials": {
+        "hwpx": "materials/en/en-sentence.hwpx",
+        "pdf": "materials/en/en-sentence.pdf"
       }
     }
   ]

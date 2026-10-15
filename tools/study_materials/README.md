@@ -31,3 +31,12 @@ python tools/study_materials/build.py ko-number --skill <hwpx 스킬 폴더> --o
 한글 파일의 점자 문자(⠿ 등)는 글자 대신 6점 칸 그림(PNG, 그림 설명 = 점 번호)으로 넣는다. 한글 프로그램이 점자 문자를 8점 칸(맨 아래 빈 점 2개)으로 그리는 글꼴로 대신 보여 주고, 파일 안에 넣은 글꼴은 쓰지 않기 때문이다. PDF는 원래대로 점자 문자를 둔다.
 
 필요한 것: hwpx 스킬, Pillow(그림),(report 템플릿과 build·validate 스크립트), Node Playwright(Chromium), 인터넷(구글 글꼴 Noto Sans KR).
+
+## 영어 단원
+- `units/en_*.py`, 공통 도구는 `en_common.py`(영어 엔진 `engine/en`, 약자 단원 틀 `contraction_doc`).
+- 한글 점자 규정(제28~37항, [부록 1])을 먼저 근거로 삼고, 규정집이 「통일영어점자 규정」을 따르라고 한 부분(제32항)에만 UEB 규칙을 쓴다.
+- UEB 규정집 표와 보기는 점자 문자 그대로 실려 있어 단원 파일에 옮겨 적고, 앱 카드·엔진 결과와 assert로 대조한다.
+
+```bash
+python tools/study_materials/build.py en-letter --skill <hwpx 스킬 폴더> --out web/materials/en --link
+```
