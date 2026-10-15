@@ -334,26 +334,11 @@ class KoreanBrailleEngine:
 
     def _index_letter_uses(self):
         for uni, char in self.rev_chosung.items():
-            if char == "ㄹ":
-                context = "word_initial"
-            elif char == "ㅊ":
-                context = "syllable_initial"
-            else:
-                context = "syllable_initial"
-            self._add_use(uni, char, context)
+            self._add_use(uni, char, "word_initial" if char == "ㄹ" else "syllable_initial")
         for uni, char in self.rev_jungsung.items():
-            context = "vowel" if char == "ㅖ" else "vowel"
-            self._add_use(uni, char, context)
+            self._add_use(uni, char, "vowel")
         for uni, char in self.rev_jongsung.items():
-            if char == "ㄴ":
-                context = "syllable_final"
-            elif char == "ㅎ":
-                context = "syllable_final"
-            elif char == "ㅆ":
-                context = "coda"
-            else:
-                context = "syllable_final"
-            self._add_use(uni, char, context)
+            self._add_use(uni, char, "coda" if char == "ㅆ" else "syllable_final")
 
     def _index_abbreviation_uses(self):
         for word, uni in self.word_abbr.items():
@@ -572,8 +557,8 @@ class KoreanBrailleEngine:
                     in_number_mode = False
                     continue
 
-            # 5. 숫자 처리
-            if ch.isdigit():
+            # 5. 숫자 처리. ²·１ 같은 다른 숫자 글자는 점형이 없으므로 아래에서 그대로 둔다.
+            if ch in self.digits:
                 prefix = ""
                 explanation = "연속 숫자"
                 if not in_number_mode:
@@ -588,7 +573,7 @@ class KoreanBrailleEngine:
 
             # 숫자 사이 쉼표·온점·하이픈·슬래시. 유지 여부는 ko_number_rules.json만 본다.
             if in_number_mode and ch in self.num_connectors:
-                if i + 1 < n and text[i+1].isdigit():
+                if i + 1 < n and text[i+1] in self.digits:
                     b_conn = self.num_connectors[ch]
                     out.append(b_conn)
                     if not self.connector_persists.get(ch, True):

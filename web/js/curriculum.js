@@ -90,7 +90,6 @@ export function materialsFor(unit, data) {
 function cardsFromSlice(slice, data) {
   if (slice.role === 'abbr') return abbrCards(slice, data);
   if (slice.ranges || slice.syllables) return syllableCards(slice, data);
-  if (slice.role === 'abbr') return abbrCards(slice, data);
   if (slice.role === 'exception') return exceptionCards(slice, data);
   if (slice.role === 'keep_a') return keepACards(slice, data);
   const node = nodeAt(data, slice.bundle, slice.path || []);

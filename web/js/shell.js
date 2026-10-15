@@ -772,7 +772,7 @@ export function createStageSession({ game, trackCombo = true, intro, getMeta, on
       : status === 'opened'
         ? `${clearance.earlier ? '이 단원과 이전 단원이 해금되었습니다.' : '이 단원이 해금되었습니다.'} ${size}문제 중 ${correct}문제를 맞혔습니다.`
         : `스테이지 ${stage} 학습 결과. ${size}문제 중 ${correct}문제를 맞혔습니다. 정답률 ${accuracy}퍼센트.`;
-    speakStage(spoken);
+    speakStage(spoken, 'KO');
   }
 
   // 게임 방법 창을 닫은 뒤에 fn을 부른다. 창이 없거나 이미 닫혔으면 바로 부른다.
